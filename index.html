@@ -1,13 +1,147 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>fcroster</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#111111"/>
+
+  <!-- Primary SEO -->
+  <title>FCRoster — Soccer Roster & Tactics Builder</title>
+  <meta name="description" content="Build soccer formations, plan substitutions, and design plays with FCRoster. Free tactical board for coaches, managers and players. 11v11, 9v9, 7v7 and 5v5."/>
+  <meta name="keywords" content="soccer tactics, football formation builder, soccer roster, tactical board, coach tool, football lineup, substitution planner"/>
+  <meta name="author" content="FCRoster"/>
+  <meta name="robots" content="index, follow"/>
+  <link rel="canonical" href="https://fcroster.com"/>
+
+  <!-- Open Graph (Facebook, WhatsApp, LinkedIn sharing) -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://fcroster.com"/>
+  <meta property="og:title" content="FCRoster — Soccer Roster & Tactics Builder"/>
+  <meta property="og:description" content="Build formations, plan subs, and design plays. Free tactical board for soccer coaches and players."/>
+  <meta property="og:image" content="https://fcroster.com/og-image.png"/>
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+  <meta property="og:site_name" content="FCRoster"/>
+  <meta property="og:locale" content="en_US"/>
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:url" content="https://fcroster.com"/>
+  <meta name="twitter:title" content="FCRoster — Soccer Tactics Builder"/>
+  <meta name="twitter:description" content="Build formations, plan subs, and design plays. Free tactical board for coaches and players."/>
+  <meta name="twitter:image" content="https://fcroster.com/og-image.png"/>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="FCRoster"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png"/>
+  <link rel="shortcut icon" href="/favicon.ico"/>
+
+  <!-- Structured data for Google -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "FCRoster",
+    "url": "https://fcroster.com",
+    "description": "Soccer roster and tactics builder for coaches, managers and players.",
+    "applicationCategory": "SportsApplication",
+    "operatingSystem": "Web, iOS, Android",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NY1C67EKYY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-NY1C67EKYY');
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root {
+      height: 100%;
+      width: 100%;
+      background: #111111;
+      color: #fff;
+      font-family: 'Rajdhani', sans-serif;
+      overflow: hidden;
+    }
+    /* Splash screen while React loads */
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 9999;
+      transition: opacity 0.4s ease;
+    }
+    #splash.hidden { opacity: 0; pointer-events: none; }
+    #splash-logo {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      font-family: 'Rajdhani', sans-serif;
+    }
+    #splash-logo .fc { color: #C8FF00; }
+    #splash-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #C8FF00;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Splash screen -->
+  <div id="splash">
+    <div style="font-size:36px">&#x26BD;</div>
+    <div id="splash-logo"><span class="fc">FC</span>ROSTER</div>
+    <div id="splash-dot"></div>
+  </div>
+
+  <div id="root"></div>
+
+  <script>
+    // Hide splash once React root renders
+    var observer = new MutationObserver(function() {
+      var root = document.getElementById('root');
+      if (root && root.children.length > 0) {
+        var splash = document.getElementById('splash');
+        if (splash) {
+          splash.classList.add('hidden');
+          setTimeout(function() { splash.remove(); }, 500);
+        }
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.getElementById('root'), { childList: true });
+  </script>
+
+  <!-- React bundle injected by build tool (Vite/CRA) -->
+  <script type="module" src="/src/main.jsx"></script>
+</body>
 </html>
