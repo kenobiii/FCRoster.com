@@ -141,11 +141,13 @@ export async function loadFormations() {
 
 // Save current pitch state as a new formation
 export async function saveFormation(state) {
-  var user = await getUser();
-  if (!user) throw new Error("Not signed in");
+  var { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) throw new Error("Not signed in");
 
   var record = {
     user_id:    user.id,
+    name:       state.title || "My Formation",
+    state:      {},
     title:      state.title,
     game_fmt:   state.gameFmt,
     formation:  state.formation,
@@ -160,6 +162,7 @@ export async function saveFormation(state) {
     opp_fmt:    state.oppFmt,
     opp_list:   state.oppList,
     opp_color:  state.oppColor,
+    type:       state.type || "roster",
   };
 
   var { data, error } = await supabase
@@ -173,10 +176,12 @@ export async function saveFormation(state) {
 
 // Update an existing formation by id
 export async function updateFormation(id, state) {
-  var user = await getUser();
-  if (!user) throw new Error("Not signed in");
+  var { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) throw new Error("Not signed in");
 
   var record = {
+    name:       state.title || "My Formation",
+    state:      {},
     title:      state.title,
     game_fmt:   state.gameFmt,
     formation:  state.formation,
@@ -191,6 +196,7 @@ export async function updateFormation(id, state) {
     opp_fmt:    state.oppFmt,
     opp_list:   state.oppList,
     opp_color:  state.oppColor,
+    type:       state.type || "roster",
   };
 
   var { data, error } = await supabase

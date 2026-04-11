@@ -1227,11 +1227,11 @@ export default function FCRoster() {
             boxShadow:tool?"0 0 12px rgba(200,255,0,0.18)":"none",
             marginBottom:10,transition:"all 0.2s"}}>
             <span style={{fontSize:13,fontWeight:700,color:tool?T.volt:T.ghost,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase"}}>{
-              tool==="drag"?"&#x2725; Move Player":
-              tool==="ball"?"&#x26BD; Drop Ball":
-              tool==="pass"?"&#x2192; Draw Pass":
-              tool==="run"?"&#x21E2; Draw Run":
-              tool==="shot"?"&#x2606; Draw Shot":"No Tool Selected"
+              tool==="drag"?"Move Player":
+              tool==="ball"?"Drop Ball":
+              tool==="pass"?"Draw Pass":
+              tool==="run"?"Draw Run":
+              tool==="shot"?"Draw Shot":"No Tool Selected"
             }</span>
           </div>
         </div>
@@ -1267,10 +1267,10 @@ export default function FCRoster() {
           )}
         </div>
         <HR/>
-        {/* Phase Builder -- bottom of right panel, large tiles */}
-        <div style={{marginTop:"auto",paddingTop:4}}>
+        {/* Phase Builder -- fills right panel space */}
+        <div style={{flex:1,display:"flex",flexDirection:"column",gap:5,marginBottom:8}}>
           <SL c="Phase Builder"/>
-          <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:8}}>
+          <div style={{display:"flex",flexDirection:"column",gap:5,flex:1}}>
             {phases.map(function(ph,i){
               var saved=ph!==null, active=activePhase===i;
               return (
@@ -1279,12 +1279,13 @@ export default function FCRoster() {
                   onDoubleClick={function(e){e.stopPropagation();if(saved)clearPhase(i);}}
                   title={saved?"Load phase "+(i+1)+" (dbl-click to clear)":"Save as phase "+(i+1)}
                   style={{
-                    width:"100%",padding:"10px 12px",borderRadius:6,cursor:"pointer",
+                    flex:1,width:"100%",padding:"10px 12px",borderRadius:6,cursor:"pointer",
                     display:"flex",alignItems:"center",justifyContent:"space-between",
                     border:"1px solid "+(active?T.volt:saved?"rgba(200,255,0,0.3)":"rgba(255,255,255,0.08)"),
                     background:active?"rgba(200,255,0,0.12)":saved?"rgba(200,255,0,0.05)":"rgba(255,255,255,0.03)",
                     transition:"all 0.13s",fontFamily:"'Rajdhani',sans-serif",
                     boxShadow:active?"0 0 10px rgba(200,255,0,0.2)":"none",
+                    minHeight:38,
                   }}>
                   <span style={{fontSize:13,fontWeight:700,letterSpacing:"0.08em",color:active?T.volt:saved?"rgba(200,255,0,0.7)":"rgba(255,255,255,0.3)"}}>PHASE {i+1}</span>
                   <span style={{fontSize:10,color:active?T.volt:saved?"rgba(200,255,0,0.5)":"rgba(255,255,255,0.2)",fontFamily:"'Poppins',sans-serif"}}>
@@ -1294,7 +1295,7 @@ export default function FCRoster() {
               );
             })}
           </div>
-          <div style={{display:"flex",gap:6}}>
+          <div style={{display:"flex",gap:6,marginTop:4}}>
             {playing?(
               <button onClick={stopPlay} className="btn btn-danger btn-sm" style={{flex:1}}>&#9632; Stop</button>
             ):(
@@ -1304,6 +1305,21 @@ export default function FCRoster() {
               if(activePhase!==null) savePhase(activePhase);
               else{var next=phases.findIndex(function(p){return p===null;});if(next!==-1)savePhase(next);else notify("All 5 phases used.");}
             }} className="btn btn-secondary btn-sm" style={{flex:1}}>Save Phase</button>
+          </div>
+        </div>
+        <HR/>
+        {/* Load Squad / Load Play */}
+        <div>
+          <SL c="Load"/>
+          <div style={{display:"flex",flexDirection:"column",gap:5}}>
+            <button className="btn btn-secondary btn-sm" style={{width:"100%",gap:6,justifyContent:"flex-start"}}
+              onClick={function(){if(user){setTab("profile");}else{setShowAuth(true);}}}>
+              <span>&#x1F465;</span> Load Squad
+            </button>
+            <button className="btn btn-secondary btn-sm" style={{width:"100%",gap:6,justifyContent:"flex-start"}}
+              onClick={function(){if(user){setTab("profile");}else{setShowAuth(true);}}}>
+              <span>&#x2606;</span> Load Play
+            </button>
           </div>
         </div>
       </div>
@@ -1532,7 +1548,7 @@ export default function FCRoster() {
                       var skillLabel=["","Grassroots","Amateur","Semi-Pro","Club Pro","Elite"][p.skill||3];
                       return (
                         <div key={p.id} style={{padding:"10px 14px",borderBottom:"1px solid "+T.b,cursor:"pointer",transition:"background 0.1s"}}
-                          onClick={function(){setEditP(Object.assign({},p));setTab("pitch");}}
+                          onClick={function(){setEditP(Object.assign({},p));}}
                           onMouseEnter={function(e){e.currentTarget.style.background="rgba(255,255,255,0.03)";}}
                           onMouseLeave={function(e){e.currentTarget.style.background="transparent";}}>
                           <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -1560,6 +1576,27 @@ export default function FCRoster() {
                       );
                     })}
                   </div>
+
+                  {/* Substitution Planner in Profile */}
+                  {subs.length>0&&(
+                    <div style={{border:"1px solid "+T.b,borderRadius:6,overflow:"hidden"}}>
+                      <div style={{padding:"8px 14px",borderBottom:"1px solid "+T.b,background:T.raised}}>
+                        <div style={{fontWeight:700,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.ghost}}>Substitutions ({subs.length})</div>
+                      </div>
+                      {subs.map(function(s,i){
+                        var outP=players.find(function(p){return p.id===s.playerId;});
+                        return(
+                          <div key={s.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",borderBottom:"1px solid "+T.b}}>
+                            <span style={{fontSize:10,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,width:20}}>#{i+1}</span>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:12,color:T.text,fontFamily:"'Rajdhani',sans-serif",fontWeight:700}}>{outP?outP.name||outP.n:"?"} <span style={{color:T.ghost,fontWeight:400}}>&#x2192; {s.subName||"Sub"}</span></div>
+                              {s.minute&&<div style={{fontSize:9,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:1}}>Min {s.minute}</div>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Save buttons */}
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
@@ -1670,22 +1707,125 @@ export default function FCRoster() {
         )}
 
         {tab==="about"&&(
-          <div style={{flex:1,overflow:"auto",padding:"36px 24px"}} className="fu">
-            <div style={{maxWidth:500,margin:"0 auto",display:"flex",flexDirection:"column",gap:18}}>
-              <div>
-                <h1 style={{fontWeight:700,fontSize:24,letterSpacing:"0.06em"}}>ABOUT FCROSTER</h1>
-                <p style={{color:T.sub,marginTop:7,lineHeight:1.8,fontSize:14,fontFamily:"'Poppins',sans-serif"}}>Tactical soccer platform for coaches, players, and fans.</p>
+          <div style={{flex:1,overflow:"auto",padding:"40px 24px 60px"}} className="fu">
+            <div style={{maxWidth:640,margin:"0 auto",display:"flex",flexDirection:"column",gap:32}}>
+
+              {/* Hero */}
+              <div style={{textAlign:"center",padding:"10px 0 4px"}}>
+                <div style={{fontSize:44,marginBottom:12}}>&#x26BD;</div>
+                <h1 style={{fontWeight:700,fontSize:28,letterSpacing:"0.08em",marginBottom:10,fontFamily:"'Rajdhani',sans-serif"}}>
+                  <span style={{color:T.volt}}>FC</span>ROSTER
+                </h1>
+                <p style={{color:T.ghost,fontSize:13,fontFamily:"'Poppins',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase"}}>
+                  For coaches at heart. Players who care. The beautiful game.
+                </p>
               </div>
-              <div style={{border:"1px solid "+T.b,borderRadius:6,padding:18}}>
-                <SL c="Contact"/>
-                <div style={{display:"flex",flexDirection:"column",gap:9}}>
-                  <div><label>Name</label><input placeholder="Alex Ferguson"/></div>
-                  <div><label>Email</label><input type="email" placeholder="coach@club.com"/></div>
-                  <div><label>Message</label><textarea rows={3} placeholder="Feedback or questions..."/></div>
-                  <button onClick={function(){notify("Message sent!");}} className="btn btn-volt-outline btn-sm">Send</button>
+
+              {/* Story */}
+              <div style={{borderLeft:"2px solid "+T.volt,paddingLeft:20}}>
+                <h2 style={{fontWeight:700,fontSize:16,letterSpacing:"0.08em",marginBottom:12,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"}}>Our Story</h2>
+                <div style={{display:"flex",flexDirection:"column",gap:12,fontFamily:"'Poppins',sans-serif",fontSize:14,lineHeight:1.85,color:"rgba(255,255,255,0.75)"}}>
+                  <p>I came to football late. No grassroots academy, no Sunday league childhood -- just a genuine love for the game that arrived and refused to leave. The more I watched, the more I wanted to understand it. The shape of a press. The angles of a build-up. The way eleven individuals become something greater than themselves when the structure is right.</p>
+                  <p>I built FCRoster because I couldn't find a tool that felt like it was made for people like me -- coaches running youth sides on weekends, players trying to understand their role, fans who want to go deeper than the scoreline. Most tools are either too complex or too shallow. FCRoster tries to sit exactly in between: powerful enough to be useful, simple enough to be picked up in seconds.</p>
+                  <p>This is a living tool. Every feature on this platform came from real feedback, real frustration, and real curiosity about what football actually needs. If something doesn't work the way you'd expect, I want to know. If there's a feature missing that would change how you prepare, plan, or share -- tell me. This was built for the community and it will keep growing with it.</p>
+                  <p style={{color:T.volt,fontWeight:600}}>Take the app. Use it. Break it. Ask for changes. That's exactly what it's here for.</p>
                 </div>
               </div>
-              <p style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>2026 FCRoster.com</p>
+
+              {/* What it does */}
+              <div>
+                <h2 style={{fontWeight:700,fontSize:16,letterSpacing:"0.08em",marginBottom:14,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"}}>What FCRoster Does</h2>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                  {[
+                    ["&#x26BD;","Tactical Pitch","Build formations for 11v11, 9v9, 7v7, and 5v5 on an interactive pitch."],
+                    ["&#x270D;","Play Designer","Draw passes, runs, and shots to design set pieces and movement patterns."],
+                    ["&#x23F5;","Phase Builder","Save up to 5 phases of play and animate them in sequence."],
+                    ["&#x1F465;","Squad Profiles","Assign names, numbers, foot, skill, age, availability, and notes to every player."],
+                    ["&#x1F501;","Sub Planner","Plan your substitutions with minute-by-minute changes before matchday."],
+                    ["&#x2193;","Save & Load","Save your formations and plays to your profile and recall them any time."],
+                  ].map(function(item,i){return(
+                    <div key={i} style={{padding:"14px",borderRadius:6,border:"1px solid "+T.b,background:"rgba(255,255,255,0.02)"}}>
+                      <div style={{fontSize:20,marginBottom:6}} dangerouslySetInnerHTML={{__html:item[0]}}/>
+                      <div style={{fontWeight:700,fontSize:12,letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",marginBottom:4,color:T.volt}}>{item[1]}</div>
+                      <div style={{fontSize:11,color:T.ghost,fontFamily:"'Poppins',sans-serif",lineHeight:1.6}}>{item[2]}</div>
+                    </div>
+                  );})}
+                </div>
+              </div>
+
+              {/* Contact */}
+              <div style={{border:"1px solid "+T.b,borderRadius:8,overflow:"hidden"}}>
+                <div style={{padding:"14px 18px",borderBottom:"1px solid "+T.b,background:T.raised}}>
+                  <h2 style={{fontWeight:700,fontSize:15,letterSpacing:"0.08em",fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"}}>Get in Touch</h2>
+                  <p style={{fontSize:11,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:4}}>Feature requests, feedback, bug reports -- all welcome.</p>
+                </div>
+                <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST"
+                  onSubmit={function(e){
+                    e.preventDefault();
+                    var form=e.target;
+                    fetch("https://formspree.io/f/YOUR_FORM_ID",{
+                      method:"POST",
+                      headers:{"Content-Type":"application/json","Accept":"application/json"},
+                      body:JSON.stringify({name:form.name.value,email:form.email.value,message:form.message.value})
+                    }).then(function(r){
+                      if(r.ok){notify("Message sent -- thank you!");form.reset();}
+                      else{notify("Something went wrong. Please try again.");}
+                    }).catch(function(){notify("Something went wrong. Please try again.");});
+                  }}
+                  style={{padding:"18px"}}>
+                  <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                      <div><label>Name</label><input name="name" placeholder="Alex Ferguson" required/></div>
+                      <div><label>Email</label><input name="email" type="email" placeholder="coach@club.com" required/></div>
+                    </div>
+                    <div><label>Message</label><textarea name="message" rows={4} placeholder="Tell us what you think, what's missing, or what's broken..." required style={{width:"100%",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:5,color:T.text,fontSize:13,fontFamily:"'Poppins',sans-serif",padding:"9px 12px",outline:"none",resize:"vertical",lineHeight:1.6}}/></div>
+                    <button type="submit" className="btn btn-volt-outline btn-md" style={{alignSelf:"flex-start",paddingLeft:24,paddingRight:24}}>Send Message</button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Legal */}
+              <div style={{borderTop:"1px solid "+T.b,paddingTop:24}}>
+                <h2 style={{fontWeight:700,fontSize:15,letterSpacing:"0.08em",fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",marginBottom:16}}>Legal</h2>
+                <div style={{display:"flex",flexDirection:"column",gap:16,fontFamily:"'Poppins',sans-serif",fontSize:12,color:T.ghost,lineHeight:1.75}}>
+
+                  <div>
+                    <div style={{fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.06em",fontSize:11}}>Terms of Use</div>
+                    <p>FCRoster.com is provided as-is for personal and coaching use. By using this platform you agree not to misuse, reverse engineer, or redistribute any part of the service. We reserve the right to modify or discontinue features at any time. Continued use of the platform constitutes acceptance of these terms.</p>
+                  </div>
+
+                  <div>
+                    <div style={{fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.06em",fontSize:11}}>Privacy Policy</div>
+                    <p>We collect only the information necessary to operate your account: your email address, display name, and the formations and player data you choose to save. We do not sell, share, or monetise your personal data. Saved formation data is stored securely via Supabase and is accessible only to your account. We may use anonymised, aggregated usage data to improve the platform.</p>
+                    <p style={{marginTop:6}}>We use Supabase for authentication and data storage, and Formspree for contact form submissions. These third-party services have their own privacy policies which govern their handling of data.</p>
+                  </div>
+
+                  <div>
+                    <div style={{fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.06em",fontSize:11}}>Cookie Policy</div>
+                    <p>FCRoster.com uses only functional cookies and local storage required for authentication session management. We do not use tracking cookies, advertising cookies, or third-party analytics cookies. No cookie consent banner is required as we only use strictly necessary cookies.</p>
+                  </div>
+
+                  <div>
+                    <div style={{fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.06em",fontSize:11}}>GDPR & Your Rights</div>
+                    <p>If you are located in the European Economic Area or the United Kingdom, you have the right to access, correct, or delete any personal data we hold about you. To exercise these rights, contact us using the form above. We will respond within 30 days. You may delete your account and all associated data at any time.</p>
+                  </div>
+
+                  <div>
+                    <div style={{fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.06em",fontSize:11}}>Disclaimer</div>
+                    <p>FCRoster.com is an independent platform and is not affiliated with, endorsed by, or associated with any football club, league, federation, or governing body. All tactical content and formations created on this platform belong to the user who created them.</p>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div style={{textAlign:"center",paddingTop:10,borderTop:"1px solid "+T.b}}>
+                <div style={{fontSize:22,marginBottom:6}}>&#x26BD;</div>
+                <p style={{fontSize:10,color:T.faint,fontFamily:"'Poppins',sans-serif",letterSpacing:"0.06em"}}>
+                  &copy; {new Date().getFullYear()} FCRoster.com &mdash; Built for the beautiful game.
+                </p>
+              </div>
+
             </div>
           </div>
         )}
