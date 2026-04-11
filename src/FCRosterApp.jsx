@@ -615,6 +615,10 @@ export default function FCRoster() {
   }
 
   function playPhases() {
+    // Auto-save current pitch as active phase (or next empty) before playing
+    var curPhase = activePhase;
+    if (curPhase !== null) { savePhase(curPhase); }
+    else { var nxt = phases.findIndex(function(p){return p===null;}); if(nxt!==-1) savePhase(nxt); }
     var saved = phases.map(function(p,i){return {ph:p,i:i};}).filter(function(x){return x.ph!==null;});
     if (saved.length < 2) { notify("Save at least 2 phases to play."); return; }
     setPlaying(true);
@@ -1300,9 +1304,11 @@ export default function FCRoster() {
               <button onClick={playPhases} className="btn btn-volt-outline btn-sm" style={{flex:1}}>&#9654; Play</button>
             )}
             <button onClick={function(){
-              if(activePhase!==null) savePhase(activePhase);
-              else{var next=phases.findIndex(function(p){return p===null;});if(next!==-1)savePhase(next);else notify("All 5 phases used.");}
-            }} className="btn btn-secondary btn-sm" style={{flex:1}}>Snapshot</button>
+              if(!user){setShowAuth(true);return;}
+              var playTitle=title||"My Play";
+              var state={title:playTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"play"};
+              saveFormation(state).then(function(){notify("Play saved to profile!");return loadFormations().then(setSavedFormations);}).catch(function(e){notify("Error: "+e.message);});
+            }} className="btn btn-secondary btn-sm" style={{flex:1}}>Save to Profile</button>
           </div>
         </div>
         <HR/>
