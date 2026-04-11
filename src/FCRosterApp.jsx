@@ -94,7 +94,7 @@ var CSS = [
   ".pc{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 4px;overflow:hidden;min-width:0;background:#131313;}",
   ".pw{flex:1;min-height:0;aspect-ratio:65/100;max-width:100%;}",
   ".d-hdr{display:flex;align-items:center;justify-content:center;padding:5px 16px;border-bottom:1px solid rgba(255,255,255,0.06);background:#131313;flex-shrink:0;gap:10;}",
-  ".d-bar{width:100%;flex-shrink:0;padding:3px 4px;display:flex;align-items:center;justify-content:space-between;}",
+  ".d-bar{width:100%;flex-shrink:0;padding:7px 8px;background:#0e0e0e;border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:8px;}",
   ".nav-sec{display:flex;}",
   ".nav-more{display:none;}",
   ".mob-ctrl{display:none;}",
@@ -304,7 +304,7 @@ function Toggle({ on, toggle, ac }) {
 }
 
 function SL({ c }) { return <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.2em",color:T.ghost,textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",marginBottom:8}}>{c}</div>; }
-function HR() { return <div style={{height:1,background:T.b,margin:"14px 0"}}/>; }
+function HR() { return <div style={{height:1,background:T.b,margin:"8px 0"}}/>; }
 
 export default function FCRoster() {
   var [tab,       setTab]       = useState("pitch");
@@ -880,24 +880,22 @@ export default function FCRoster() {
 
   function ActionBar({ compact }) {
     var canUndo = historyLen > 0;
+    var sz = "btn-md";
     return (
-      <div style={{display:"flex",alignItems:"center",gap:compact?8:6,width:"100%",padding:compact?"5px 0":"4px 0"}}>
-        {/* Undo */}
-        <button onClick={doUndo} className={"btn "+(canUndo?"btn-secondary":"btn-secondary")+" "+(compact?"btn-md":"btn-sm")}
-          style={{flex:1,opacity:canUndo?1:0.28,gap:5,border:canUndo?"1px solid rgba(255,255,255,0.18)":"1px solid rgba(255,255,255,0.06)",fontWeight:canUndo?700:400}} title="Undo last action" disabled={!canUndo}>
-          <span style={{fontSize:compact?14:12,fontWeight:700}}>&#x21BA;</span>
+      <div style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:compact?"5px 0":"0"}}>
+        <button onClick={doUndo} className={"btn btn-secondary "+sz}
+          style={{flex:1,opacity:canUndo?1:0.28,gap:5,border:canUndo?"1px solid rgba(255,255,255,0.18)":"1px solid rgba(255,255,255,0.06)",fontWeight:canUndo?700:400}} title="Undo" disabled={!canUndo}>
+          <span style={{fontSize:14,fontWeight:700}}>&#x21BA;</span>
           <span>Undo</span>
         </button>
-        {/* Reset */}
-        <button onClick={doClear} className={"btn btn-danger "+(compact?"btn-md":"btn-sm")}
+        <button onClick={doClear} className={"btn btn-danger "+sz}
           style={{flex:1,gap:5}} title="Reset pitch">
-          <span style={{fontSize:compact?13:11}}>&#x21BA;</span>
+          <span style={{fontSize:14}}>&#x21BA;</span>
           <span>Reset</span>
         </button>
-        {/* Export PNG */}
-        <button onClick={doExport} className={"btn btn-primary "+(compact?"btn-md":"btn-sm")}
+        <button onClick={doExport} className={"btn btn-primary "+sz}
           style={{flex:2,gap:5,fontWeight:800}} title="Export as PNG">
-          <span style={{fontSize:compact?11:9}}>&#x2913;</span>
+          <span style={{fontSize:12}}>&#x2913;</span>
           <span>Export PNG</span>
         </button>
       </div>
@@ -1069,7 +1067,7 @@ export default function FCRoster() {
 
   function LeftPanel() {
     return (
-      <div style={{padding:"18px 13px",display:"flex",flexDirection:"column",height:"100%",overflowY:"auto"}}>
+      <div style={{padding:"12px 13px",display:"flex",flexDirection:"column",height:"100%",overflowY:"auto"}}>
 
         <div style={{marginBottom:12}}><SL c="Format"/><DD value={gameFmt} options={fmtOpts} onChange={changeFmt}/></div>
         <div style={{marginBottom:12}}><SL c="Formation"/><DD value={formation} options={formOpts} onChange={function(f){loadTeam(f);}}/></div>
@@ -1218,8 +1216,8 @@ export default function FCRoster() {
 
   function RightPanel() {
     return (
-      <div style={{padding:"18px 13px",display:"flex",flexDirection:"column",height:"100%",overflowY:"auto"}}>
-        <div style={{marginBottom:10}}>
+      <div style={{padding:"12px 13px",display:"flex",flexDirection:"column",height:"100%",overflowY:"auto"}}>
+        <div style={{marginBottom:6}}>
           <SL c="Active Tool"/>
           <div style={{padding:"10px 12px",borderRadius:6,
             background:tool?"rgba(200,255,0,0.06)":T.raised,
@@ -1304,7 +1302,7 @@ export default function FCRoster() {
             <button onClick={function(){
               if(activePhase!==null) savePhase(activePhase);
               else{var next=phases.findIndex(function(p){return p===null;});if(next!==-1)savePhase(next);else notify("All 5 phases used.");}
-            }} className="btn btn-secondary btn-sm" style={{flex:1}}>Save Phase</button>
+            }} className="btn btn-secondary btn-sm" style={{flex:1}}>Snapshot</button>
           </div>
         </div>
         <HR/>
