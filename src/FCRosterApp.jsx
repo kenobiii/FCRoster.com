@@ -39,15 +39,18 @@ function unitCol(n){ if(n==="GK")return UC.GK; if(["CB","RB","LB","RWB","LWB"].i
 function txtOnFill(f){ return ["#F0B429","#93C5FD","#DEDEDE","#C4920A","#E8C200","#D4B87A","#C4A265","#C8860A","#D4920C"].includes(f)?"rgba(0,0,0,0.88)":"#fff"; }
 
 var PALETTES = [
-  {id:"unit",   name:"Team",   primary:null,       secondary:null},
-  {id:"white",  name:"White",  primary:"#DEDEDE",  secondary:"#111"},
-  {id:"black",  name:"Black",  primary:"#1E1E1E",  secondary:"#DDD"},
-  {id:"blue",   name:"Blue",   primary:"#1050C4",  secondary:"#FFF"},
-  {id:"green",  name:"Green",  primary:"#166638",  secondary:"#FFF"},
-  {id:"red",    name:"Red",    primary:"#C42200",  secondary:"#FFF"},
-  {id:"yellow", name:"Yellow", primary:"#E8C200",  secondary:"#111"},
-  {id:"orange", name:"Orange", primary:"#CC5A00",  secondary:"#FFF"},
-  {id:"grey",   name:"Grey",   primary:"#6B7280",  secondary:"#FFF"},
+  {id:"unit",    name:"Team",    primary:null,       secondary:null},
+  {id:"white",   name:"White",   primary:"#DEDEDE",  secondary:"#111"},
+  {id:"black",   name:"Black",   primary:"#1E1E1E",  secondary:"#DDD"},
+  {id:"blue",    name:"Blue",    primary:"#1050C4",  secondary:"#FFF"},
+  {id:"green",   name:"Green",   primary:"#166638",  secondary:"#FFF"},
+  {id:"red",     name:"Red",     primary:"#C42200",  secondary:"#FFF"},
+  {id:"yellow",  name:"Yellow",  primary:"#E8C200",  secondary:"#111"},
+  {id:"orange",  name:"Orange",  primary:"#CC5A00",  secondary:"#FFF"},
+  {id:"grey",    name:"Grey",    primary:"#6B7280",  secondary:"#FFF"},
+  {id:"purple",  name:"Purple",  primary:"#7C3AED",  secondary:"#FFF"},
+  {id:"pink",    name:"Pink",    primary:"#DB2777",  secondary:"#FFF"},
+  {id:"sky",     name:"Sky",     primary:"#38BDF8",  secondary:"#111"},
 ];
 
 var OPP_COLORS = ["#EE2244","#FF7700","#BB0030","#EEEEEE","#222222","#6600BB","#0040BB","#BB5500"];
@@ -275,7 +278,7 @@ function KitPicker({ value, onChange, bg, up }) {
       }}>
         <PalChip pal={pal} sz={20}/>
         <span style={{flex:1,fontSize:14,fontWeight:600,color:T.text,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",textAlign:"left"}}>{pal.name}</span>
-        <span style={{opacity:0.3,fontSize:10}}>{open?"^":"v"}</span>
+        <span style={{opacity:0.5,fontSize:12,color:"rgba(255,255,255,0.7)",flexShrink:0,marginLeft:4}}>{open?"&#9650;":"&#9660;"}</span>
       </button>
       {open && !up && (
         <div style={{position:"absolute",top:"calc(100% + 3px)",left:0,right:0,zIndex:600,background:"#222",border:"1px solid " + T.bhi,borderRadius:6,padding:14,boxShadow:"0 14px 36px rgba(0,0,0,0.72)"}}>
@@ -1071,12 +1074,15 @@ export default function FCRoster() {
     return (
       <div style={{padding:"18px 13px",display:"flex",flexDirection:"column",height:"100%",overflowY:"auto"}}>
         <div style={{marginBottom:14,paddingBottom:12,borderBottom:"1px solid "+T.b}}>
+          <div style={{fontSize:9,fontWeight:700,color:T.ghost,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",marginBottom:5}}>SQUAD NAME</div>
           {editTitle ? (
-            <input value={title} onChange={function(e){setTitle(e.target.value);}} onBlur={function(){setEditTitle(false);}} onKeyDown={function(e){if(e.key==="Enter")setEditTitle(false);}} autoFocus style={{fontSize:16,fontWeight:700,background:"transparent",border:"none",borderBottom:"1px solid "+T.b,borderRadius:0,color:T.text,padding:"2px 0",fontFamily:"'Rajdhani',sans-serif",width:"100%"}}/>
+            <input value={title} onChange={function(e){setTitle(e.target.value);}} onBlur={function(){setEditTitle(false);}} onKeyDown={function(e){if(e.key==="Enter")setEditTitle(false);}} autoFocus placeholder="Name your squad..." maxLength={32} style={{fontSize:15,fontWeight:700,background:"transparent",border:"none",borderBottom:"1px solid "+T.volt,borderRadius:0,color:T.text,padding:"2px 0",fontFamily:"'Rajdhani',sans-serif",width:"100%",outline:"none",letterSpacing:"0.04em"}}/>
           ) : (
-            <div onClick={function(){setEditTitle(true);}} style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer"}}>
-              <span style={{flex:1,fontSize:16,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{title}</span>
-              <span style={{opacity:0.2,fontSize:12}}>&#x270E;</span>
+            <div onClick={function(){setEditTitle(true);}} style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",padding:"5px 8px",borderRadius:5,background:"rgba(200,255,0,0.04)",border:"1px dashed rgba(200,255,0,0.2)",transition:"background 0.15s"}}>
+              <span style={{flex:1,fontSize:14,fontWeight:700,color:title==="My FCRoster"?"rgba(200,255,0,0.6)":T.text,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                {title==="My FCRoster"?"Tap to name your squad":title}
+              </span>
+              <span style={{fontSize:14,opacity:0.4,flexShrink:0}}>&#x270E;</span>
             </div>
           )}
         </div>
@@ -1234,15 +1240,43 @@ export default function FCRoster() {
               tool==="ball"?"Drop Ball":
               tool==="pass"?"Draw Pass":
               tool==="run"?"Draw Run":
-              tool==="shot"?"Draw Shot":tool
+              tool==="shot"?"Draw Shot":"No Tool Selected"
             }</span>
           </div>
-
         </div>
         <HR/>
         <SL c="Playmaker"/>
         {ToolRow()}
-        {SubPlanner()}
+        <HR/>
+        {/* Phase Builder */}
+        <div style={{marginBottom:4}}>
+          <SL c={"Phases"}/>
+          <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:8,flexWrap:"wrap"}}>
+            {phases.map(function(ph,i){
+              var saved=ph!==null, active=activePhase===i;
+              return (
+                <button key={i}
+                  onClick={function(){saved?loadPhase(i):savePhase(i);}}
+                  onDoubleClick={function(e){e.stopPropagation();if(saved)clearPhase(i);}}
+                  title={saved?"Load phase "+(i+1)+" (dbl-click to clear)":"Save as phase "+(i+1)}
+                  className={"phase-pill"+(saved?" saved":"")+(active?" active-phase":"")}>
+                  {i+1}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{display:"flex",gap:6}}>
+            {playing?(
+              <button onClick={stopPlay} className="btn btn-danger btn-sm" style={{flex:1}}>Stop</button>
+            ):(
+              <button onClick={playPhases} className="btn btn-volt-outline btn-sm" style={{flex:1}}>Play</button>
+            )}
+            <button onClick={function(){
+              if(activePhase!==null) savePhase(activePhase);
+              else{var next=phases.findIndex(function(p){return p===null;});if(next!==-1)savePhase(next);else notify("All 5 phases used.");}
+            }} className="btn btn-secondary btn-sm" style={{flex:1}}>Save Phase</button>
+          </div>
+        </div>
         <HR/>
         <div style={{marginBottom:0}}>
           <SL c="Drawing Key"/>
@@ -1343,6 +1377,30 @@ export default function FCRoster() {
               <div className="lp">{LeftPanel()}</div>
               <div className="pc">
                 {PhaseStrip()}
+                {/* Squad name bar -- desktop only, above pitch */}
+                <div className="d-hdr" style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"6px 16px",borderBottom:"1px solid rgba(255,255,255,0.06)",background:"#131313",flexShrink:0,gap:10}}>
+                  {editTitle ? (
+                    <input
+                      value={title}
+                      onChange={function(e){setTitle(e.target.value);}}
+                      onBlur={function(){setEditTitle(false);}}
+                      onKeyDown={function(e){if(e.key==="Enter")setEditTitle(false);}}
+                      autoFocus
+                      placeholder="Name your squad..."
+                      maxLength={32}
+                      style={{fontSize:15,fontWeight:700,background:"transparent",border:"none",borderBottom:"1px solid "+T.volt,borderRadius:0,color:T.text,padding:"2px 6px",fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase",outline:"none",textAlign:"center",minWidth:200}}
+                    />
+                  ) : (
+                    <div onClick={function(){setEditTitle(true);}} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",padding:"3px 10px",borderRadius:5,border:"1px dashed rgba(255,255,255,0.1)",transition:"border-color 0.15s"}}
+                      onMouseEnter={function(e){e.currentTarget.style.borderColor="rgba(200,255,0,0.4)";}}
+                      onMouseLeave={function(e){e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";}}>
+                      <span style={{fontSize:15,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:title==="My FCRoster"?T.volt:T.text}}>
+                        {title==="My FCRoster"?<span>&#9998; Name Your Squad</span>:title}
+                      </span>
+                      {title!=="My FCRoster"&&<span style={{fontSize:13,opacity:0.35}}>&#x270E;</span>}
+                    </div>
+                  )}
+                </div>
                 <div className="pw">{PitchSVG()}</div>
                 <div className="d-bar">{ActionBar({compact:false})}</div>
               </div>
@@ -1458,6 +1516,48 @@ export default function FCRoster() {
                       <div style={{fontWeight:700,fontSize:19}}>{user.name}</div>
                       <div style={{color:T.ghost,fontSize:12,marginTop:2,fontFamily:"'Poppins',sans-serif"}}>{user.email}</div>
                     </div>
+                  </div>
+
+                  {/* Squad Roster */}
+                  <div style={{border:"1px solid "+T.b,borderRadius:6,overflow:"hidden"}}>
+                    <div style={{padding:"10px 14px",borderBottom:"1px solid "+T.b,background:T.raised}}>
+                      <div style={{fontWeight:700,fontSize:13,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.volt}}>{title}</div>
+                      <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:2}}>{gameFmt} &bull; {formation} &bull; {players.length} players</div>
+                    </div>
+                    {players.map(function(p){
+                      var avail=p.availability||"available";
+                      var availColor=avail==="available"?"#22CC44":avail==="doubtful"?"#F5BE00":"#F02040";
+                      var footLabel={L:"Left",R:"Right",B:"Both"}[p.foot||"R"];
+                      var skillLabel=["","Grassroots","Amateur","Semi-Pro","Club Pro","Elite"][p.skill||3];
+                      return (
+                        <div key={p.id} style={{padding:"10px 14px",borderBottom:"1px solid "+T.b,cursor:"pointer",transition:"background 0.1s"}}
+                          onClick={function(){setEditP(Object.assign({},p));setTab("pitch");}}
+                          onMouseEnter={function(e){e.currentTarget.style.background="rgba(255,255,255,0.03)";}}
+                          onMouseLeave={function(e){e.currentTarget.style.background="transparent";}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10}}>
+                            {/* Availability dot */}
+                            <div style={{width:8,height:8,borderRadius:"50%",background:availColor,flexShrink:0,boxShadow:"0 0 6px "+availColor+"88"}}/>
+                            {/* Token */}
+                            <div style={{width:28,height:28,borderRadius:"50%",background:tFill(p.n),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              <span style={{fontSize:8,fontWeight:900,color:tTxt(p.n),fontFamily:"'Rajdhani',sans-serif"}}>{p.number||p.n.slice(0,4)}</span>
+                            </div>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                                <span style={{fontSize:13,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em"}}>{p.name||p.n}</span>
+                                <span style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase"}}>{p.n}</span>
+                              </div>
+                              <div style={{display:"flex",gap:8,marginTop:2,flexWrap:"wrap"}}>
+                                {p.age&&<span style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>Age {p.age}</span>}
+                                <span style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>{footLabel} foot</span>
+                                <span style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>{skillLabel}</span>
+                              </div>
+                              {p.notes&&<div style={{fontSize:9,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:240}}>{p.notes}</div>}
+                            </div>
+                            <span style={{fontSize:11,opacity:0.25,flexShrink:0}}>&#x270E;</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* Save current formation */}
@@ -1621,12 +1721,86 @@ export default function FCRoster() {
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(10px)"}}
           onClick={function(e){if(e.target===e.currentTarget)setEditP(null);}}
           onTouchStart={function(e){e.stopPropagation();}}>
-          <div style={{background:"#1A1A1A",border:"1px solid "+T.bhi,borderTop:"2px solid "+T.volt,borderRadius:10,padding:22,width:"100%",maxWidth:280}} className="fu">
-            <h3 style={{fontWeight:700,fontSize:16,marginBottom:18,letterSpacing:"0.05em"}}>ASSIGN PLAYER</h3>
-            <div style={{marginBottom:10}}><label>Position</label><input value={editP.n} onChange={function(e){setEditP(function(p){return Object.assign({},p,{n:e.target.value.slice(0,4).toUpperCase()});});}} maxLength={4} placeholder="GK"/></div>
-            <div style={{marginBottom:10}}><label>Starter Name</label><input autoFocus value={editP.name||""} onChange={function(e){setEditP(function(p){return Object.assign({},p,{name:e.target.value});});}} placeholder="e.g. De Gea" maxLength={16}/></div>
+          <div style={{background:"#1A1A1A",border:"1px solid "+T.bhi,borderTop:"2px solid "+T.volt,borderRadius:10,padding:22,width:"100%",maxWidth:320,maxHeight:"90vh",overflowY:"auto"}} className="fu">
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:18}}>
+              <div style={{width:36,height:36,borderRadius:"50%",background:tFill(editP.n),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <span style={{fontSize:11,fontWeight:900,color:tTxt(editP.n),fontFamily:"'Rajdhani',sans-serif"}}>{editP.n.slice(0,4)}</span>
+              </div>
+              <h3 style={{fontWeight:700,fontSize:16,letterSpacing:"0.05em",flex:1}}>PLAYER PROFILE</h3>
+            </div>
+
+            {/* Row 1: Position + Jersey # */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+              <div><label>Position</label><input value={editP.n} onChange={function(e){setEditP(function(p){return Object.assign({},p,{n:e.target.value.slice(0,4).toUpperCase()});});}} maxLength={4} placeholder="GK"/></div>
+              <div><label>Jersey #</label><input type="number" min="1" max="99" value={editP.number||""} onChange={function(e){setEditP(function(p){return Object.assign({},p,{number:e.target.value});});}} placeholder="1"/></div>
+            </div>
+
+            {/* Starter Name */}
+            <div style={{marginBottom:10}}><label>Player Name</label><input autoFocus value={editP.name||""} onChange={function(e){setEditP(function(p){return Object.assign({},p,{name:e.target.value});});}} placeholder="e.g. De Gea" maxLength={16}/></div>
+
+            {/* Row 2: Age + Foot */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+              <div><label>Age</label><input type="number" min="1" max="99" value={editP.age||""} onChange={function(e){setEditP(function(p){return Object.assign({},p,{age:e.target.value});});}} placeholder="25"/></div>
+              <div>
+                <label>Foot</label>
+                <div style={{display:"flex",gap:4,marginTop:4}}>
+                  {["L","R","B"].map(function(f){
+                    var labels={L:"Left",R:"Right",B:"Both"};
+                    var active=(editP.foot||"R")===f;
+                    return <button key={f} onClick={function(){setEditP(function(p){return Object.assign({},p,{foot:f});});}}
+                      style={{flex:1,padding:"5px 0",borderRadius:4,border:"1px solid "+(active?T.volt:T.b),background:active?"rgba(200,255,0,0.1)":"transparent",color:active?T.volt:T.ghost,fontSize:11,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",cursor:"pointer",transition:"all 0.1s"}}
+                      title={labels[f]}>{f}</button>;
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Skill ranking */}
+            <div style={{marginBottom:10}}>
+              <label>Skill Level</label>
+              <div style={{display:"flex",gap:5,marginTop:4,alignItems:"center"}}>
+                {[1,2,3,4,5].map(function(s){
+                  var active=(editP.skill||3)>=s;
+                  return <div key={s} onClick={function(){setEditP(function(p){return Object.assign({},p,{skill:s});});}}
+                    style={{flex:1,height:6,borderRadius:3,background:active?T.volt:"rgba(255,255,255,0.1)",cursor:"pointer",transition:"background 0.1s"}}/>;
+                })}
+                <span style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginLeft:6,flexShrink:0,width:60}}>
+                  {["","Grassroots","Amateur","Semi-Pro","Club Pro","Elite"][(editP.skill||3)]}
+                </span>
+              </div>
+            </div>
+
+            {/* Availability */}
+            <div style={{marginBottom:10}}>
+              <label>Availability</label>
+              <div style={{display:"flex",gap:6,marginTop:4}}>
+                {[["available","#22CC44","Available"],["doubtful","#F5BE00","Doubtful"],["unavailable","#F02040","Unavailable"]].map(function(item){
+                  var active=(editP.availability||"available")===item[0];
+                  return <button key={item[0]} onClick={function(){setEditP(function(p){return Object.assign({},p,{availability:item[0]});});}}
+                    style={{flex:1,padding:"5px 4px",borderRadius:4,border:"1px solid "+(active?item[1]:T.b),background:active?"rgba("+item[1].slice(1).match(/.{2}/g).map(function(x){return parseInt(x,16);}).join(",")+",0.12)":"transparent",color:active?item[1]:T.ghost,fontSize:9,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.06em",cursor:"pointer",transition:"all 0.1s",textTransform:"uppercase"}}>
+                    {item[2]}
+                  </button>;
+                })}
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div style={{marginBottom:14}}>
+              <label style={{display:"flex",justifyContent:"space-between"}}>
+                <span>Notes</span>
+                <span style={{fontSize:9,color:T.faint,fontWeight:400}}>{(editP.notes||"").length}/250</span>
+              </label>
+              <textarea value={editP.notes||""} onChange={function(e){setEditP(function(p){return Object.assign({},p,{notes:e.target.value.slice(0,250)});});}}
+                placeholder="Injuries, role notes, availability details..."
+                rows={3} maxLength={250}
+                style={{width:"100%",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:5,color:T.text,fontSize:12,fontFamily:"'Poppins',sans-serif",padding:"7px 10px",outline:"none",resize:"vertical",lineHeight:1.5}}/>
+            </div>
+
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              <button onClick={function(){setPlayers(function(prev){return prev.map(function(x){return x.id===editP.id?Object.assign({},x,editP):x;});});setEditP(null);notify("Player updated.");}} className="btn btn-primary btn-sm">Save</button>
+              <button onClick={function(){
+                setPlayers(function(prev){return prev.map(function(x){return x.id===editP.id?Object.assign({},x,editP):x;});});
+                setEditP(null); notify("Player updated.");
+              }} className="btn btn-primary btn-sm">Save</button>
               <button onClick={function(){setEditP(null);}} className="btn btn-danger btn-sm">Cancel</button>
             </div>
           </div>
