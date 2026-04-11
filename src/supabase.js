@@ -85,11 +85,11 @@ export async function getUser() {
   return data?.user ?? null;
 }
 
-// Sign in with Google (OAuth popup)
+// Sign in with Google (OAuth redirect)
 export async function signInGoogle() {
   var { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: window.location.origin },
+    options: { redirectTo: window.location.hostname === "localhost" ? window.location.origin : "https://www.fcroster.com" },
   });
   if (error) throw error;
 }

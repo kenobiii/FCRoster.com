@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { signInGoogle, signInEmail, signUpEmail, signOut, onAuthChange, saveFormation, updateFormation, loadFormations, deleteFormation } from "./supabase.js";
+import { supabase, signInGoogle, signInEmail, signUpEmail, signOut, onAuthChange, saveFormation, updateFormation, loadFormations, deleteFormation } from "./supabase.js";
 
 var FORMATIONS = {
   "11v11":{
@@ -1843,8 +1843,12 @@ export default function FCRoster() {
             <p style={{color:T.ghost,fontSize:12,marginBottom:20,fontFamily:"'Poppins',sans-serif"}}>Unlock pass, run, and shot drawing tools.</p>
             <button onClick={function(){
               setAuthErr(""); setAuthBusy(true);
-              signInGoogle().catch(function(err){setAuthErr(err.message);setAuthBusy(false);});
-            }} className="btn btn-secondary btn-md" style={{width:"100%",marginBottom:12,gap:8}} disabled={authBusy}>
+              supabase.auth.signInWithOAuth({
+                provider: "google",
+                options: { redirectTo: "https://www.fcroster.com" }
+              }).catch(function(err){setAuthErr(err.message);setAuthBusy(false);});
+            }} className="btn btn-secondary btn-md" style={{width:"100%",marginBottom:12,gap:8,display:"flex",alignItems:"center",justifyContent:"center"}} disabled={authBusy}>
+              <svg width="16" height="16" viewBox="0 0 48 48" style={{flexShrink:0}}><path fill="#EA4335" d="M24 9.5c3.14 0 5.95 1.08 8.17 2.85l6.08-6.08C34.46 3.1 29.5 1 24 1 14.82 1 7.07 6.48 3.88 14.18l7.07 5.49C12.6 13.36 17.87 9.5 24 9.5z"/><path fill="#4285F4" d="M46.52 24.5c0-1.64-.15-3.22-.42-4.75H24v9h12.7c-.55 2.97-2.22 5.48-4.72 7.17l7.24 5.62C43.46 37.3 46.52 31.36 46.52 24.5z"/><path fill="#FBBC05" d="M10.95 28.32A14.6 14.6 0 0 1 9.5 24c0-1.5.26-2.95.72-4.32l-7.07-5.49A23.94 23.94 0 0 0 0 24c0 3.86.92 7.51 2.55 10.73l8.4-6.41z"/><path fill="#34A853" d="M24 47c6.48 0 11.93-2.15 15.9-5.83l-7.24-5.62C30.6 37.3 27.45 38.5 24 38.5c-6.13 0-11.4-3.86-13.05-9.18l-8.4 6.41C6.07 43.52 14.46 47 24 47z"/></svg>
               {authBusy?"Connecting...":"Continue with Google"}
             </button>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
