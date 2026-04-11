@@ -39,24 +39,24 @@ function unitCol(n){ if(n==="GK")return UC.GK; if(["CB","RB","LB","RWB","LWB"].i
 function txtOnFill(f){ return ["#F0B429","#93C5FD","#DEDEDE","#C4920A","#E8C200","#D4B87A","#C4A265","#C8860A","#D4920C"].includes(f)?"rgba(0,0,0,0.88)":"#fff"; }
 
 var DEMO_PLAYERS = [
-  {id:"gk",  pos:"GK",  x:32.5, y:88, name:"Martínez",  jersey:1,  foot:"Right", skill:"Pro",      avail:true, age:28, notes:""},
-  {id:"rb",  pos:"RB",  x:55,   y:72, name:"Trent",     jersey:2,  foot:"Right", skill:"Pro",      avail:true, age:25, notes:""},
-  {id:"cb1", pos:"CB",  x:42,   y:75, name:"Van Dijk",  jersey:4,  foot:"Left",  skill:"Pro",      avail:true, age:32, notes:""},
-  {id:"cb2", pos:"CB",  x:23,   y:75, name:"Stones",    jersey:5,  foot:"Right", skill:"Pro",      avail:true, age:29, notes:""},
-  {id:"lb",  pos:"LB",  x:10,   y:72, name:"Robertson", jersey:3,  foot:"Left",  skill:"Pro",      avail:true, age:29, notes:""},
-  {id:"cm1", pos:"CM",  x:18,   y:52, name:"Gravenberch",jersey:38,foot:"Right", skill:"Pro",      avail:true, age:22, notes:""},
-  {id:"cm2", pos:"CM",  x:32.5, y:48, name:"Mac Allister",jersey:10,foot:"Right",skill:"Pro",      avail:true, age:25, notes:""},
-  {id:"cm3", pos:"CM",  x:47,   y:52, name:"Szoboszlai",jersey:8,  foot:"Right", skill:"Pro",      avail:true, age:23, notes:""},
-  {id:"lw",  pos:"LW",  x:10,   y:30, name:"Díaz",      jersey:7,  foot:"Right", skill:"Pro",      avail:true, age:27, notes:""},
-  {id:"st",  pos:"ST",  x:32.5, y:22, name:"Núñez",     jersey:9,  foot:"Right", skill:"Pro",      avail:true, age:24, notes:""},
-  {id:"rw",  pos:"RW",  x:55,   y:30, name:"Salah",     jersey:11, foot:"Left",  skill:"Semi-Pro", avail:true, age:31, notes:""},
+  {id:1,  n:"GK", x:32, y:88, name:"Martínez",   jersey:1,  foot:"Right", skill:"Pro",      avail:true, age:28, notes:""},
+  {id:2,  n:"RB", x:52, y:73, name:"Trent",      jersey:2,  foot:"Right", skill:"Pro",      avail:true, age:25, notes:""},
+  {id:3,  n:"CB", x:41, y:76, name:"Van Dijk",   jersey:4,  foot:"Left",  skill:"Pro",      avail:true, age:32, notes:""},
+  {id:4,  n:"CB", x:24, y:76, name:"Stones",     jersey:5,  foot:"Right", skill:"Pro",      avail:true, age:29, notes:""},
+  {id:5,  n:"LB", x:13, y:73, name:"Robertson",  jersey:3,  foot:"Left",  skill:"Pro",      avail:true, age:29, notes:""},
+  {id:6,  n:"CM", x:43, y:55, name:"Gravenberch",jersey:38, foot:"Right", skill:"Pro",      avail:true, age:22, notes:""},
+  {id:7,  n:"CM", x:32, y:52, name:"Mac Allister",jersey:10,foot:"Right", skill:"Pro",      avail:true, age:25, notes:""},
+  {id:8,  n:"CM", x:22, y:55, name:"Szoboszlai", jersey:8,  foot:"Right", skill:"Pro",      avail:true, age:23, notes:""},
+  {id:9,  n:"RW", x:49, y:30, name:"Salah",      jersey:11, foot:"Left",  skill:"Semi-Pro", avail:true, age:31, notes:""},
+  {id:10, n:"ST", x:32, y:24, name:"Núñez",      jersey:9,  foot:"Right", skill:"Pro",      avail:true, age:24, notes:""},
+  {id:11, n:"LW", x:16, y:30, name:"Díaz",       jersey:7,  foot:"Right", skill:"Pro",      avail:true, age:27, notes:""},
 ];
 var DEMO_LINES = [
-  {tool:"pass", pts:[{x:32.5,y:88},{x:32.5,y:75}]},
-  {tool:"pass", pts:[{x:32.5,y:75},{x:18,y:52}]},
-  {tool:"run",  pts:[{x:18,y:52},{x:32.5,y:48}]},
-  {tool:"pass", pts:[{x:32.5,y:48},{x:55,y:30}]},
-  {tool:"shot", pts:[{x:55,y:30},{x:32.5,y:12}]},
+  {tool:"pass", pts:[{x:32,y:88},{x:32,y:76}]},
+  {tool:"pass", pts:[{x:32,y:76},{x:22,y:55}]},
+  {tool:"run",  pts:[{x:22,y:55},{x:32,y:52}]},
+  {tool:"pass", pts:[{x:32,y:52},{x:49,y:30}]},
+  {tool:"shot", pts:[{x:49,y:30},{x:32,y:10}]},
 ];
 
 var PALETTES = [
