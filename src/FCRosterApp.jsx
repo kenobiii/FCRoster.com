@@ -93,7 +93,7 @@ var CSS = [
   ".rp{border-left:1px solid rgba(255,255,255,0.08);}",
   ".pc{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 4px;overflow:hidden;min-width:0;background:#131313;}",
   ".pw{flex:1;min-height:0;aspect-ratio:65/100;max-width:100%;}",
-  ".d-hdr{display:none;}",
+  ".d-hdr{display:flex;align-items:center;justify-content:center;padding:5px 16px;border-bottom:1px solid rgba(255,255,255,0.06);background:#131313;flex-shrink:0;gap:10;}",
   ".d-bar{width:100%;flex-shrink:0;padding:3px 4px;display:flex;align-items:center;justify-content:space-between;}",
   ".nav-sec{display:flex;}",
   ".nav-more{display:none;}",
@@ -884,9 +884,9 @@ export default function FCRoster() {
     return (
       <div style={{display:"flex",alignItems:"center",gap:compact?8:6,width:"100%",padding:compact?"5px 0":"4px 0"}}>
         {/* Undo */}
-        <button onClick={doUndo} className={"btn btn-secondary "+(compact?"btn-md":"btn-sm")}
-          style={{flex:1,opacity:canUndo?1:0.32,gap:5}} title="Undo last action">
-          <span style={{fontSize:12}}>&#x21B6;</span>
+        <button onClick={doUndo} className={"btn "+(canUndo?"btn-secondary":"btn-secondary")+" "+(compact?"btn-md":"btn-sm")}
+          style={{flex:1,opacity:canUndo?1:0.28,gap:5,border:canUndo?"1px solid rgba(255,255,255,0.18)":"1px solid rgba(255,255,255,0.06)",fontWeight:canUndo?700:400}} title="Undo last action" disabled={!canUndo}>
+          <span style={{fontSize:compact?14:12,fontWeight:700}}>&#x21BA;</span>
           <span>Undo</span>
         </button>
         {/* Reset */}
@@ -1123,6 +1123,8 @@ export default function FCRoster() {
           })}
           <p style={{marginTop:8,fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>Tap a name to edit. Double-click token for position.</p>
         </div>
+        <HR/>
+        {SubPlanner()}
       </div>
     );
   }
@@ -1234,49 +1236,23 @@ export default function FCRoster() {
       <div style={{padding:"18px 13px",display:"flex",flexDirection:"column",height:"100%",overflowY:"auto"}}>
         <div style={{marginBottom:10}}>
           <SL c="Active Tool"/>
-          <div style={{padding:"10px 12px",borderRadius:6,background:T.raised,border:"1px solid "+T.b,marginBottom:10}}>
-            <span style={{fontSize:13,fontWeight:700,color:T.volt,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase"}}>{
-              tool==="drag"?"Move Player":
-              tool==="ball"?"Drop Ball":
-              tool==="pass"?"Draw Pass":
-              tool==="run"?"Draw Run":
-              tool==="shot"?"Draw Shot":"No Tool Selected"
+          <div style={{padding:"10px 12px",borderRadius:6,
+            background:tool?"rgba(200,255,0,0.06)":T.raised,
+            border:"1px solid "+(tool?T.volt:T.b),
+            boxShadow:tool?"0 0 12px rgba(200,255,0,0.18)":"none",
+            marginBottom:10,transition:"all 0.2s"}}>
+            <span style={{fontSize:13,fontWeight:700,color:tool?T.volt:T.ghost,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase"}}>{
+              tool==="drag"?"&#x2725; Move Player":
+              tool==="ball"?"&#x26BD; Drop Ball":
+              tool==="pass"?"&#x2192; Draw Pass":
+              tool==="run"?"&#x21E2; Draw Run":
+              tool==="shot"?"&#x2606; Draw Shot":"No Tool Selected"
             }</span>
           </div>
         </div>
         <HR/>
         <SL c="Playmaker"/>
         {ToolRow()}
-        <HR/>
-        {/* Phase Builder */}
-        <div style={{marginBottom:4}}>
-          <SL c={"Phases"}/>
-          <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:8,flexWrap:"wrap"}}>
-            {phases.map(function(ph,i){
-              var saved=ph!==null, active=activePhase===i;
-              return (
-                <button key={i}
-                  onClick={function(){saved?loadPhase(i):savePhase(i);}}
-                  onDoubleClick={function(e){e.stopPropagation();if(saved)clearPhase(i);}}
-                  title={saved?"Load phase "+(i+1)+" (dbl-click to clear)":"Save as phase "+(i+1)}
-                  className={"phase-pill"+(saved?" saved":"")+(active?" active-phase":"")}>
-                  {i+1}
-                </button>
-              );
-            })}
-          </div>
-          <div style={{display:"flex",gap:6}}>
-            {playing?(
-              <button onClick={stopPlay} className="btn btn-danger btn-sm" style={{flex:1}}>Stop</button>
-            ):(
-              <button onClick={playPhases} className="btn btn-volt-outline btn-sm" style={{flex:1}}>Play</button>
-            )}
-            <button onClick={function(){
-              if(activePhase!==null) savePhase(activePhase);
-              else{var next=phases.findIndex(function(p){return p===null;});if(next!==-1)savePhase(next);else notify("All 5 phases used.");}
-            }} className="btn btn-secondary btn-sm" style={{flex:1}}>Save Phase</button>
-          </div>
-        </div>
         <HR/>
         <div style={{marginBottom:0}}>
           <SL c="Drawing Key"/>
@@ -1304,6 +1280,36 @@ export default function FCRoster() {
               <DD value={oppFmt} options={avF.map(function(v){return {value:v,label:v};})} onChange={function(v){loadOpp(v);}} accent="#F02040"/>
             </div>
           )}
+        </div>
+        <HR/>
+        {/* Phase Builder -- bottom of right panel */}
+        <div style={{marginTop:"auto",paddingTop:4}}>
+          <SL c="Phase Builder"/>
+          <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:8,flexWrap:"wrap"}}>
+            {phases.map(function(ph,i){
+              var saved=ph!==null, active=activePhase===i;
+              return (
+                <button key={i}
+                  onClick={function(){saved?loadPhase(i):savePhase(i);}}
+                  onDoubleClick={function(e){e.stopPropagation();if(saved)clearPhase(i);}}
+                  title={saved?"Load phase "+(i+1)+" (dbl-click to clear)":"Save as phase "+(i+1)}
+                  className={"phase-pill"+(saved?" saved":"")+(active?" active-phase":"")}>
+                  {i+1}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{display:"flex",gap:6}}>
+            {playing?(
+              <button onClick={stopPlay} className="btn btn-danger btn-sm" style={{flex:1}}>&#9632; Stop</button>
+            ):(
+              <button onClick={playPhases} className="btn btn-volt-outline btn-sm" style={{flex:1}}>&#9654; Play</button>
+            )}
+            <button onClick={function(){
+              if(activePhase!==null) savePhase(activePhase);
+              else{var next=phases.findIndex(function(p){return p===null;});if(next!==-1)savePhase(next);else notify("All 5 phases used.");}
+            }} className="btn btn-secondary btn-sm" style={{flex:1}}>Save Phase</button>
+          </div>
         </div>
       </div>
     );
@@ -1386,19 +1392,21 @@ export default function FCRoster() {
                       onBlur={function(){setEditTitle(false);}}
                       onKeyDown={function(e){if(e.key==="Enter")setEditTitle(false);}}
                       autoFocus
-                      placeholder="Name your squad..."
+                      placeholder="Enter squad name..."
                       maxLength={32}
-                      style={{fontSize:15,fontWeight:700,background:"transparent",border:"none",borderBottom:"1px solid "+T.volt,borderRadius:0,color:T.text,padding:"2px 6px",fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase",outline:"none",textAlign:"center",minWidth:200}}
+                      style={{fontSize:15,fontWeight:700,background:"transparent",border:"none",borderBottom:"1px solid "+T.volt,borderRadius:0,color:T.text,padding:"2px 6px",fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase",outline:"none",textAlign:"center",minWidth:220}}
                     />
                   ) : (
-                    <div onClick={function(){setEditTitle(true);}} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",padding:"3px 10px",borderRadius:5,border:"1px dashed rgba(255,255,255,0.1)",transition:"border-color 0.15s"}}
-                      onMouseEnter={function(e){e.currentTarget.style.borderColor="rgba(200,255,0,0.4)";}}
-                      onMouseLeave={function(e){e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";}}>
-                      <span style={{fontSize:15,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:title==="My FCRoster"?T.volt:T.text}}>
-                        {title==="My FCRoster"?<span>&#9998; Name Your Squad</span>:title}
+                    <button onClick={function(){setEditTitle(true);}}
+                      style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",padding:"5px 14px",borderRadius:5,border:"1px solid rgba(200,255,0,0.25)",background:"rgba(200,255,0,0.04)",transition:"all 0.15s",outline:"none"}}
+                      onMouseEnter={function(e){e.currentTarget.style.borderColor="rgba(200,255,0,0.5)";e.currentTarget.style.background="rgba(200,255,0,0.08)";}}
+                      onMouseLeave={function(e){e.currentTarget.style.borderColor="rgba(200,255,0,0.25)";e.currentTarget.style.background="rgba(200,255,0,0.04)";}}>
+                      <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:"rgba(200,255,0,0.6)"}}>SQUAD NAME</span>
+                      <span style={{fontSize:15,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:title==="My FCRoster"?"rgba(255,255,255,0.3)":T.text}}>
+                        {title==="My FCRoster"?"Untitled":title}
                       </span>
-                      {title!=="My FCRoster"&&<span style={{fontSize:13,opacity:0.35}}>&#x270E;</span>}
-                    </div>
+                      <span style={{fontSize:12,opacity:0.4}}>&#x270E;</span>
+                    </button>
                   )}
                 </div>
                 <div className="pw">{PitchSVG()}</div>
@@ -1560,64 +1568,85 @@ export default function FCRoster() {
                     })}
                   </div>
 
-                  {/* Save current formation */}
-                  <button className="btn btn-primary btn-md" style={{width:"100%",gap:6}}
-                    onClick={function(){
-                      var state={title,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor};
-                      var fn = savedId ? updateFormation(savedId, state) : saveFormation(state);
-                      fn.then(function(row){
-                        setSavedId(row.id);
-                        notify(savedId ? "Formation updated!" : "Formation saved!");
-                        return loadFormations().then(setSavedFormations);
-                      }).catch(function(e){notify("Error: "+e.message);});
-                    }}>
-                    <span>&#x2193;</span> {savedId ? "Update Formation" : "Save Formation"}
-                  </button>
-
-                  {/* Saved formations list */}
-                  <div style={{border:"1px solid "+T.b,borderRadius:6,overflow:"hidden"}}>
-                    <div style={{padding:"10px 14px",borderBottom:"1px solid "+T.b,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                      <SL c={"Saved Formations"+(savedFormations.length>0?" ("+savedFormations.length+")":"")}/>
-                      <button className="btn btn-secondary btn-sm" onClick={function(){
-                        loadFormations().then(setSavedFormations).catch(function(e){notify(e.message);});
-                      }}>Refresh</button>
-                    </div>
-                    {savedFormations.length===0?(
-                      <div style={{padding:16}}>
-                        <p style={{color:T.ghost,fontSize:13,fontFamily:"'Poppins',sans-serif"}}>No formations saved yet.</p>
-                      </div>
-                    ):(
-                      <div style={{maxHeight:320,overflowY:"auto"}}>
-                        {savedFormations.map(function(f){
-                          return (
-                            <div key={f.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:"1px solid "+T.b}}>
-                              <div style={{flex:1,minWidth:0}}>
-                                <div style={{fontSize:13,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</div>
-                                <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:2}}>{f.game_fmt} &bull; {f.formation}</div>
-                              </div>
-                              <button className="btn btn-volt-outline btn-sm" onClick={function(){
-                                setTitle(f.title); setGameFmt(f.game_fmt); setFormation(f.formation);
-                                setSurface(f.surface); setPaletteId(f.palette_id);
-                                setPlayers(f.players); setLines(f.lines); setSubs(f.subs);
-                                setPhases(f.phases); setBallPos(f.ball_pos);
-                                setShowOpp(f.show_opp); setOppFmt(f.opp_fmt||"4-4-2");
-                                setOppList(f.opp_list||[]); setOppColor(f.opp_color||"#EE2244");
-                                setSavedId(f.id); setTab("pitch");
-                                notify("Loaded: "+f.title);
-                              }}>Load</button>
-                              <button className="btn btn-danger btn-sm" onClick={function(){
-                                deleteFormation(f.id).then(function(){
-                                  setSavedFormations(function(prev){return prev.filter(function(x){return x.id!==f.id;});});
-                                  if(savedId===f.id) setSavedId(null);
-                                  notify("Deleted.");
-                                }).catch(function(e){notify(e.message);});
-                              }}>Del</button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                  {/* Save buttons */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                    <button className="btn btn-primary btn-md" style={{gap:5}}
+                      onClick={function(){
+                        var state={title,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
+                        var fn = savedId ? updateFormation(savedId, state) : saveFormation(state);
+                        fn.then(function(row){
+                          setSavedId(row.id);
+                          notify(savedId ? "Roster updated!" : "Roster saved!");
+                          return loadFormations().then(setSavedFormations);
+                        }).catch(function(e){notify("Error: "+e.message);});
+                      }}>
+                      <span>&#x2193;</span> {savedId?"Update":"Save Roster"}
+                    </button>
+                    <button className="btn btn-volt-outline btn-md" style={{gap:5}}
+                      onClick={function(){
+                        var playTitle=title+" (Play)";
+                        var state={title:playTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"play"};
+                        saveFormation(state).then(function(){
+                          notify("Play saved!");
+                          return loadFormations().then(setSavedFormations);
+                        }).catch(function(e){notify("Error: "+e.message);});
+                      }}>
+                      <span>&#x2606;</span> Save Play
+                    </button>
                   </div>
+
+                  {/* Saved list -- Rosters + Plays */}
+                  {(function(){
+                    var rosters=savedFormations.filter(function(f){return !f.type||f.type==="roster";});
+                    var plays=savedFormations.filter(function(f){return f.type==="play";});
+                    function SavedList(items, label) {
+                      return (
+                        <div style={{border:"1px solid "+T.b,borderRadius:6,overflow:"hidden"}}>
+                          <div style={{padding:"8px 14px",borderBottom:"1px solid "+T.b,display:"flex",alignItems:"center",justifyContent:"space-between",background:T.raised}}>
+                            <SL c={label+(items.length>0?" ("+items.length+")":"")}/>
+                            <button className="btn btn-secondary btn-sm" onClick={function(){loadFormations().then(setSavedFormations).catch(function(e){notify(e.message);});}}>&#x21BA;</button>
+                          </div>
+                          {items.length===0?(
+                            <div style={{padding:"12px 14px"}}><p style={{color:T.ghost,fontSize:12,fontFamily:"'Poppins',sans-serif"}}>Nothing saved yet.</p></div>
+                          ):(
+                            <div style={{maxHeight:220,overflowY:"auto"}}>
+                              {items.map(function(f){return(
+                                <div key={f.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderBottom:"1px solid "+T.b}}>
+                                  <div style={{flex:1,minWidth:0}}>
+                                    <div style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</div>
+                                    <div style={{fontSize:9,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:1}}>{f.game_fmt} &bull; {f.formation}</div>
+                                  </div>
+                                  <button className="btn btn-volt-outline btn-sm" onClick={function(){
+                                    setTitle(f.title); setGameFmt(f.game_fmt); setFormation(f.formation);
+                                    setSurface(f.surface); setPaletteId(f.palette_id);
+                                    setPlayers(f.players); setLines(f.lines||[]); setSubs(f.subs||[]);
+                                    setPhases(f.phases||[null,null,null,null,null]); setBallPos(f.ball_pos||null);
+                                    setShowOpp(f.show_opp||false); setOppFmt(f.opp_fmt||"4-4-2");
+                                    setOppList(f.opp_list||[]); setOppColor(f.opp_color||"#EE2244");
+                                    setSavedId(f.id); setTab("pitch");
+                                    notify("Loaded: "+f.title);
+                                  }}>Load</button>
+                                  <button className="btn btn-danger btn-sm" onClick={function(){
+                                    deleteFormation(f.id).then(function(){
+                                      setSavedFormations(function(prev){return prev.filter(function(x){return x.id!==f.id;});});
+                                      if(savedId===f.id) setSavedId(null);
+                                      notify("Deleted.");
+                                    }).catch(function(e){notify(e.message);});
+                                  }}>&#x2715;</button>
+                                </div>
+                              );})}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                        {SavedList(rosters,"Saved Rosters")}
+                        {SavedList(plays,"Saved Plays")}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
