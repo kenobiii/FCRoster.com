@@ -52,15 +52,15 @@ var DEMO_PLAYERS = [
   {id:11, n:"LW", x:16, y:30, name:"Díaz",        jersey:7,  foot:"Right", skill:"Pro",      avail:true, age:27, notes:""},
 ];
 
-// 4-phase Liverpool-style build-up: GK → CB → CM → Salah → GOAL
-// Each phase: { ball, lines, players (positions for that moment) }
+// 4-phase Liverpool build-up — fully audited: every run/pass starts from player's actual position
+// Phase players show WHERE players ARE at the start of that phase's action
 var DEMO_PHASES = [
   {
-    // Phase 1: GK distributes to Van Dijk. Trent begins overlap run.
+    // Phase 1: GK (32,88) → Stones (24,76). Trent (52,73) begins overlap.
     ball: {x:24, y:76},
     lines: [
-      {tool:"pass", pts:[{x:32,y:88},{x:24,y:76}]},   // GK → Van Dijk
-      {tool:"run",  pts:[{x:52,y:73},{x:55,y:50}]},   // Trent overlaps
+      {tool:"pass", pts:[{x:32,y:88},{x:24,y:76}]},  // GK → Stones ✓
+      {tool:"run",  pts:[{x:52,y:73},{x:55,y:50}]},  // Trent from (52,73) ✓
     ],
     players: [
       {id:1,x:32,y:88},{id:2,x:52,y:73},{id:3,x:41,y:76},{id:4,x:24,y:76},
@@ -69,47 +69,47 @@ var DEMO_PHASES = [
     ],
   },
   {
-    // Phase 2: Van Dijk plays to Mac Allister. Szoboszlai 3rd man. Núñez drags CB.
+    // Phase 2: Stones (24,76) → Mac Allister (32,52). Trent (55,50) continues. Szoboszlai (22,55) 3rd man. Núñez (32,24) drags.
     ball: {x:32, y:52},
     lines: [
-      {tool:"pass", pts:[{x:24,y:76},{x:32,y:52}]},   // Van Dijk → Mac Allister
-      {tool:"run",  pts:[{x:22,y:55},{x:36,y:36}]},   // Szoboszlai 3rd man run
-      {tool:"run",  pts:[{x:32,y:24},{x:20,y:18}]},   // Núñez drags CB wide
-      {tool:"run",  pts:[{x:52,y:73},{x:57,y:40}]},   // Trent continues overlap
+      {tool:"pass", pts:[{x:24,y:76},{x:32,y:52}]},  // Stones → Mac Allister ✓
+      {tool:"run",  pts:[{x:55,y:50},{x:58,y:35}]},  // Trent from (55,50) ✓
+      {tool:"run",  pts:[{x:22,y:55},{x:36,y:36}]},  // Szoboszlai from (22,55) ✓
+      {tool:"run",  pts:[{x:32,y:24},{x:20,y:18}]},  // Núñez from (32,24) ✓
     ],
     players: [
-      {id:1,x:32,y:88},{id:2,x:54,y:58},{id:3,x:41,y:76},{id:4,x:24,y:76},
-      {id:5,x:13,y:65},{id:6,x:43,y:52},{id:7,x:32,y:52},{id:8,x:22,y:55},
+      {id:1,x:32,y:88},{id:2,x:55,y:50},{id:3,x:41,y:76},{id:4,x:24,y:76},
+      {id:5,x:13,y:65},{id:6,x:43,y:55},{id:7,x:32,y:52},{id:8,x:22,y:55},
       {id:9,x:49,y:30},{id:10,x:32,y:24},{id:11,x:16,y:30},
     ],
   },
   {
-    // Phase 3: Mac Allister releases Salah. Three bodies converge on box.
+    // Phase 3: Mac Allister (32,52) → Salah (49,30). Szoboszlai (36,36) box run. Núñez (20,18) near post. Díaz (16,30) far post.
     ball: {x:49, y:30},
     lines: [
-      {tool:"pass", pts:[{x:32,y:52},{x:49,y:30}]},   // Mac Allister → Salah
-      {tool:"run",  pts:[{x:20,y:18},{x:26,y:11}]},   // Núñez near post
-      {tool:"run",  pts:[{x:16,y:30},{x:18,y:13}]},   // Díaz far post
-      {tool:"run",  pts:[{x:36,y:36},{x:36,y:18}]},   // Szoboszlai late arrival
+      {tool:"pass", pts:[{x:32,y:52},{x:49,y:30}]},  // Mac Allister → Salah ✓
+      {tool:"run",  pts:[{x:36,y:36},{x:36,y:18}]},  // Szoboszlai from (36,36) ✓
+      {tool:"run",  pts:[{x:20,y:18},{x:26,y:11}]},  // Núñez from (20,18) ✓
+      {tool:"run",  pts:[{x:16,y:30},{x:18,y:13}]},  // Díaz from (16,30) ✓
     ],
     players: [
-      {id:1,x:32,y:88},{id:2,x:57,y:38},{id:3,x:38,y:68},{id:4,x:22,y:70},
-      {id:5,x:13,y:62},{id:6,x:43,y:48},{id:7,x:32,y:52},{id:8,x:26,y:42},
-      {id:9,x:49,y:30},{id:10,x:22,y:18},{id:11,x:16,y:28},
+      {id:1,x:32,y:88},{id:2,x:58,y:35},{id:3,x:41,y:76},{id:4,x:22,y:70},
+      {id:5,x:13,y:62},{id:6,x:43,y:50},{id:7,x:32,y:52},{id:8,x:36,y:36},
+      {id:9,x:49,y:30},{id:10,x:20,y:18},{id:11,x:16,y:30},
     ],
   },
   {
-    // Phase 4: Salah cuts inside, SHOOTS. Goal!
+    // Phase 4: Salah (49,30) shoots top corner. Núñez (24,12) near post. Díaz (18,14) far post.
     ball: {x:36, y:6},
     lines: [
-      {tool:"shot", pts:[{x:49,y:30},{x:36,y:6}]},    // Salah shoots — top corner
-      {tool:"run",  pts:[{x:22,y:18},{x:28,y:10}]},   // Núñez near post arriving
-      {tool:"run",  pts:[{x:18,y:13},{x:22,y:8}]},    // Díaz second ball
+      {tool:"shot", pts:[{x:49,y:30},{x:36,y:6}]},   // Salah shoots from (49,30) ✓
+      {tool:"run",  pts:[{x:24,y:12},{x:28,y:8}]},   // Núñez from (24,12) ✓
+      {tool:"run",  pts:[{x:18,y:14},{x:22,y:8}]},   // Díaz from (18,14) ✓
     ],
     players: [
-      {id:1,x:32,y:88},{id:2,x:57,y:32},{id:3,x:38,y:65},{id:4,x:22,y:66},
-      {id:5,x:13,y:60},{id:6,x:43,y:44},{id:7,x:34,y:46},{id:8,x:30,y:30},
-      {id:9,x:44,y:24},{id:10,x:24,y:14},{id:11,x:19,y:11},
+      {id:1,x:32,y:88},{id:2,x:58,y:28},{id:3,x:41,y:74},{id:4,x:22,y:66},
+      {id:5,x:13,y:60},{id:6,x:42,y:46},{id:7,x:34,y:46},{id:8,x:36,y:18},
+      {id:9,x:49,y:30},{id:10,x:24,y:12},{id:11,x:18,y:14},
     ],
   },
 ];
@@ -457,16 +457,48 @@ export default function FCRoster() {
     setGameFmt("11v11");
   }, []);
 
-  // Auto-animate demo loop
+  // Auto-animate demo loop — plays once through all 4 phases, then resets to clean 4-3-3, then repeats
   useEffect(function() {
-    if (!demoMode) { if (demoRef.current) { clearInterval(demoRef.current); demoRef.current = null; } return; }
-    // Start after 1.5s delay
-    var startTimeout = setTimeout(function() {
+    if (!demoMode) {
+      if (demoRef.current) { clearInterval(demoRef.current); demoRef.current = null; }
+      return;
+    }
+
+    var startTimeout;
+    var resetTimeout;
+    var restartTimeout;
+
+    function resetToClean() {
+      // Reset to default 4-3-3 — no names, no lines, no ball, clean pitch
+      setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
+      setLines([]);
+      setBallPos(null);
+      setDemoPhase(0);
+      setGoalFlash(false);
+    }
+
+    function runSequence() {
       var phase = 0;
+      // Load phase 1 immediately (ball at keeper)
+      setBallPos({x:32, y:88});
+      setLines(DEMO_PHASES[0].lines);
+      setPlayers(DEMO_PLAYERS.map(function(p){return Object.assign({},p);}));
+
       function advance() {
-        phase = (phase + 1) % DEMO_PHASES.length;
+        phase = phase + 1;
+        if (phase >= DEMO_PHASES.length) {
+          // Sequence complete — stop interval
+          clearInterval(demoRef.current);
+          demoRef.current = null;
+          // 2.5s after goal, reset to clean pitch
+          resetTimeout = setTimeout(function() {
+            resetToClean();
+            // 1.5s after reset, start again
+            restartTimeout = setTimeout(runSequence, 1500);
+          }, 2500);
+          return;
+        }
         var ph = DEMO_PHASES[phase];
-        // Update players positions for this phase
         setPlayers(function(prev) {
           return prev.map(function(p) {
             var match = ph.players.find(function(dp){return dp.id===p.id;});
@@ -478,14 +510,20 @@ export default function FCRoster() {
         setDemoPhase(phase);
         // Goal flash on phase 4 (index 3)
         if (phase === 3) {
-          setTimeout(function(){setGoalFlash(true);},800);
-          setTimeout(function(){setGoalFlash(false);},2000);
+          setTimeout(function(){setGoalFlash(true);}, 800);
+          setTimeout(function(){setGoalFlash(false);}, 2000);
         }
       }
+
       demoRef.current = setInterval(advance, 2800);
-    }, 1500);
+    }
+
+    startTimeout = setTimeout(runSequence, 1500);
+
     return function() {
       clearTimeout(startTimeout);
+      clearTimeout(resetTimeout);
+      clearTimeout(restartTimeout);
       if (demoRef.current) { clearInterval(demoRef.current); demoRef.current = null; }
     };
   }, [demoMode]);
