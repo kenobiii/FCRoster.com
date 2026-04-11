@@ -57,7 +57,7 @@ var DEMO_PLAYERS = [
 var DEMO_PHASES = [
   {
     // Phase 1: GK distributes to Van Dijk. Trent begins overlap run.
-    ball: {x:32, y:88},
+    ball: {x:24, y:76},
     lines: [
       {tool:"pass", pts:[{x:32,y:88},{x:24,y:76}]},   // GK → Van Dijk
       {tool:"run",  pts:[{x:52,y:73},{x:55,y:50}]},   // Trent overlaps
@@ -70,7 +70,7 @@ var DEMO_PHASES = [
   },
   {
     // Phase 2: Van Dijk plays to Mac Allister. Szoboszlai 3rd man. Núñez drags CB.
-    ball: {x:24, y:76},
+    ball: {x:32, y:52},
     lines: [
       {tool:"pass", pts:[{x:24,y:76},{x:32,y:52}]},   // Van Dijk → Mac Allister
       {tool:"run",  pts:[{x:22,y:55},{x:36,y:36}]},   // Szoboszlai 3rd man run
@@ -85,7 +85,7 @@ var DEMO_PHASES = [
   },
   {
     // Phase 3: Mac Allister releases Salah. Three bodies converge on box.
-    ball: {x:32, y:52},
+    ball: {x:49, y:30},
     lines: [
       {tool:"pass", pts:[{x:32,y:52},{x:49,y:30}]},   // Mac Allister → Salah
       {tool:"run",  pts:[{x:20,y:18},{x:26,y:11}]},   // Núñez near post
@@ -100,7 +100,7 @@ var DEMO_PHASES = [
   },
   {
     // Phase 4: Salah cuts inside, SHOOTS. Goal!
-    ball: {x:49, y:30},
+    ball: {x:36, y:6},
     lines: [
       {tool:"shot", pts:[{x:49,y:30},{x:36,y:6}]},    // Salah shoots — top corner
       {tool:"run",  pts:[{x:22,y:18},{x:28,y:10}]},   // Núñez near post arriving
@@ -436,7 +436,7 @@ export default function FCRoster() {
         // Restore demo state when signed out
         setPlayers(DEMO_PLAYERS.map(function(p){return Object.assign({},p);}));
         setLines(DEMO_PHASES[0].lines);
-        setBallPos(DEMO_PHASES[0].ball);
+        setBallPos({x:32, y:88}); // Ball back to keeper
         setTitle("FCRoster Demo");
         setFormation("4-3-3");
         setGameFmt("11v11");
@@ -451,7 +451,7 @@ export default function FCRoster() {
   useEffect(function() {
     setPlayers(DEMO_PLAYERS.map(function(p){return Object.assign({},p);}));
     setLines(DEMO_PHASES[0].lines);
-    setBallPos(DEMO_PHASES[0].ball);
+    setBallPos({x:32, y:88}); // Ball starts with keeper
     setTitle("FCRoster Demo");
     setFormation("4-3-3");
     setGameFmt("11v11");
