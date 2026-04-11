@@ -278,7 +278,7 @@ function KitPicker({ value, onChange, bg, up }) {
       }}>
         <PalChip pal={pal} sz={20}/>
         <span style={{flex:1,fontSize:14,fontWeight:600,color:T.text,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",textAlign:"left"}}>{pal.name}</span>
-        <span style={{opacity:0.5,fontSize:12,color:"rgba(255,255,255,0.7)",flexShrink:0,marginLeft:4}}>{open?"&#9650;":"&#9660;"}</span>
+        <span style={{opacity:0.5,fontSize:12,color:"rgba(255,255,255,0.7)",flexShrink:0,marginLeft:4}}>{open?"▲":"▼"}</span>
       </button>
       {open && !up && (
         <div style={{position:"absolute",top:"calc(100% + 3px)",left:0,right:0,zIndex:600,background:"#222",border:"1px solid " + T.bhi,borderRadius:6,padding:14,boxShadow:"0 14px 36px rgba(0,0,0,0.72)"}}>
@@ -546,7 +546,6 @@ export default function FCRoster() {
 
 
   function pts2d(pts){if(pts.length<2)return"";return pts.map(function(p,i){return(i===0?"M":"L")+" "+p.x+" "+p.y;}).join(" ");}
-  function arwId(t){if(t==="pass")return"url(#ap)";if(t==="run")return"url(#ar)";if(t==="shot")return"url(#as)";return"";}
   // History -- push before any destructive pitch change
   function pushHistory() {
     var snap = {
@@ -972,9 +971,7 @@ export default function FCRoster() {
         onMouseDown={svgDown} onMouseMove={svgMove} onMouseUp={svgUp} onMouseLeave={svgUp}
         onTouchEnd={svgUp}>
         <defs>
-          <marker id="ap" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto"><path d="M0,0L0,5L5,2.5z" fill="#F5BE00"/></marker>
-          <marker id="ar" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto"><path d="M0,0L0,5L5,2.5z" fill="#22CC44"/></marker>
-          <marker id="as" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto"><path d="M0,0L0,5L5,2.5z" fill="#F02040"/></marker>
+          
 
           <filter id="tsh" x="-40%" y="-40%" width="180%" height="220%">
             <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="rgba(0,0,0,0.5)" floodOpacity="1"/>
@@ -1027,7 +1024,7 @@ export default function FCRoster() {
         </g>
 
         {lines.map(function(ln,i){return(
-          <path key={i} d={pts2d(ln.pts)} stroke={TC[ln.tool]} strokeWidth={ln.tool==="shot"?"0.65":"0.52"} fill="none" strokeLinecap="round" strokeLinejoin="round" markerEnd={arwId(ln.tool)} opacity="0.92" strokeDasharray={ln.tool==="run"?"1.7,0.85":"none"}/>
+          <path key={i} d={pts2d(ln.pts)} stroke={TC[ln.tool]} strokeWidth={ln.tool==="shot"?"0.65":"0.52"} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.92" strokeDasharray={ln.tool==="run"?"1.7,0.85":"none"}/>
         );})}
         {curLine && <path d={pts2d(curLine.pts)} stroke={TC[curLine.tool]} strokeWidth="0.52" fill="none" strokeLinecap="round" opacity="0.55" strokeDasharray={curLine.tool==="run"?"1.7,0.85":"none"}/>}
         {ballPos && <text x={ballPos.x} y={ballPos.y+1.5} textAnchor="middle" fontSize="3" style={{userSelect:"none",pointerEvents:"none"}}>&#x26BD;</text>}
@@ -1073,19 +1070,7 @@ export default function FCRoster() {
   function LeftPanel() {
     return (
       <div style={{padding:"18px 13px",display:"flex",flexDirection:"column",height:"100%",overflowY:"auto"}}>
-        <div style={{marginBottom:14,paddingBottom:12,borderBottom:"1px solid "+T.b}}>
-          <div style={{fontSize:9,fontWeight:700,color:T.ghost,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",marginBottom:5}}>SQUAD NAME</div>
-          {editTitle ? (
-            <input value={title} onChange={function(e){setTitle(e.target.value);}} onBlur={function(){setEditTitle(false);}} onKeyDown={function(e){if(e.key==="Enter")setEditTitle(false);}} autoFocus placeholder="Name your squad..." maxLength={32} style={{fontSize:15,fontWeight:700,background:"transparent",border:"none",borderBottom:"1px solid "+T.volt,borderRadius:0,color:T.text,padding:"2px 0",fontFamily:"'Rajdhani',sans-serif",width:"100%",outline:"none",letterSpacing:"0.04em"}}/>
-          ) : (
-            <div onClick={function(){setEditTitle(true);}} style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",padding:"5px 8px",borderRadius:5,background:"rgba(200,255,0,0.04)",border:"1px dashed rgba(200,255,0,0.2)",transition:"background 0.15s"}}>
-              <span style={{flex:1,fontSize:14,fontWeight:700,color:title==="My FCRoster"?"rgba(200,255,0,0.6)":T.text,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                {title==="My FCRoster"?"Tap to name your squad":title}
-              </span>
-              <span style={{fontSize:14,opacity:0.4,flexShrink:0}}>&#x270E;</span>
-            </div>
-          )}
-        </div>
+
         <div style={{marginBottom:12}}><SL c="Format"/><DD value={gameFmt} options={fmtOpts} onChange={changeFmt}/></div>
         <div style={{marginBottom:12}}><SL c="Formation"/><DD value={formation} options={formOpts} onChange={function(f){loadTeam(f);}}/></div>
         <div><SL c="Surface"/><DD value={surface} options={surfOpts} onChange={setSurface}/></div>
@@ -1260,7 +1245,7 @@ export default function FCRoster() {
             <div key={item[0]} style={{display:"flex",alignItems:"center",gap:10,marginBottom:7}}>
               <svg width="20" height="9" style={{flexShrink:0}}>
                 <line x1="0" y1="4.5" x2="14" y2="4.5" stroke={item[1]} strokeWidth={item[0]==="shot"?"2.2":"1.7"} strokeDasharray={item[0]==="run"?"4,2":"none"} strokeLinecap="round"/>
-                <polygon points="12,2 19,4.5 12,7" fill={item[1]}/>
+                
               </svg>
               <span style={{fontSize:12,color:T.sub,fontFamily:"'Poppins',sans-serif",fontWeight:400}}>{item[2]}</span>
             </div>
@@ -1282,10 +1267,10 @@ export default function FCRoster() {
           )}
         </div>
         <HR/>
-        {/* Phase Builder -- bottom of right panel */}
+        {/* Phase Builder -- bottom of right panel, large tiles */}
         <div style={{marginTop:"auto",paddingTop:4}}>
           <SL c="Phase Builder"/>
-          <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:8,flexWrap:"wrap"}}>
+          <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:8}}>
             {phases.map(function(ph,i){
               var saved=ph!==null, active=activePhase===i;
               return (
@@ -1293,8 +1278,18 @@ export default function FCRoster() {
                   onClick={function(){saved?loadPhase(i):savePhase(i);}}
                   onDoubleClick={function(e){e.stopPropagation();if(saved)clearPhase(i);}}
                   title={saved?"Load phase "+(i+1)+" (dbl-click to clear)":"Save as phase "+(i+1)}
-                  className={"phase-pill"+(saved?" saved":"")+(active?" active-phase":"")}>
-                  {i+1}
+                  style={{
+                    width:"100%",padding:"10px 12px",borderRadius:6,cursor:"pointer",
+                    display:"flex",alignItems:"center",justifyContent:"space-between",
+                    border:"1px solid "+(active?T.volt:saved?"rgba(200,255,0,0.3)":"rgba(255,255,255,0.08)"),
+                    background:active?"rgba(200,255,0,0.12)":saved?"rgba(200,255,0,0.05)":"rgba(255,255,255,0.03)",
+                    transition:"all 0.13s",fontFamily:"'Rajdhani',sans-serif",
+                    boxShadow:active?"0 0 10px rgba(200,255,0,0.2)":"none",
+                  }}>
+                  <span style={{fontSize:13,fontWeight:700,letterSpacing:"0.08em",color:active?T.volt:saved?"rgba(200,255,0,0.7)":"rgba(255,255,255,0.3)"}}>PHASE {i+1}</span>
+                  <span style={{fontSize:10,color:active?T.volt:saved?"rgba(200,255,0,0.5)":"rgba(255,255,255,0.2)",fontFamily:"'Poppins',sans-serif"}}>
+                    {active?"ACTIVE":saved?"SAVED":"EMPTY"}
+                  </span>
                 </button>
               );
             })}
@@ -1397,15 +1392,13 @@ export default function FCRoster() {
                       style={{fontSize:15,fontWeight:700,background:"transparent",border:"none",borderBottom:"1px solid "+T.volt,borderRadius:0,color:T.text,padding:"2px 6px",fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase",outline:"none",textAlign:"center",minWidth:220}}
                     />
                   ) : (
-                    <button onClick={function(){setEditTitle(true);}}
-                      style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",padding:"5px 14px",borderRadius:5,border:"1px solid rgba(200,255,0,0.25)",background:"rgba(200,255,0,0.04)",transition:"all 0.15s",outline:"none"}}
-                      onMouseEnter={function(e){e.currentTarget.style.borderColor="rgba(200,255,0,0.5)";e.currentTarget.style.background="rgba(200,255,0,0.08)";}}
-                      onMouseLeave={function(e){e.currentTarget.style.borderColor="rgba(200,255,0,0.25)";e.currentTarget.style.background="rgba(200,255,0,0.04)";}}>
-                      <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:"rgba(200,255,0,0.6)"}}>SQUAD NAME</span>
-                      <span style={{fontSize:15,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:title==="My FCRoster"?"rgba(255,255,255,0.3)":T.text}}>
-                        {title==="My FCRoster"?"Untitled":title}
+                    <button onClick={function(e){e.stopPropagation();setEditTitle(true);}}
+                      style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",padding:"5px 14px",borderRadius:5,border:"1px solid rgba(200,255,0,0.3)",background:"rgba(200,255,0,0.05)",transition:"all 0.15s",outline:"none",pointerEvents:"all"}}>
+                      <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:"rgba(200,255,0,0.55)",flexShrink:0}}>SQUAD NAME</span>
+                      <span style={{fontSize:14,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:title==="My FCRoster"?"rgba(255,255,255,0.25)":T.text,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                        {title==="My FCRoster"?"Click to name your squad":title}
                       </span>
-                      <span style={{fontSize:12,opacity:0.4}}>&#x270E;</span>
+                      <span style={{fontSize:12,color:"rgba(200,255,0,0.4)",flexShrink:0}}>&#x270E;</span>
                     </button>
                   )}
                 </div>
