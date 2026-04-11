@@ -1,0 +1,1643 @@
+import { useState, useRef, useEffect, useCallback } from "react";
+import { signInGoogle, signInEmail, signUpEmail, signOut, onAuthChange, saveFormation, updateFormation, loadFormations, deleteFormation } from "./supabase.js";
+
+var FORMATIONS = {
+  "11v11":{
+    "4-3-3":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"RB",x:52,y:73},{id:3,n:"CB",x:41,y:76},{id:4,n:"CB",x:24,y:76},{id:5,n:"LB",x:13,y:73},{id:6,n:"CM",x:43,y:55},{id:7,n:"CM",x:32,y:52},{id:8,n:"CM",x:22,y:55},{id:9,n:"RW",x:49,y:30},{id:10,n:"ST",x:32,y:24},{id:11,n:"LW",x:16,y:30}],
+    "4-4-2":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"RB",x:52,y:73},{id:3,n:"CB",x:41,y:76},{id:4,n:"CB",x:24,y:76},{id:5,n:"LB",x:13,y:73},{id:6,n:"RM",x:51,y:52},{id:7,n:"CM",x:39,y:55},{id:8,n:"CM",x:26,y:55},{id:9,n:"LM",x:14,y:52},{id:10,n:"ST",x:40,y:27},{id:11,n:"ST",x:25,y:27}],
+    "4-2-3-1":[{id:1,n:"GK",x:32,y:88},{id:2,n:"RB",x:52,y:73},{id:3,n:"CB",x:41,y:77},{id:4,n:"CB",x:24,y:77},{id:5,n:"LB",x:13,y:73},{id:6,n:"DM",x:40,y:61},{id:7,n:"DM",x:25,y:61},{id:8,n:"RW",x:47,y:42},{id:9,n:"AM",x:32,y:40},{id:10,n:"LW",x:18,y:42},{id:11,n:"ST",x:32,y:21}],
+    "3-5-2":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:44,y:77},{id:3,n:"CB",x:32,y:79},{id:4,n:"CB",x:21,y:77},{id:5,n:"RM",x:53,y:54},{id:6,n:"CM",x:42,y:57},{id:7,n:"CM",x:32,y:59},{id:8,n:"CM",x:23,y:57},{id:9,n:"LM",x:12,y:54},{id:10,n:"ST",x:40,y:27},{id:11,n:"ST",x:25,y:27}],
+    "4-5-1":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"RB",x:52,y:73},{id:3,n:"CB",x:41,y:76},{id:4,n:"CB",x:24,y:76},{id:5,n:"LB",x:13,y:73},{id:6,n:"RM",x:53,y:54},{id:7,n:"CM",x:42,y:57},{id:8,n:"CM",x:32,y:59},{id:9,n:"CM",x:23,y:57},{id:10,n:"LM",x:12,y:54},{id:11,n:"ST",x:32,y:22}],
+    "5-3-2":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"RWB",x:55,y:70},{id:3,n:"CB",x:44,y:77},{id:4,n:"CB",x:32,y:79},{id:5,n:"CB",x:21,y:77},{id:6,n:"LWB",x:10,y:70},{id:7,n:"CM",x:42,y:54},{id:8,n:"CM",x:32,y:56},{id:9,n:"CM",x:23,y:54},{id:10,n:"ST",x:40,y:27},{id:11,n:"ST",x:25,y:27}],
+  },
+  "9v9":{
+    "3-3-2":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:44,y:75},{id:3,n:"CB",x:32,y:77},{id:4,n:"CB",x:21,y:75},{id:5,n:"CM",x:44,y:54},{id:6,n:"CM",x:32,y:52},{id:7,n:"CM",x:21,y:54},{id:8,n:"ST",x:62,y:28},{id:9,n:"ST",x:38,y:28}],
+    "2-3-2-1":[{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:41,y:76},{id:3,n:"CB",x:24,y:76},{id:4,n:"RM",x:49,y:58},{id:5,n:"CM",x:32,y:60},{id:6,n:"LM",x:16,y:58},{id:7,n:"RW",x:46,y:38},{id:8,n:"LW",x:20,y:38},{id:9,n:"ST",x:32,y:24}],
+    "3-4-1":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:44,y:75},{id:3,n:"CB",x:32,y:78},{id:4,n:"CB",x:21,y:75},{id:5,n:"RM",x:51,y:53},{id:6,n:"CM",x:40,y:56},{id:7,n:"CM",x:25,y:56},{id:8,n:"LM",x:14,y:53},{id:9,n:"ST",x:32,y:25}],
+  },
+  "7v7":{
+    "2-3-1":[{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:42,y:73},{id:3,n:"CB",x:23,y:73},{id:4,n:"RM",x:49,y:52},{id:5,n:"CM",x:32,y:50},{id:6,n:"LM",x:16,y:52},{id:7,n:"ST",x:32,y:25}],
+    "3-2-1":[{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:46,y:73},{id:3,n:"CB",x:32,y:75},{id:4,n:"CB",x:20,y:73},{id:5,n:"CM",x:40,y:52},{id:6,n:"CM",x:25,y:52},{id:7,n:"ST",x:32,y:25}],
+  },
+  "5v5":{
+    "2-1-1":[{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:42,y:72},{id:3,n:"CB",x:23,y:72},{id:4,n:"CM",x:32,y:50},{id:5,n:"ST",x:32,y:25}],
+    "1-2-1":[{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:32,y:74},{id:3,n:"CM",x:42,y:54},{id:4,n:"CM",x:23,y:54},{id:5,n:"ST",x:32,y:25}],
+  },
+};
+
+var SURFACES = {
+  grass:  {label:"Grass",  base:"#2d7a3a",light:"#357d40",line:"rgba(255,255,255,0.78)"},
+  turf:   {label:"Turf",   base:"#123616",light:"#163d1a",line:"rgba(255,255,255,0.82)"},
+  asphalt:{label:"Asphalt",base:"#2a2a2a",light:"#323232",line:"rgba(255,255,255,0.45)"},
+  sand:   {label:"Sand",   base:"#C4A265",light:"#D4B87A",line:"rgba(255,255,255,0.65)"},
+  futsal: {label:"Futsal", base:"#C8860A",light:"#D4920C",line:"rgba(255,255,255,0.7)"},
+  herrema:{label:"Herrema",base:"#4a5c2a",light:"#5a6e36",line:"rgba(255,255,255,0.55)"},
+};
+
+var UC = {GK:"#F0B429",DEF:"#1E3A8A",MID:"#3B82F6",ATT:"#93C5FD"};
+function unitCol(n){ if(n==="GK")return UC.GK; if(["CB","RB","LB","RWB","LWB"].includes(n))return UC.DEF; if(["ST","RW","LW","CF"].includes(n))return UC.ATT; return UC.MID; }
+function txtOnFill(f){ return ["#F0B429","#93C5FD","#DEDEDE","#C4920A","#E8C200","#D4B87A","#C4A265","#C8860A","#D4920C"].includes(f)?"rgba(0,0,0,0.88)":"#fff"; }
+
+var PALETTES = [
+  {id:"unit",   name:"Team",   primary:null,       secondary:null},
+  {id:"white",  name:"White",  primary:"#DEDEDE",  secondary:"#111"},
+  {id:"black",  name:"Black",  primary:"#1E1E1E",  secondary:"#DDD"},
+  {id:"blue",   name:"Blue",   primary:"#1050C4",  secondary:"#FFF"},
+  {id:"green",  name:"Green",  primary:"#166638",  secondary:"#FFF"},
+  {id:"red",    name:"Red",    primary:"#C42200",  secondary:"#FFF"},
+  {id:"yellow", name:"Yellow", primary:"#E8C200",  secondary:"#111"},
+  {id:"orange", name:"Orange", primary:"#CC5A00",  secondary:"#FFF"},
+  {id:"grey",   name:"Grey",   primary:"#6B7280",  secondary:"#FFF"},
+];
+
+var OPP_COLORS = ["#EE2244","#FF7700","#BB0030","#EEEEEE","#222222","#6600BB","#0040BB","#BB5500"];
+var TC = {pass:"#F5BE00",run:"#22CC44",shot:"#F02040"};
+var VOLT = "#C8FF00";
+var SNAP = 2.5;
+var DRAG_T = 8;
+
+var POSTS = [
+  {id:1,cat:"Formations",title:"Mastering the 4-3-3",   body:"How the 4-3-3 creates numerical superiority through overlapping fullbacks and inverted wingers."},
+  {id:2,cat:"Tactics",   title:"High Press vs Low Block",body:"When to defend high and when to sit deep."},
+  {id:3,cat:"Roles",     title:"The Sweeper-Keeper",     body:"Modern goalkeepers are the first outfield player."},
+  {id:4,cat:"Youth",     title:"7v7 Development",        body:"Which formations give young players the most touches."},
+  {id:5,cat:"Set Pieces",title:"Designing Set Pieces",   body:"Corner routines and free kick shapes that create clear chances."},
+  {id:6,cat:"Tactics",   title:"Gegenpressing Science",  body:"Principles that make instant counter-pressing work."},
+];
+
+var T = {
+  bg:"#1A1A1A", nav:"#111111", surface:"#1E1E1E", raised:"#252525",
+  b:"rgba(255,255,255,0.08)", bhi:"rgba(255,255,255,0.15)",
+  text:"rgba(255,255,255,0.92)", sub:"rgba(255,255,255,0.52)",
+  ghost:"rgba(255,255,255,0.28)", faint:"rgba(255,255,255,0.10)",
+  volt:"#C8FF00", voltBg:"rgba(200,255,0,0.08)", voltBd:"rgba(200,255,0,0.30)",
+  red:"rgba(240,50,50,0.80)", redBd:"rgba(240,50,50,0.25)",
+};
+
+var CSS = [
+  "@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Poppins:wght@400;500&display=swap');",
+  "*{box-sizing:border-box;margin:0;padding:0}",
+  "::-webkit-scrollbar{width:0;height:0}",
+  "body{overscroll-behavior:none}",
+  "input,select,textarea{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:rgba(255,255,255,0.9);padding:9px 11px;font-family:'Poppins',sans-serif;font-size:13px;width:100%;outline:none;transition:border-color .16s;}",
+  "input:focus,select:focus,textarea:focus{border-color:rgba(200,255,0,0.4);}",
+  "label{font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.24);margin-bottom:5px;display:block;font-family:'Rajdhani',sans-serif;}",
+  "@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}",
+  ".fu{animation:fadeUp .24s ease both}",
+  ".ps{flex:1;display:grid;grid-template-columns:200px 1fr 196px;overflow:hidden;min-height:0;}",
+  ".lp,.rp{overflow-y:auto;overflow-x:hidden;background:#1E1E1E;}",
+  ".lp{border-right:1px solid rgba(255,255,255,0.08);}",
+  ".rp{border-left:1px solid rgba(255,255,255,0.08);}",
+  ".pc{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 4px;overflow:hidden;min-width:0;background:#131313;}",
+  ".pw{flex:1;min-height:0;aspect-ratio:65/100;max-width:100%;}",
+  ".d-hdr{display:none;}",
+  ".d-bar{width:100%;flex-shrink:0;padding:3px 4px;display:flex;align-items:center;justify-content:space-between;}",
+  ".nav-sec{display:flex;}",
+  ".nav-more{display:none;}",
+  ".mob-ctrl{display:none;}",
+  "@media(max-width:767px){",
+  "  .ps{grid-template-columns:1fr;height:100%;display:flex;flex-direction:column;overflow:hidden;}",
+  "  .lp,.rp{display:none!important}",
+  "  .pc{flex:1;min-height:0;padding:0;background:#131313;align-items:stretch;justify-content:flex-start;}",
+  "  .pw{max-height:100%;width:auto;aspect-ratio:65/100;max-width:100%;margin:0 auto;}",
+  "  .d-hdr,.d-bar{display:none!important;}",
+  "  .mob-ctrl{display:flex;flex-direction:column;flex-shrink:0;background:#1E1E1E;border-top:1px solid rgba(255,255,255,0.08);}",
+  "  .mob-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.08);background:#111111;}",
+  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:90px;max-height:34vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}",
+  "}",
+  "@media(max-width:639px){.nav-sec{display:none!important}.nav-more{display:flex!important}}",
+  "@media(min-width:768px) and (max-width:1099px){.ps{grid-template-columns:172px 1fr 168px}}",
+  /* Button system */
+  ".btn{display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.14s;border:none;outline:none;}",
+  ".btn:active{transform:scale(0.96);}",
+  ".btn-primary{background:#C8FF00;color:#000;border:none;box-shadow:0 2px 12px rgba(200,255,0,0.25);}",
+  ".btn-primary:hover{background:#d4ff33;box-shadow:0 4px 18px rgba(200,255,0,0.35);}",
+  ".btn-secondary{background:transparent;color:rgba(255,255,255,0.52);border:1px solid rgba(255,255,255,0.12);}",
+  ".btn-secondary:hover{border-color:rgba(255,255,255,0.28);color:rgba(255,255,255,0.82);}",
+  ".btn-danger{background:transparent;color:rgba(240,50,50,0.8);border:1px solid rgba(240,50,50,0.25);}",
+  ".btn-danger:hover{background:rgba(240,50,50,0.08);border-color:rgba(240,50,50,0.5);}",
+  ".btn-volt-outline{background:rgba(200,255,0,0.08);color:#C8FF00;border:1px solid rgba(200,255,0,0.3);}",
+  ".btn-volt-outline:hover{background:rgba(200,255,0,0.14);border-color:rgba(200,255,0,0.55);}",
+  ".btn-sm{padding:5px 12px;font-size:10px;}",
+  ".btn-md{padding:8px 16px;font-size:11px;}",
+  ".btn-lg{padding:12px 24px;font-size:14px;}",
+  /* Tab system */
+  ".mob-tab-btn{flex:1;padding:11px 0;background:none;border:none;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.28);border-bottom:2px solid transparent;transition:color .13s,border-color .13s,background .13s;}",
+  ".mob-tab-btn.active{color:#C8FF00;border-bottom-color:#C8FF00;background:rgba(200,255,0,0.04);}",
+  /* Phase pills */
+  ".phase-pill{display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;transition:all 0.13s;border:1px solid rgba(255,255,255,0.08);background:transparent;color:rgba(255,255,255,0.28);width:32px;height:32px;}",
+  ".phase-pill:active{transform:scale(0.92);}",
+  ".phase-pill.saved{border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.06);}",
+  ".phase-pill.active-phase{border-color:#C8FF00;background:#C8FF00;color:#000;box-shadow:0 2px 10px rgba(200,255,0,0.3);}",
+].join("\n");
+
+function useOutside(ref, cb, active) {
+  useEffect(function() {
+    if (!active) return;
+    function fn(e) { if (ref.current && !ref.current.contains(e.target)) cb(); }
+    document.addEventListener("mousedown", fn);
+    document.addEventListener("touchstart", fn, {passive:true});
+    return function() { document.removeEventListener("mousedown",fn); document.removeEventListener("touchstart",fn); };
+  }, [active, cb]);
+}
+
+function Seg({ options, value, onChange, sm }) {
+  return (
+    <div style={{display:"flex",background:"rgba(255,255,255,0.05)",borderRadius:7,padding:3,gap:2,overflowX:"auto",scrollbarWidth:"none"}}>
+      {options.map(function(o) {
+        var v = o.value != null ? o.value : o;
+        var l = o.label != null ? o.label : o;
+        var act = v === value;
+        return (
+          <button key={String(v)} onClick={function() { onChange(v); }} style={{
+            flex:"none", padding:sm?"4px 10px":"6px 13px", borderRadius:5, border:"none",
+            cursor:"pointer", fontFamily:"'Rajdhani',sans-serif", fontSize:sm?12:13,
+            fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase",
+            whiteSpace:"nowrap", transition:"all 0.15s",
+            background:act?VOLT:"transparent",
+            color:act?"#000":"rgba(255,255,255,0.42)",
+          }}>{l}</button>
+        );
+      })}
+    </div>
+  );
+}
+
+function DD({ value, options, onChange, accent, bg, up }) {
+  var [open, setOpen] = useState(false);
+  var [rect, setRect] = useState(null);
+  var ref = useRef(null);
+  var btnRef = useRef(null);
+  var ac = accent || VOLT;
+  useOutside(ref, useCallback(function() { setOpen(false); }, []), open);
+  var found = options.find(function(o) { return (o.value != null ? o.value : o) === value; });
+  var label = found ? (found.label || found) : value;
+  var chip = found && found.color ? found.color : null;
+
+  function handleOpen() {
+    if (up && btnRef.current) {
+      var r = btnRef.current.getBoundingClientRect();
+      setRect(r);
+    }
+    setOpen(function(v) { return !v; });
+  }
+
+  function renderOptions(opts) {
+    return opts.map(function(opt) {
+      var v = opt.value != null ? opt.value : opt;
+      var l = opt.label != null ? opt.label : opt;
+      var c = opt.color || null;
+      var active = v === value;
+      return (
+        <div key={String(v)} onClick={function() { onChange(v); setOpen(false); }}
+          style={{padding:"9px 12px",cursor:"pointer",fontSize:14,fontFamily:"'Rajdhani',sans-serif",fontWeight:active?700:500,letterSpacing:"0.04em",color:active?ac:T.sub,background:active?"rgba(200,255,0,0.06)":"transparent",borderLeft:"2px solid "+(active?ac:"transparent"),display:"flex",alignItems:"center",gap:8,transition:"background 0.1s"}}
+          onMouseEnter={function(e){if(!active){e.currentTarget.style.background="rgba(255,255,255,0.05)";e.currentTarget.style.color=T.text;}}}
+          onMouseLeave={function(e){if(!active){e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.sub;}}}>
+          {c && <div style={{width:14,height:14,borderRadius:"50%",background:c,flexShrink:0,border:"1px solid rgba(255,255,255,0.18)"}}/>}
+          <span style={{flex:1}}>{l}</span>
+          {active && <span style={{color:ac,fontSize:12}}>v</span>}
+        </div>
+      );
+    });
+  }
+
+  return (
+    <div ref={ref} style={{position:"relative",width:"100%"}}>
+      <button ref={btnRef} onClick={handleOpen} style={{
+        width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between",
+        gap:8, padding:"9px 12px", borderRadius:6,
+        background:open ? T.raised : (bg || T.surface),
+        border:"1px solid " + (open ? T.bhi : T.b),
+        color:T.text, cursor:"pointer", fontFamily:"'Rajdhani',sans-serif",
+        fontSize:14, fontWeight:600, letterSpacing:"0.04em", transition:"all 0.13s",
+      }}>
+        <div style={{display:"flex",alignItems:"center",gap:8,flex:1,minWidth:0}}>
+          {chip && <div style={{width:16,height:16,borderRadius:"50%",background:chip,flexShrink:0,border:"1px solid rgba(255,255,255,0.2)"}}/>}
+          <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{label}</span>
+        </div>
+        <span style={{opacity:0.3,fontSize:10,marginLeft:4,flexShrink:0}}>{open?"^":"v"}</span>
+      </button>
+      {open && !up && (
+        <div style={{position:"absolute",top:"calc(100% + 3px)",left:0,right:0,zIndex:600,background:"#222",border:"1px solid " + T.bhi,borderRadius:6,overflow:"hidden",boxShadow:"0 16px 40px rgba(0,0,0,0.75)"}}>
+          {renderOptions(options)}
+        </div>
+      )}
+      {open && up && rect && (
+        <div style={{position:"fixed",bottom:window.innerHeight - rect.top + 4,left:rect.left,width:rect.width,zIndex:2000,background:"#222",border:"1px solid " + T.bhi,borderRadius:6,overflow:"hidden",boxShadow:"0 -8px 28px rgba(0,0,0,0.85)"}}>
+          {renderOptions(options)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PalChip({ pal, sz }) {
+  var s = sz || 22;
+  if (pal.primary === null) {
+    return <div style={{width:s,height:s,borderRadius:"50%",background:"conic-gradient(#F0B429 0 25%,#1E3A8A 25% 50%,#3B82F6 50% 75%,#93C5FD 75%)"}}/>;
+  }
+  return <div style={{width:s,height:s,borderRadius:"50%",background:pal.primary}}/>;
+}
+
+function KitPicker({ value, onChange, bg, up }) {
+  var [open, setOpen] = useState(false);
+  var [rect, setRect] = useState(null);
+  var ref = useRef(null);
+  var btnRef = useRef(null);
+  useOutside(ref, useCallback(function() { setOpen(false); }, []), open);
+  var pal = PALETTES.find(function(p) { return p.id === value; }) || PALETTES[0];
+  function handleOpen() {
+    if (up && btnRef.current) setRect(btnRef.current.getBoundingClientRect());
+    setOpen(function(v) { return !v; });
+  }
+  var grid = (
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",rowGap:10,columnGap:6}}>
+      {PALETTES.map(function(p) {
+        var sel = p.id === value;
+        return (
+          <div key={p.id} onClick={function() { onChange(p.id); setOpen(false); }}
+            style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer"}}>
+            <div style={{width:26,height:26,borderRadius:"50%",overflow:"hidden",outline:sel?"2px solid rgba(255,255,255,0.8)":"1px solid rgba(255,255,255,0.12)",outlineOffset:sel?2:0,transform:sel?"scale(1.1)":"scale(1)",transition:"all 0.12s"}}>
+              <PalChip pal={p} sz={26}/>
+            </div>
+            <span style={{fontSize:7,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:sel?T.text:T.ghost,fontFamily:"'Rajdhani',sans-serif",whiteSpace:"nowrap"}}>{p.name}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+  return (
+    <div ref={ref} style={{position:"relative",width:"100%"}}>
+      <button ref={btnRef} onClick={handleOpen} style={{
+        width:"100%", display:"flex", alignItems:"center", gap:10, padding:"9px 12px",
+        borderRadius:6, border:"1px solid " + (open ? T.bhi : T.b),
+        background:open ? T.raised : (bg || T.surface), cursor:"pointer", transition:"all 0.13s",
+      }}>
+        <PalChip pal={pal} sz={20}/>
+        <span style={{flex:1,fontSize:14,fontWeight:600,color:T.text,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",textAlign:"left"}}>{pal.name}</span>
+        <span style={{opacity:0.3,fontSize:10}}>{open?"^":"v"}</span>
+      </button>
+      {open && !up && (
+        <div style={{position:"absolute",top:"calc(100% + 3px)",left:0,right:0,zIndex:600,background:"#222",border:"1px solid " + T.bhi,borderRadius:6,padding:14,boxShadow:"0 14px 36px rgba(0,0,0,0.72)"}}>
+          {grid}
+        </div>
+      )}
+      {open && up && rect && (
+        <div style={{position:"fixed",bottom:window.innerHeight - rect.top + 4,left:rect.left,width:rect.width,zIndex:2000,background:"#222",border:"1px solid " + T.bhi,borderRadius:6,padding:14,boxShadow:"0 -8px 28px rgba(0,0,0,0.85)"}}>
+          {grid}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Toggle({ on, toggle, ac }) {
+  var color = ac || "#F02040";
+  return (
+    <div onClick={toggle} style={{width:36,height:20,borderRadius:10,cursor:"pointer",flexShrink:0,position:"relative",transition:"all 0.2s",background:on?"rgba(61,221,106,0.15)":T.faint,border:"1px solid " + (on ? color+"55" : T.b)}}>
+      <div style={{position:"absolute",top:3,left:on?17:3,width:12,height:12,borderRadius:"50%",transition:"left 0.2s",background:on?color:"rgba(255,255,255,0.3)"}}/>
+    </div>
+  );
+}
+
+function SL({ c }) { return <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.2em",color:T.ghost,textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",marginBottom:8}}>{c}</div>; }
+function HR() { return <div style={{height:1,background:T.b,margin:"14px 0"}}/>; }
+
+export default function FCRoster() {
+  var [tab,       setTab]       = useState("pitch");
+  var [gameFmt,   setGameFmt]   = useState("11v11");
+  var [formation, setFormation] = useState("4-3-3");
+  var [surface,   setSurface]   = useState("grass");
+  var [players,   setPlayers]   = useState(function() { return FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}); });
+  var [paletteId, setPaletteId] = useState("unit");
+  var [tool,      setTool]      = useState(null);
+  var [lines,     setLines]     = useState([]);
+  var [curLine,   setCurLine]   = useState(null);
+  var [historyLen, setHistoryLen] = useState(0);
+  var historyRef = useRef([]);
+  var [ballPos,   setBallPos]   = useState(null);
+  var [title,     setTitle]     = useState("My FCRoster");
+  var [editTitle, setEditTitle] = useState(false);
+  var [showOpp,   setShowOpp]   = useState(false);
+  var [oppFmt,    setOppFmt]    = useState("4-4-2");
+  var [oppList,   setOppList]   = useState([]);
+  var [oppColor,  setOppColor]  = useState("#EE2244");
+  var [user,      setUser]      = useState(null);
+  var [showAuth,  setShowAuth]  = useState(false);
+  var [authMode,  setAuthMode]  = useState("signin");
+  var [aEmail,    setAEmail]    = useState("");
+  var [aPass,     setAPass]     = useState("");
+  var [aName,     setAName]     = useState("");
+  var [authErr,   setAuthErr]   = useState("");
+  var [authBusy,  setAuthBusy]  = useState(false);
+  var [savedFormations, setSavedFormations] = useState([]);
+  var [savedId,   setSavedId]   = useState(null);
+
+  // Real Supabase auth listener -- keeps user in sync
+  useEffect(function() {
+    var unsub = onAuthChange(function(u) {
+      if (u) {
+        setUser({ id: u.id, name: u.user_metadata?.full_name || u.email.split("@")[0], email: u.email });
+        loadFormations().then(setSavedFormations).catch(function(){});
+      } else {
+        setUser(null);
+        setSavedFormations([]);
+        setSavedId(null);
+      }
+    });
+    return unsub;
+  }, []);
+  var [dragId,    setDragId]    = useState(null);
+  var [editP,     setEditP]     = useState(null);
+  var [subs,      setSubs]      = useState([]);
+  var [phases,    setPhases]    = useState([null,null,null,null,null]);
+  var [activePhase, setActivePhase] = useState(null);
+  var [playing,   setPlaying]   = useState(false);
+  var playRef = useRef(null);
+  var [toast,     setToast]     = useState(null);
+  var [moreOpen,  setMoreOpen]  = useState(false);
+  var [sheetTab,  setSheetTab]  = useState("lineup");
+  var [mobMenu,   setMobMenu]   = useState(true);
+
+  var svgRef      = useRef(null);
+  var moreRef     = useRef(null);
+  var dIdRef      = useRef(null);
+  var dPosRef     = useRef(null);
+  var dCandRef    = useRef(null);
+  var moveFnRef   = useRef(null);
+  var playersRef  = useRef(players);
+  var setEditPRef = useRef(null);
+
+  useOutside(moreRef, useCallback(function(){setMoreOpen(false);}, []), moreOpen);
+
+  // Keep refs current so native listeners always see latest values
+  var toolRef = useRef(tool);
+  useEffect(function() { toolRef.current = tool; }, [tool]);
+  playersRef.current  = players;
+  setEditPRef.current = setEditP;
+
+  useEffect(function() {
+    var el = svgRef.current; if (!el) return;
+
+    // Walk up from touch target to find a token <g> by id="tkn-N"
+    function findTokenId(node) {
+      while (node && node !== el) {
+        var id = node.id || "";
+        if (id.indexOf("tkn-") === 0) return parseInt(id.slice(4), 10);
+        node = node.parentNode;
+      }
+      return null;
+    }
+
+    function onStart(e) {
+      var t = e.touches && e.touches[0]; if (!t) return;
+      var currentTool = toolRef.current;
+
+      // Name edit modal only fires when NO tool is selected
+      // Every active tool owns its touch completely -- no modal interruption
+      if (currentTool === null) {
+        var target = e.target;
+        var isText = target && target.tagName && target.tagName.toLowerCase() === "text";
+        var targetY = isText ? parseFloat(target.getAttribute("y") || "0") : 0;
+        if (isText && targetY > 5) {
+          var node = target;
+          var pid3 = null;
+          while (node && node !== el) {
+            var nid3 = node.id || "";
+            if (nid3.indexOf("tkn-") === 0) { pid3 = parseInt(nid3.slice(4), 10); break; }
+            node = node.parentNode;
+          }
+          if (pid3 !== null && setEditPRef.current && playersRef.current) {
+            var plr = playersRef.current.find(function(x){return x.id===pid3;});
+            if (plr) {
+              // preventDefault kills the synthesized click that would bleed
+              // through to the modal backdrop or bottom menu 300ms later
+              e.preventDefault();
+              setEditPRef.current(Object.assign({}, plr));
+              return;
+            }
+          }
+        }
+      }
+
+      // All other SVG touches: prevent default (stops scroll/zoom)
+      e.preventDefault();
+
+      var pid = findTokenId(e.target);
+      if (pid !== null && currentTool === "drag") {
+        dCandRef.current = {id:pid, startX:t.clientX, startY:t.clientY};
+      } else if (pid === null || currentTool !== "drag") {
+        var c = getXY(e);
+        if (currentTool === "ball") { setBallPos(c); }
+        else if (currentTool === "pass" || currentTool === "run" || currentTool === "shot") {
+          setCurLine({tool:currentTool, pts:[c]});
+        }
+      }
+    }
+
+    function onMove(e) { if (moveFnRef.current) moveFnRef.current(e); }
+
+    el.addEventListener("touchstart", onStart, {passive:false});
+    el.addEventListener("touchmove",  onMove,  {passive:false});
+    return function() {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove",  onMove);
+    };
+  }, []);
+
+  function notify(msg) { setToast(msg); setTimeout(function(){setToast(null);},2000); }
+
+  var pal = PALETTES.find(function(p){return p.id===paletteId;}) || PALETTES[0];
+  function tFill(n) { return pal.primary !== null ? pal.primary : unitCol(n); }
+  function tTxt(n) { return txtOnFill(tFill(n)); }
+
+  var loadTeam = useCallback(function(fo, gf) {
+    var g=gf||gameFmt, fs=FORMATIONS[g], k=(fo&&fs[fo])?fo:Object.keys(fs)[0];
+    setPlayers(fs[k].map(function(p){return Object.assign({},p);}));
+    setFormation(k); setLines([]); setBallPos(null);
+  }, [gameFmt]);
+
+  var loadOpp = useCallback(function(fo, gf) {
+    var g=gf||gameFmt, fs=FORMATIONS[g], k=(fo&&fs[fo])?fo:Object.keys(fs)[0];
+    setOppFmt(k); setOppList(fs[k].map(function(p){return Object.assign({},p,{y:100-p.y});}));
+  }, [gameFmt]);
+
+  function changeFmt(gf) {
+    setGameFmt(gf);
+    var fs=FORMATIONS[gf], k=Object.keys(fs)[0];
+    setPlayers(fs[k].map(function(p){return Object.assign({},p);}));
+    setFormation(k); setLines([]); setBallPos(null);
+    if (showOpp) { setOppFmt(k); setOppList(fs[k].map(function(p){return Object.assign({},p,{y:100-p.y});})); }
+  }
+
+  useEffect(function(){if(showOpp)loadOpp(oppFmt);},[showOpp]);
+
+  function getXY(e) {
+    if (!svgRef.current) return {x:32,y:50};
+    var r=svgRef.current.getBoundingClientRect();
+    var cx=(e.touches&&e.touches[0])?e.touches[0].clientX:e.clientX;
+    var cy=(e.touches&&e.touches[0])?e.touches[0].clientY:e.clientY;
+    return {x:Math.max(2,Math.min(63,((cx-r.left)/r.width)*65)), y:Math.max(2,Math.min(98,((cy-r.top)/r.height)*100))};
+  }
+
+  var svgMove = useCallback(function(e) {
+    if (dCandRef.current !== null && dIdRef.current === null) {
+      var t=e.touches&&e.touches[0]; if (!t) return;
+      var dx=t.clientX-dCandRef.current.startX, dy=t.clientY-dCandRef.current.startY;
+      if (Math.sqrt(dx*dx+dy*dy)>DRAG_T) {
+        e.preventDefault();
+        dIdRef.current=dCandRef.current.id;
+        dCandRef.current=null;
+      }
+      return;
+    }
+    if (dIdRef.current !== null) {
+      e.preventDefault();
+      var c=getXY(e); dPosRef.current=c;
+      var el=svgRef.current&&svgRef.current.querySelector("#tkn-"+dIdRef.current);
+      if (el) el.setAttribute("transform","translate("+c.x+","+c.y+")");
+      return;
+    }
+    setCurLine(function(v){
+      if (!v) return v;
+      e.preventDefault();
+      var c2=getXY(e);
+      return {tool:v.tool,pts:v.pts.concat([c2])};
+    });
+  }, []);
+
+  moveFnRef.current = svgMove;
+
+  function svgDown(e) {
+    var c=getXY(e);
+    if (tool==="ball"){pushHistory();setBallPos(c);return;}
+    if (tool==="pass"||tool==="run"||tool==="shot") setCurLine({tool:tool,pts:[c]});
+  }
+
+  function svgUp() {
+    dCandRef.current=null;
+    var id=dIdRef.current, pos=dPosRef.current;
+    dIdRef.current=null; dPosRef.current=null;
+    if (id!==null) {
+      setDragId(null);
+      if (pos) {
+        pushHistory();
+        setPlayers(function(prev){return prev.map(function(x){return x.id===id?Object.assign({},x,{x:Math.round(pos.x/SNAP)*SNAP,y:Math.round(pos.y/SNAP)*SNAP}):x;});});
+      }
+      return;
+    }
+    if (curLine&&curLine.pts.length>2) {
+      pushHistory();
+      setLines(function(v){return v.concat([curLine]);});
+    }
+    setCurLine(null);
+  }
+
+  function pMD(e,id){
+    if(tool!=="drag") return; // let event bubble to SVG for draw tools
+    e.stopPropagation();
+    dIdRef.current=id;
+    setDragId(id);
+  }
+  function pDbl(e,p){e.stopPropagation();setEditP(Object.assign({},p));}
+
+
+  function pts2d(pts){if(pts.length<2)return"";return pts.map(function(p,i){return(i===0?"M":"L")+" "+p.x+" "+p.y;}).join(" ");}
+  function arwId(t){if(t==="pass")return"url(#ap)";if(t==="run")return"url(#ar)";if(t==="shot")return"url(#as)";return"";}
+  // History -- push before any destructive pitch change
+  function pushHistory() {
+    var snap = {
+      players: players.map(function(p){return Object.assign({},p);}),
+      lines:   lines.slice(),
+      ballPos: ballPos ? Object.assign({},ballPos) : null,
+    };
+    var next = historyRef.current.slice(-19).concat([snap]);
+    historyRef.current = next;
+    setHistoryLen(next.length);
+  }
+
+  function doUndo() {
+    var hist = historyRef.current;
+    if (hist.length === 0) { notify("Nothing to undo."); return; }
+    var snap = hist[hist.length - 1];
+    var next = hist.slice(0, -1);
+    historyRef.current = next;
+    setHistoryLen(next.length);
+    setPlayers(snap.players.map(function(p){return Object.assign({},p);}));
+    setLines(snap.lines.slice());
+    setBallPos(snap.ballPos ? Object.assign({},snap.ballPos) : null);
+    notify("Undone.");
+  }
+
+  function doClear(){
+    pushHistory();
+    setLines([]);setBallPos(null);
+    notify("Pitch reset.");
+  }
+
+  function savePhase(idx) {
+    var snapshot = {
+      players: players.map(function(p){return Object.assign({},p);}),
+      lines:   lines.slice(),
+      ballPos: ballPos ? Object.assign({},ballPos) : null,
+    };
+    setPhases(function(prev){
+      var next = prev.slice();
+      next[idx] = snapshot;
+      return next;
+    });
+    setActivePhase(idx);
+    notify("Phase "+(idx+1)+" saved.");
+  }
+
+  function applySnapshot(ph) {
+    setPlayers(ph.players.map(function(p){return Object.assign({},p);}));
+    setLines(ph.lines.slice());
+    setBallPos(ph.ballPos ? Object.assign({},ph.ballPos) : null);
+  }
+
+  function loadPhase(idx) {
+    var ph = phases[idx];
+    if (!ph) return;
+    applySnapshot(ph);
+    setActivePhase(idx);
+  }
+
+  function clearPhase(idx) {
+    setPhases(function(prev){
+      var next = prev.slice();
+      next[idx] = null;
+      return next;
+    });
+    if (activePhase === idx) setActivePhase(null);
+  }
+
+  function playPhases() {
+    var saved = phases.map(function(p,i){return {ph:p,i:i};}).filter(function(x){return x.ph!==null;});
+    if (saved.length < 2) { notify("Save at least 2 phases to play."); return; }
+    setPlaying(true);
+    var step = 0;
+    applySnapshot(saved[step].ph);
+    setActivePhase(saved[step].i);
+    playRef.current = setInterval(function(){
+      step++;
+      if (step >= saved.length) {
+        clearInterval(playRef.current);
+        setPlaying(false);
+        return;
+      }
+      applySnapshot(saved[step].ph);
+      setActivePhase(saved[step].i);
+    }, 1200);
+  }
+
+  function stopPlay() {
+    clearInterval(playRef.current);
+    setPlaying(false);
+  }
+
+  function doExport(){
+    var svgEl=svgRef.current;
+    if(!svgEl){notify("Nothing to export.");return;}
+
+    var clone=svgEl.cloneNode(true);
+    clone.setAttribute("xmlns","http://www.w3.org/2000/svg");
+    clone.setAttribute("xmlns:xlink","http://www.w3.org/1999/xlink");
+    clone.style.cursor="default";
+    clone.querySelectorAll("[style]").forEach(function(el){
+      el.style.cursor="default";
+      el.style.userSelect="";
+      el.style.pointerEvents="";
+    });
+    var styleEl=document.createElementNS("http://www.w3.org/2000/svg","style");
+    styleEl.textContent="text{font-family:Rajdhani,'Arial Narrow',Arial,sans-serif}";
+    clone.insertBefore(styleEl,clone.firstChild);
+
+    var SCALE=2;
+    var PAD=24*SCALE;
+    var HDR=56*SCALE;
+    var FTR=28*SCALE;
+    var ROW=26*SCALE;
+    var activeSubs=subs.filter(function(s){return s.subName&&s.subName.trim();});
+    var SUBTBL=activeSubs.length>0?(20*SCALE + activeSubs.length*ROW + 14*SCALE):0;
+
+    var bbox=svgEl.getBoundingClientRect();
+    var PW=Math.round(bbox.width*SCALE);
+    var PH=Math.round(bbox.height*SCALE);
+    clone.setAttribute("width",PW);
+    clone.setAttribute("height",PH);
+
+    var svgStr=new XMLSerializer().serializeToString(clone);
+    var blob=new Blob([svgStr],{type:"image/svg+xml;charset=utf-8"});
+    var url=URL.createObjectURL(blob);
+
+    var img=new Image();
+    img.onload=function(){
+      var CW=PW+PAD*2;
+      var CH=HDR+PH+SUBTBL+FTR+PAD*2;
+
+      var canvas=document.createElement("canvas");
+      canvas.width=CW; canvas.height=CH;
+      var ctx=canvas.getContext("2d");
+
+      // Background
+      ctx.fillStyle="#111111";
+      ctx.fillRect(0,0,CW,CH);
+
+      // Header
+      ctx.fillStyle="#1A1A1A";
+      ctx.fillRect(0,0,CW,HDR+PAD);
+      ctx.textAlign="center";
+      ctx.fillStyle="rgba(255,255,255,0.92)";
+      ctx.font="bold "+(18*SCALE)+"px 'Arial Narrow',Arial,sans-serif";
+      ctx.fillText(title.toUpperCase(),CW/2,PAD+20*SCALE);
+      ctx.fillStyle="rgba(255,255,255,0.38)";
+      ctx.font=(10*SCALE)+"px Arial,sans-serif";
+      ctx.fillText(gameFmt+" - "+formation,CW/2,PAD+36*SCALE);
+
+      // Pitch
+      ctx.drawImage(img,PAD,PAD+HDR,PW,PH);
+
+      // Substitution table
+      if(activeSubs.length>0){
+        var ty=PAD+HDR+PH+14*SCALE;
+        // Section header
+        ctx.fillStyle="#1A1A1A";
+        ctx.fillRect(PAD,ty,PW,18*SCALE);
+        ctx.fillStyle="rgba(200,255,0,0.7)";
+        ctx.font="bold "+(8*SCALE)+"px 'Arial Narrow',Arial,sans-serif";
+        ctx.textAlign="left";
+        ctx.fillText("SUBSTITUTIONS",PAD+8*SCALE,ty+12*SCALE);
+        ty+=20*SCALE;
+
+        // Column widths
+        var C0=PAD,
+            C1=PAD+40*SCALE,
+            C2=PAD+140*SCALE,
+            C3=PAD+190*SCALE,
+            C4=PAD+290*SCALE,
+            C5=PAD+340*SCALE;
+
+        // Column headers
+        ctx.fillStyle="rgba(255,255,255,0.28)";
+        ctx.font=(7*SCALE)+"px Arial,sans-serif";
+        ctx.textAlign="left";
+        ["#","POS","STARTER","","SUB","MIN"].forEach(function(h,i){
+          var cx=[C0,C1,C2,C3,C4,C5][i];
+          ctx.fillText(h,cx,ty+8*SCALE);
+        });
+        ty+=12*SCALE;
+
+        activeSubs.forEach(function(s,idx){
+          var pl=players.find(function(p){return p.id===s.playerId;});
+          var pos=pl?pl.n:s.pos;
+          var starterName=pl?(pl.name||pl.n):s.pos;
+          // Row bg alternating
+          ctx.fillStyle=idx%2===0?"rgba(255,255,255,0.03)":"transparent";
+          ctx.fillRect(PAD,ty,PW,ROW-2*SCALE);
+          // Number
+          ctx.fillStyle="rgba(255,255,255,0.28)";
+          ctx.font=(8*SCALE)+"px Arial,sans-serif";
+          ctx.textAlign="left";
+          ctx.fillText(String(idx+1),C0+4*SCALE,ty+16*SCALE);
+          // Pos chip
+          var chipFill=tFill(pos);
+          ctx.fillStyle=chipFill;
+          ctx.beginPath();
+          ctx.roundRect(C1,ty+4*SCALE,30*SCALE,16*SCALE,3*SCALE);
+          ctx.fill();
+          ctx.fillStyle=txtOnFill(chipFill);
+          ctx.font="bold "+(7*SCALE)+"px Arial,sans-serif";
+          ctx.textAlign="center";
+          ctx.fillText(pos.slice(0,4),C1+15*SCALE,ty+15*SCALE);
+          // Starter
+          ctx.fillStyle="rgba(255,255,255,0.75)";
+          ctx.font=(9*SCALE)+"px 'Arial Narrow',Arial,sans-serif";
+          ctx.textAlign="left";
+          ctx.fillText(starterName.toUpperCase(),C2,ty+16*SCALE);
+          // Arrow
+          ctx.fillStyle="rgba(255,255,255,0.3)";
+          ctx.font=(10*SCALE)+"px Arial,sans-serif";
+          ctx.textAlign="center";
+          ctx.fillText("\u2192",C3+10*SCALE,ty+16*SCALE);
+          // Sub name
+          ctx.fillStyle="rgba(200,255,0,0.9)";
+          ctx.font="bold "+(9*SCALE)+"px 'Arial Narrow',Arial,sans-serif";
+          ctx.textAlign="left";
+          ctx.fillText(s.subName.toUpperCase(),C4,ty+16*SCALE);
+          // Minute
+          if(s.minute){
+            ctx.fillStyle="rgba(255,255,255,0.4)";
+            ctx.font=(8*SCALE)+"px Arial,sans-serif";
+            ctx.textAlign="left";
+            ctx.fillText(s.minute+"'",C5,ty+16*SCALE);
+          }
+          ty+=ROW;
+        });
+      }
+
+      // Footer
+      var footerY=PAD+HDR+PH+SUBTBL+(SUBTBL>0?4*SCALE:0)+16*SCALE;
+      ctx.fillStyle="rgba(200,255,0,0.75)";
+      ctx.font="bold "+(9*SCALE)+"px Arial,sans-serif";
+      ctx.textAlign="center";
+      ctx.fillText("FCROSTER.COM",CW/2,footerY);
+
+      URL.revokeObjectURL(url);
+      var link=document.createElement("a");
+      link.download=(title.replace(/\s+/g,"_")||"formation")+".png";
+      link.href=canvas.toDataURL("image/png");
+      link.click();
+      notify("Saved: "+link.download);
+    };
+    img.onerror=function(){URL.revokeObjectURL(url);notify("Export failed.");};
+    img.src=url;
+  }
+
+  var sf=SURFACES[surface];
+  var avF=Object.keys(FORMATIONS[gameFmt]);
+  var fmtOpts=["11v11","9v9","7v7","5v5"].map(function(v){return {value:v,label:v};});
+  var formOpts=avF.map(function(v){return {value:v,label:v};});
+  var surfOpts=Object.entries(SURFACES).map(function(e){return {value:e[0],label:e[1].label,color:e[1].base};});
+
+  function ToolRow() {
+    var move = [{t:"drag",lb:"Move\nPlayer"},{t:"ball",lb:"Drop\nBall"}];
+    var draw = [
+      {t:"pass",lb:"Pass",  ac:TC.pass, locked:!user},
+      {t:"run", lb:"Run",   ac:TC.run,  locked:!user},
+      {t:"shot",lb:"Shot",  ac:TC.shot, locked:!user},
+    ];
+    function ToolBtn(item) {
+      var act = tool===item.t;
+      var color = item.ac||VOLT;
+      var lines = item.lb.split("\n");
+      return (
+        <button key={item.t}
+          onClick={function(){
+            if(item.locked){setShowAuth(true);return;}
+            setTool(act ? null : item.t);
+          }}
+          style={{
+            flex:1,display:"flex",flexDirection:"column",alignItems:"center",
+            justifyContent:"center",gap:2,padding:"9px 4px",borderRadius:6,
+            position:"relative",cursor:"pointer",transition:"all 0.13s",
+            lineHeight:1.3,border:"1px solid",
+            fontFamily:"'Rajdhani',sans-serif",fontSize:9,fontWeight:700,
+            letterSpacing:"0.08em",textTransform:"uppercase",
+            borderColor: item.locked ? "rgba(255,255,255,0.07)"
+                       : act ? color+"99" : "rgba(255,255,255,0.1)",
+            background:  item.locked ? "rgba(255,255,255,0.03)"
+                       : act ? color+"1a" : "rgba(255,255,255,0.04)",
+            color:       item.locked ? "rgba(255,255,255,0.22)"
+                       : act ? color : "rgba(255,255,255,0.55)",
+          }}
+          onMouseEnter={function(e){if(!item.locked&&!act){e.currentTarget.style.borderColor="rgba(255,255,255,0.22)";e.currentTarget.style.color="rgba(255,255,255,0.82)";}}}
+          onMouseLeave={function(e){if(!item.locked&&!act){e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";e.currentTarget.style.color="rgba(255,255,255,0.55)";}}}
+          onPointerDown={function(e){e.currentTarget.style.transform="scale(0.95)";}}
+          onPointerUp={function(e){e.currentTarget.style.transform="scale(1)";}}
+          onPointerLeave={function(e){e.currentTarget.style.transform="scale(1)";}}>
+          {act && <div style={{position:"absolute",top:0,left:0,right:0,height:2,borderRadius:"6px 6px 0 0",background:color}}/>}
+          {item.locked && (
+            <div style={{position:"absolute",top:4,right:4,width:12,height:12,borderRadius:"50%",background:"rgba(200,255,0,0.15)",border:"1px solid rgba(200,255,0,0.3)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <span style={{fontSize:6,color:VOLT,lineHeight:1}}>&#9733;</span>
+            </div>
+          )}
+          {lines.map(function(l,i){return <span key={i} style={{fontSize:i===0&&lines.length>1?7:9}}>{l}</span>;})}
+        </button>
+      );
+    }
+    return (
+      <div style={{display:"flex",flexDirection:"column",gap:8,width:"100%"}}>
+        {tool===null&&(
+          <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",textAlign:"center",letterSpacing:"0.02em",padding:"2px 0"}}>
+            Select a tool to interact with the pitch
+          </div>
+        )}
+        {/* Movement group */}
+        <div>
+          <div style={{fontSize:8,fontWeight:700,color:T.faint,letterSpacing:"0.2em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",marginBottom:4}}>Movement</div>
+          <div style={{display:"flex",gap:4}}>{move.map(ToolBtn)}</div>
+        </div>
+        {/* Drawing group */}
+        <div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+            <div style={{fontSize:8,fontWeight:700,color:T.faint,letterSpacing:"0.2em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif"}}>Drawing</div>
+            {!user&&<div style={{fontSize:8,color:VOLT,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.1em",opacity:0.7}}>&#9733; PRO</div>}
+          </div>
+          <div style={{display:"flex",gap:4}}>{draw.map(ToolBtn)}</div>
+        </div>
+        {/* Sign in nudge - volt themed, not amber */}
+        {!user&&(
+          <button onClick={function(){setShowAuth(true);}} className="btn btn-volt-outline btn-sm" style={{width:"100%",gap:6}}>
+            <span style={{fontSize:10}}>&#9733;</span> Unlock Drawing Tools
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  function ActionBar({ compact }) {
+    var canUndo = historyLen > 0;
+    return (
+      <div style={{display:"flex",alignItems:"center",gap:compact?8:6,width:"100%",padding:compact?"5px 0":"4px 0"}}>
+        {/* Undo */}
+        <button onClick={doUndo} className={"btn btn-secondary "+(compact?"btn-md":"btn-sm")}
+          style={{flex:1,opacity:canUndo?1:0.32,gap:5}} title="Undo last action">
+          <span style={{fontSize:12}}>&#x21B6;</span>
+          <span>Undo</span>
+        </button>
+        {/* Reset */}
+        <button onClick={doClear} className={"btn btn-danger "+(compact?"btn-md":"btn-sm")}
+          style={{flex:1,gap:5}} title="Reset pitch">
+          <span style={{fontSize:compact?13:11}}>&#x21BA;</span>
+          <span>Reset</span>
+        </button>
+        {/* Export PNG */}
+        <button onClick={doExport} className={"btn btn-primary "+(compact?"btn-md":"btn-sm")}
+          style={{flex:2,gap:5,fontWeight:800}} title="Export as PNG">
+          <span style={{fontSize:compact?11:9}}>&#x2913;</span>
+          <span>Export PNG</span>
+        </button>
+      </div>
+    );
+  }
+
+  function PhaseStrip() {
+    return (
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"4px 10px",flexShrink:0,background:"#0e0e0e",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+
+        <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
+          <span style={{fontSize:9,fontWeight:700,color:T.ghost,letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif"}}>Format</span>
+          <select value={gameFmt} onChange={function(e){changeFmt(e.target.value);}}
+            style={{background:"#1a1a1a",border:"1px solid "+T.b,borderRadius:4,color:T.text,padding:"3px 8px",fontFamily:"'Rajdhani',sans-serif",fontSize:12,fontWeight:700,cursor:"pointer",outline:"none",letterSpacing:"0.04em"}}>
+            {fmtOpts.map(function(o){return <option key={o.value} value={o.value}>{o.label}</option>;})}
+          </select>
+        </div>
+
+        <div style={{width:1,height:14,background:T.b,flexShrink:0}}/>
+
+        <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
+          <span style={{fontSize:9,fontWeight:700,color:T.ghost,letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif"}}>Shape</span>
+          <select value={formation} onChange={function(e){loadTeam(e.target.value);}}
+            style={{background:"#1a1a1a",border:"1px solid "+T.b,borderRadius:4,color:T.text,padding:"3px 8px",fontFamily:"'Rajdhani',sans-serif",fontSize:12,fontWeight:700,cursor:"pointer",outline:"none",letterSpacing:"0.04em"}}>
+            {formOpts.map(function(o){return <option key={o.value} value={o.value}>{o.label}</option>;})}
+          </select>
+        </div>
+
+      </div>
+    );
+  }
+
+  // Compact phase-only strip for top of mobile bottom menu
+  function MobPhaseBar() {
+    return (
+      <div style={{display:"flex",alignItems:"center",gap:4,padding:"5px 10px",flexShrink:0,borderBottom:"1px solid rgba(255,255,255,0.08)",background:"#0e0e0e"}}>
+        <span style={{fontSize:9,fontWeight:700,color:T.ghost,letterSpacing:"0.14em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>Phase</span>
+        {phases.map(function(ph,i){
+          var saved = ph !== null;
+          var active = activePhase === i;
+          return (
+            <button key={i}
+              onClick={function(){
+                if (saved) { loadPhase(i); } else { savePhase(i); }
+                setSheetTab("tools");
+              }}
+              title={saved ? "Load phase "+(i+1) : "Save current pitch as phase "+(i+1)}
+              className={"phase-pill"+(saved?" saved":"")+(active?" active-phase":"")} style={{flexShrink:0}}>
+              {i+1}
+            </button>
+          );
+        })}
+        <div style={{flex:1}}/>
+        {playing ? (
+          <button onClick={stopPlay} className="btn btn-danger btn-sm">Stop</button>
+        ) : (
+          <button onClick={playPhases} className="btn btn-volt-outline btn-sm">Play</button>
+        )}
+        <button onClick={function(){
+          if(activePhase!==null) savePhase(activePhase);
+          else { var next=phases.findIndex(function(p){return p===null;}); if(next!==-1) savePhase(next); else notify("All 5 phases used."); }
+        }} className="btn btn-secondary btn-sm">Save</button>
+      </div>
+    );
+  }
+
+  function PitchSVG() {
+    return (
+      <svg ref={svgRef} width="100%" height="100%" viewBox="0 0 65 100"
+        style={{display:"block",borderRadius:8,touchAction:"none",cursor:dragId!==null?"grabbing":tool==="drag"?"grab":tool?"crosshair":"default"}}
+        onMouseDown={svgDown} onMouseMove={svgMove} onMouseUp={svgUp} onMouseLeave={svgUp}
+        onTouchEnd={svgUp}>
+        <defs>
+          <marker id="ap" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto"><path d="M0,0L0,5L5,2.5z" fill="#F5BE00"/></marker>
+          <marker id="ar" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto"><path d="M0,0L0,5L5,2.5z" fill="#22CC44"/></marker>
+          <marker id="as" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto"><path d="M0,0L0,5L5,2.5z" fill="#F02040"/></marker>
+
+          <filter id="tsh" x="-40%" y="-40%" width="180%" height="220%">
+            <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="rgba(0,0,0,0.5)" floodOpacity="1"/>
+          </filter>
+        </defs>
+
+        <rect width="65" height="100" fill={sf.base}/>
+
+        {surface==="herrema"&&(
+          <g>
+            {/* Top keeper zone worn patches */}
+            <ellipse cx="32" cy="7"  rx="12" ry="5"   fill="#5c3d1a" opacity="0.55"/>
+            <ellipse cx="28" cy="5"  rx="7"  ry="3.5" fill="#7a4e22" opacity="0.45"/>
+            <ellipse cx="37" cy="6"  rx="6"  ry="3"   fill="#6b4218" opacity="0.4"/>
+            <ellipse cx="32" cy="9"  rx="9"  ry="4"   fill="#4a3010" opacity="0.5"/>
+            <ellipse cx="25" cy="8"  rx="4"  ry="2.5" fill="#8a5a28" opacity="0.35"/>
+            <ellipse cx="40" cy="8"  rx="4"  ry="2"   fill="#5c3d1a" opacity="0.3"/>
+            <ellipse cx="32" cy="11" rx="6"  ry="2.5" fill="#4a3010" opacity="0.35"/>
+            <ellipse cx="29" cy="4"  rx="5"  ry="2"   fill="#9a6a30" opacity="0.3"/>
+            {/* Bottom keeper zone worn patches */}
+            <ellipse cx="32" cy="93" rx="12" ry="5"   fill="#5c3d1a" opacity="0.55"/>
+            <ellipse cx="28" cy="95" rx="7"  ry="3.5" fill="#7a4e22" opacity="0.45"/>
+            <ellipse cx="37" cy="94" rx="6"  ry="3"   fill="#6b4218" opacity="0.4"/>
+            <ellipse cx="32" cy="91" rx="9"  ry="4"   fill="#4a3010" opacity="0.5"/>
+            <ellipse cx="25" cy="92" rx="4"  ry="2.5" fill="#8a5a28" opacity="0.35"/>
+            <ellipse cx="40" cy="92" rx="4"  ry="2"   fill="#5c3d1a" opacity="0.3"/>
+            <ellipse cx="32" cy="89" rx="6"  ry="2.5" fill="#4a3010" opacity="0.35"/>
+            <ellipse cx="29" cy="96" rx="5"  ry="2"   fill="#9a6a30" opacity="0.3"/>
+            {/* Scattered lighter patches across both zones for realism */}
+            <ellipse cx="34" cy="6"  rx="3"  ry="1.5" fill="#a07840" opacity="0.2"/>
+            <ellipse cx="30" cy="10" rx="3"  ry="1.5" fill="#a07840" opacity="0.2"/>
+            <ellipse cx="34" cy="94" rx="3"  ry="1.5" fill="#a07840" opacity="0.2"/>
+            <ellipse cx="30" cy="90" rx="3"  ry="1.5" fill="#a07840" opacity="0.2"/>
+          </g>
+        )}
+
+        <g stroke={sf.line} fill="none" strokeWidth="0.28" opacity="0.9">
+          <rect x="3" y="3" width="59" height="94"/>
+          <line x1="3" y1="50" x2="62" y2="50"/>
+          <circle cx="32" cy="50" r="6"/>
+          <circle cx="32" cy="50" r="0.6" fill={sf.line} stroke="none"/>
+          <rect x="14" y="3" width="37" height="16"/>
+          <rect x="22" y="3" width="21" height="7"/>
+          <rect x="26" y="1" width="13" height="2.5" strokeWidth="0.28" opacity="0.6"/>
+          <circle cx="32" cy="13" r="0.6" fill={sf.line} stroke="none"/>
+          <rect x="14" y="81" width="37" height="16"/>
+          <rect x="22" y="90" width="21" height="7"/>
+          <rect x="26" y="96.5" width="13" height="2.5" strokeWidth="0.28" opacity="0.6"/>
+          <circle cx="32" cy="87" r="0.6" fill={sf.line} stroke="none"/>
+        </g>
+
+        {lines.map(function(ln,i){return(
+          <path key={i} d={pts2d(ln.pts)} stroke={TC[ln.tool]} strokeWidth={ln.tool==="shot"?"0.65":"0.52"} fill="none" strokeLinecap="round" strokeLinejoin="round" markerEnd={arwId(ln.tool)} opacity="0.92" strokeDasharray={ln.tool==="run"?"1.7,0.85":"none"}/>
+        );})}
+        {curLine && <path d={pts2d(curLine.pts)} stroke={TC[curLine.tool]} strokeWidth="0.52" fill="none" strokeLinecap="round" opacity="0.55" strokeDasharray={curLine.tool==="run"?"1.7,0.85":"none"}/>}
+        {ballPos && <text x={ballPos.x} y={ballPos.y+1.5} textAnchor="middle" fontSize="3" style={{userSelect:"none",pointerEvents:"none"}}>&#x26BD;</text>}
+
+        {showOpp && oppList.map(function(p){return(
+          <g key={"o"+p.id} transform={"translate("+p.x+","+p.y+")"} style={{pointerEvents:"none"}}>
+            <circle r="2.9" fill={oppColor} opacity="0.1"/>
+            <circle r="2.9" fill="none" stroke={oppColor} strokeWidth="0.5" opacity="0.7"/>
+            <line x1="-1.6" y1="-1.6" x2="1.6" y2="1.6" stroke={oppColor} strokeWidth="0.85" strokeLinecap="round"/>
+            <line x1="1.6" y1="-1.6" x2="-1.6" y2="1.6" stroke={oppColor} strokeWidth="0.85" strokeLinecap="round"/>
+          </g>
+        );})}
+
+        {players.map(function(p){
+          var fill=tFill(p.n), txt=tTxt(p.n);
+          var hasName=p.name&&p.name.trim().length>0;
+          return (
+            <g key={p.id} id={"tkn-"+p.id}
+              transform={"translate("+p.x+","+p.y+")"}
+              onMouseDown={function(e){pMD(e,p.id);}}
+              onDoubleClick={function(e){pDbl(e,p);}}
+              style={{cursor:tool==="drag"?"grab":tool?"crosshair":"default"}}>
+              <circle r="3.1" fill="rgba(0,0,0,0.4)" cx="0.22" cy="0.58" filter="url(#tsh)"/>
+              <circle r="3.1" fill={fill} strokeWidth="0.3" stroke="rgba(255,255,255,0.3)"/>
+              <text y="0.6" textAnchor="middle" fontSize="1.6" fontWeight="700" fill={txt}
+                style={{userSelect:"none",pointerEvents:"none",fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em"}}>
+                {p.n.slice(0,4)}
+              </text>
+              <text y="5.5" textAnchor="middle" fontSize="1.8"
+                fill={hasName?"rgba(255,255,255,0.93)":"rgba(255,255,255,0.38)"}
+                onClick={function(e){e.stopPropagation();setEditP(Object.assign({},p));}}
+                style={{userSelect:"none",pointerEvents:"all",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.04em"}}>
+                {hasName?p.name.slice(0,12):"STARTER"}
+              </text>
+
+            </g>
+          );
+        })}
+      </svg>
+    );
+  }
+
+  function LeftPanel() {
+    return (
+      <div style={{padding:"18px 13px",display:"flex",flexDirection:"column",height:"100%",overflowY:"auto"}}>
+        <div style={{marginBottom:14,paddingBottom:12,borderBottom:"1px solid "+T.b}}>
+          {editTitle ? (
+            <input value={title} onChange={function(e){setTitle(e.target.value);}} onBlur={function(){setEditTitle(false);}} onKeyDown={function(e){if(e.key==="Enter")setEditTitle(false);}} autoFocus style={{fontSize:16,fontWeight:700,background:"transparent",border:"none",borderBottom:"1px solid "+T.b,borderRadius:0,color:T.text,padding:"2px 0",fontFamily:"'Rajdhani',sans-serif",width:"100%"}}/>
+          ) : (
+            <div onClick={function(){setEditTitle(true);}} style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer"}}>
+              <span style={{flex:1,fontSize:16,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{title}</span>
+              <span style={{opacity:0.2,fontSize:12}}>&#x270E;</span>
+            </div>
+          )}
+        </div>
+        <div style={{marginBottom:12}}><SL c="Format"/><DD value={gameFmt} options={fmtOpts} onChange={changeFmt}/></div>
+        <div style={{marginBottom:12}}><SL c="Formation"/><DD value={formation} options={formOpts} onChange={function(f){loadTeam(f);}}/></div>
+        <div><SL c="Surface"/><DD value={surface} options={surfOpts} onChange={setSurface}/></div>
+        <HR/>
+        <div><SL c="Kit Colour"/><KitPicker value={paletteId} onChange={setPaletteId}/></div>
+        <HR/>
+        <div style={{flex:1}}>
+          <SL c={"Lineup - "+players.length}/>
+          {players.map(function(p){
+            var col=tFill(p.n);
+            return (
+              <div key={p.id} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                <div style={{width:22,height:22,borderRadius:"50%",background:col,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <span style={{fontSize:9,fontWeight:900,color:txtOnFill(col),fontFamily:"'Rajdhani',sans-serif",lineHeight:1}}>{p.n.slice(0,3)}</span>
+                </div>
+                <input
+                  value={p.name||""}
+                  placeholder={p.n}
+                  maxLength={14}
+                  onChange={function(e){
+                    var v=e.target.value;
+                    setPlayers(function(prev){return prev.map(function(x){return x.id===p.id?Object.assign({},x,{name:v}):x;});});
+                  }}
+                  style={{
+                    flex:1,background:"transparent",border:"none",
+                    borderBottom:"1px solid rgba(255,255,255,0.08)",
+                    color:T.text,fontSize:12,fontWeight:600,
+                    fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",
+                    padding:"2px 0",outline:"none",
+                    textTransform:"uppercase",
+                  }}
+                />
+              </div>
+            );
+          })}
+          <p style={{marginTop:8,fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>Tap a name to edit. Double-click token for position.</p>
+        </div>
+      </div>
+    );
+  }
+
+  function SubPlanner() {
+    var posOpts = players.map(function(p){
+      return {value:p.id, label:(p.name||p.n)+" ("+p.n+")", pos:p.n};
+    });
+
+    function addSub() {
+      if(subs.length>=12) return;
+      // Default to first unplanned player
+      var usedIds = subs.map(function(s){return s.playerId;});
+      var firstFree = players.find(function(p){return usedIds.indexOf(p.id)===-1;});
+      setSubs(function(prev){
+        return prev.concat([{
+          id: Date.now(),
+          playerId: firstFree ? firstFree.id : players[0].id,
+          subName: "",
+          minute: "",
+        }]);
+      });
+    }
+
+    function removeSub(sid){
+      setSubs(function(prev){return prev.filter(function(s){return s.id!==sid;});});
+    }
+
+    function updateSub(sid, field, val){
+      setSubs(function(prev){
+        return prev.map(function(s){
+          return s.id===sid ? Object.assign({},s,{[field]:val}) : s;
+        });
+      });
+    }
+
+    return (
+      <div style={{marginTop:12}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+          <SL c={"Sub Planner"+(subs.length>0?" ("+subs.length+"/12)":"")}/>
+          {subs.length<12&&(
+            <button onClick={addSub} className="btn btn-volt-outline btn-sm">+ Add</button>
+          )}
+        </div>
+
+        {subs.length===0&&(
+          <div style={{fontSize:11,color:T.faint,fontFamily:"'Poppins',sans-serif",padding:"6px 0"}}>
+            No substitutions planned.
+          </div>
+        )}
+
+        {subs.map(function(s, idx){
+          var pl = players.find(function(p){return p.id===s.playerId;});
+          return (
+            <div key={s.id} style={{
+              display:"flex",flexDirection:"column",gap:5,
+              padding:"8px 10px",marginBottom:6,borderRadius:6,
+              background:T.raised,border:"1px solid "+T.b,
+              position:"relative",
+            }}>
+              {/* Row header: number + remove */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:2}}>
+                <span style={{fontSize:9,fontWeight:700,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.16em",textTransform:"uppercase"}}>Sub {idx+1}</span>
+                <button onClick={function(){removeSub(s.id);}} style={{
+                  background:"none",border:"none",cursor:"pointer",
+                  color:T.ghost,fontSize:14,lineHeight:1,padding:"0 2px",
+                  fontFamily:"monospace",
+                }}>x</button>
+              </div>
+
+              {/* Player OUT picker */}
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontSize:9,fontWeight:700,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.12em",textTransform:"uppercase",width:22,flexShrink:0}}>OUT</span>
+                <select value={s.playerId}
+                  onChange={function(e){updateSub(s.id,"playerId",parseInt(e.target.value,10));}}
+                  style={{flex:1,background:T.surface,border:"1px solid "+T.b,borderRadius:4,color:T.text,padding:"5px 8px",fontFamily:"'Rajdhani',sans-serif",fontSize:12,fontWeight:600,cursor:"pointer",outline:"none"}}>
+                  {posOpts.map(function(o){
+                    return <option key={o.value} value={o.value}>{o.label}</option>;
+                  })}
+                </select>
+              </div>
+
+              {/* Sub IN + minute */}
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontSize:9,fontWeight:700,color:"rgba(200,255,0,0.6)",fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.12em",textTransform:"uppercase",width:22,flexShrink:0}}>IN</span>
+                <input
+                  value={s.subName}
+                  onChange={function(e){updateSub(s.id,"subName",e.target.value);}}
+                  placeholder="Sub player name"
+                  maxLength={16}
+                  style={{flex:1,background:T.surface,border:"1px solid "+T.b,borderRadius:4,color:"rgba(200,255,0,0.9)",padding:"5px 8px",fontFamily:"'Rajdhani',sans-serif",fontSize:12,fontWeight:600,outline:"none"}}
+                />
+                <input
+                  value={s.minute}
+                  onChange={function(e){updateSub(s.id,"minute",e.target.value.replace(/[^0-9+]/g,"").slice(0,4));}}
+                  placeholder="Min"
+                  style={{width:44,background:T.surface,border:"1px solid "+T.b,borderRadius:4,color:T.sub,padding:"5px 6px",fontFamily:"'Rajdhani',sans-serif",fontSize:12,fontWeight:600,outline:"none",textAlign:"center"}}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  function RightPanel() {
+    return (
+      <div style={{padding:"18px 13px",display:"flex",flexDirection:"column",height:"100%",overflowY:"auto"}}>
+        <div style={{marginBottom:10}}>
+          <SL c="Active Tool"/>
+          <div style={{padding:"10px 12px",borderRadius:6,background:T.raised,border:"1px solid "+T.b,marginBottom:10}}>
+            <span style={{fontSize:13,fontWeight:700,color:T.volt,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase"}}>{
+              tool==="drag"?"Move Player":
+              tool==="ball"?"Drop Ball":
+              tool==="pass"?"Draw Pass":
+              tool==="run"?"Draw Run":
+              tool==="shot"?"Draw Shot":tool
+            }</span>
+          </div>
+
+        </div>
+        <HR/>
+        <SL c="Playmaker"/>
+        {ToolRow()}
+        {SubPlanner()}
+        <HR/>
+        <div style={{marginBottom:0}}>
+          <SL c="Drawing Key"/>
+          {[["pass","#F5BE00","Pass"],["run","#22CC44","Run"],["shot","#F02040","Shot"]].map(function(item){return(
+            <div key={item[0]} style={{display:"flex",alignItems:"center",gap:10,marginBottom:7}}>
+              <svg width="20" height="9" style={{flexShrink:0}}>
+                <line x1="0" y1="4.5" x2="14" y2="4.5" stroke={item[1]} strokeWidth={item[0]==="shot"?"2.2":"1.7"} strokeDasharray={item[0]==="run"?"4,2":"none"} strokeLinecap="round"/>
+                <polygon points="12,2 19,4.5 12,7" fill={item[1]}/>
+              </svg>
+              <span style={{fontSize:12,color:T.sub,fontFamily:"'Poppins',sans-serif",fontWeight:400}}>{item[2]}</span>
+            </div>
+          );})}
+        </div>
+        <HR/>
+        <div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:showOpp?12:0}}>
+            <SL c="Opposition"/>
+            <Toggle on={showOpp} toggle={function(){setShowOpp(function(v){return !v;});}} ac="#F02040"/>
+          </div>
+          {showOpp && (
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+                {OPP_COLORS.map(function(c){return(<div key={c} onClick={function(){setOppColor(c);}} style={{width:20,height:20,borderRadius:"50%",background:c,cursor:"pointer",outline:oppColor===c?"2px solid rgba(255,255,255,0.75)":"1px solid rgba(255,255,255,0.12)",outlineOffset:oppColor===c?2:0,transition:"outline 0.1s"}}/>);})}
+              </div>
+              <DD value={oppFmt} options={avF.map(function(v){return {value:v,label:v};})} onChange={function(v){loadOpp(v);}} accent="#F02040"/>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{fontFamily:"'Rajdhani',sans-serif",background:T.bg,color:T.text,height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <style dangerouslySetInnerHTML={{__html:CSS}}/>
+
+      <header style={{background:T.nav,borderBottom:"1px solid "+T.b,display:"flex",alignItems:"center",padding:"0 16px",height:50,flexShrink:0,zIndex:50}}>
+
+        {/* Logo */}
+        <div onClick={function(){setTab("pitch");}} style={{display:"flex",alignItems:"center",gap:7,flexShrink:0,cursor:"pointer",marginRight:20}}>
+          <span style={{fontSize:20,lineHeight:1}}>&#x26BD;</span>
+          <span style={{fontWeight:700,fontSize:16,letterSpacing:"0.08em",lineHeight:1,fontFamily:"'Rajdhani',sans-serif"}}>
+            <span style={{color:T.volt}}>FC</span>
+            <span style={{color:T.text}}>ROSTER</span>
+          </span>
+        </div>
+
+        {/* Nav */}
+        <nav style={{display:"flex",flex:1,alignItems:"center"}}>
+          <button onClick={function(){setTab("pitch");}} style={{background:"none",border:"none",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:13,letterSpacing:"0.16em",textTransform:"uppercase",padding:"0 14px",height:50,flexShrink:0,color:tab==="pitch"?T.text:T.ghost,borderBottom:"2px solid "+(tab==="pitch"?T.volt:"transparent"),transition:"color .13s,border-color .13s"}}>Pitch</button>
+          <button onClick={function(){user ? setTab("profile") : setShowAuth(true);}}
+            style={{background:"none",border:"none",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:13,letterSpacing:"0.16em",textTransform:"uppercase",padding:"0 14px",height:50,flexShrink:0,transition:"color .13s,border-color .13s",
+              color: user ? (tab==="profile"?T.text:T.ghost) : T.volt,
+              borderBottom:"2px solid "+(tab==="profile"&&user ? T.volt : "transparent"),
+            }}>
+            {user ? "Profile" : "Sign In"}
+          </button>
+        </nav>
+
+        {/* Right anchor -- avatar dropdown when signed in */}
+        {user&&(
+          <div ref={moreRef} style={{position:"relative",flexShrink:0}}>
+            <button onClick={function(){setMoreOpen(function(v){return !v;});}}
+              style={{width:32,height:32,borderRadius:"50%",background:T.voltBg,border:"1px solid "+T.voltBd,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:13,fontWeight:700,color:T.volt,transition:"all 0.13s"}}
+              onMouseEnter={function(e){e.currentTarget.style.background="rgba(200,255,0,0.18)";}}
+              onMouseLeave={function(e){e.currentTarget.style.background=T.voltBg;}}>
+              {user.name[0].toUpperCase()}
+            </button>
+            {moreOpen&&(
+              <div style={{position:"absolute",top:"calc(100% + 6px)",right:0,zIndex:300,background:"#1e1e1e",border:"1px solid "+T.bhi,borderRadius:8,overflow:"hidden",boxShadow:"0 12px 32px rgba(0,0,0,0.8)",minWidth:160}}>
+                <div style={{padding:"12px 14px 8px",borderBottom:"1px solid "+T.b}}>
+                  <div style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.06em"}}>{user.name}</div>
+                  <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:2}}>{user.email}</div>
+                </div>
+                {[["pitch","Pitch"],["profile","Profile"],["playbook","Playbook"],["about","About"]].map(function(item){return(
+                  <button key={item[0]} onClick={function(){setTab(item[0]);setMoreOpen(false);}}
+                    style={{display:"block",width:"100%",textAlign:"left",background:"none",border:"none",cursor:"pointer",padding:"10px 14px",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",color:tab===item[0]?T.volt:T.sub,transition:"color .13s"}}
+                    onMouseEnter={function(e){e.currentTarget.style.background="rgba(255,255,255,0.04)";}}
+                    onMouseLeave={function(e){e.currentTarget.style.background="none";}}>
+                    {item[1]}
+                  </button>
+                );})}
+                <div style={{borderTop:"1px solid "+T.b,padding:"6px 8px"}}>
+                  <button onClick={function(){signOut().then(function(){setMoreOpen(false);notify("Signed out.");}).catch(function(e){notify(e.message);});}} className="btn btn-danger btn-sm" style={{width:"100%"}}>Sign Out</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+      </header>
+
+      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0}}>
+
+        {tab==="pitch"&&(
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0}}>
+            <div className="ps">
+              <div className="lp">{LeftPanel()}</div>
+              <div className="pc">
+                {PhaseStrip()}
+                <div className="pw">{PitchSVG()}</div>
+                <div className="d-bar">{ActionBar({compact:false})}</div>
+              </div>
+              <div className="rp">{RightPanel()}</div>
+            </div>
+
+            <div className="mob-ctrl">
+              {/* Auto-hide handle -- always visible, toggles menu */}
+              <div onClick={function(){setMobMenu(function(v){return !v;});}}
+                style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                  gap:4,minHeight:44,cursor:"pointer",flexShrink:0,
+                  borderBottom:mobMenu?"1px solid rgba(255,255,255,0.06)":"none",
+                  background:"#131313",userSelect:"none",WebkitTapHighlightColor:"transparent"}}>
+                <div style={{width:48,height:5,borderRadius:10,background:"rgba(255,255,255,0.22)",transition:"background 0.15s"}}/>
+                <span style={{fontSize:10,color:"rgba(255,255,255,0.22)",lineHeight:1,transition:"color 0.15s"}}>
+                  {mobMenu ? "\u2335" : "\u2303"}
+                </span>
+              </div>
+              {mobMenu&&(
+                <div style={{display:"flex",flexDirection:"column",overflow:"hidden"}}>
+                  {MobPhaseBar()}
+                  <div className="mob-tabs">
+                    {[["lineup","Lineup"],["tools","Tools"],["colors","Colors"]].map(function(item){return(
+                      <button key={item[0]} onClick={function(){setSheetTab(item[0]);}} className={"mob-tab-btn"+(sheetTab===item[0]?" active":"")}>{item[1]}</button>
+                    );})}
+                  </div>
+                  <div className="mob-panel">
+
+                {sheetTab==="lineup"&&(
+                  <div style={{display:"flex",flexDirection:"column",gap:6,padding:"10px 14px 12px",width:"100%"}}>
+                    <SL c="Player Names"/>
+                    {players.map(function(p){
+                      var col=tFill(p.n);
+                      return (
+                        <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"3px 0",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+                          <div style={{width:24,height:24,borderRadius:"50%",background:col,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            <span style={{fontSize:9,fontWeight:900,color:txtOnFill(col),fontFamily:"'Rajdhani',sans-serif"}}>{p.n.slice(0,3)}</span>
+                          </div>
+                          <input
+                            value={p.name||""}
+                            placeholder={p.n}
+                            maxLength={14}
+                            onChange={function(e){
+                              var v=e.target.value;
+                              setPlayers(function(prev){return prev.map(function(x){return x.id===p.id?Object.assign({},x,{name:v}):x;});});
+                            }}
+                            style={{flex:1,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:5,color:T.text,fontSize:13,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",padding:"6px 8px",outline:"none",textTransform:"uppercase"}}
+                          />
+                        </div>
+                      );
+                    })}
+                    <HR/>
+                    {SubPlanner()}
+                  </div>
+                )}
+
+                {sheetTab==="tools"&&(
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"stretch",gap:10,padding:"10px 14px 12px",width:"100%"}}>
+                    {ToolRow()}
+                  </div>
+                )}
+
+                {sheetTab==="colors"&&(
+                  <div style={{display:"flex",flexDirection:"column",gap:10,padding:"10px 14px 12px",width:"100%"}}>
+                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                      <span style={{fontSize:10,fontWeight:700,color:T.ghost,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",flexShrink:0,width:70}}>Surface</span>
+                      <div style={{flex:1}}><DD value={surface} options={surfOpts} onChange={setSurface} bg="#1A1A1A" up={true}/></div>
+                    </div>
+                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                      <span style={{fontSize:10,fontWeight:700,color:T.ghost,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",flexShrink:0,width:70}}>Kit</span>
+                      <div style={{flex:1}}><KitPicker value={paletteId} onChange={setPaletteId} bg="#1A1A1A" up={true}/></div>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",paddingTop:2}}>
+                      <span style={{fontSize:12,fontWeight:600,color:T.sub,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase"}}>Opposition</span>
+                      <Toggle on={showOpp} toggle={function(){setShowOpp(function(v){return !v;});}} ac="#F02040"/>
+                    </div>
+                    {showOpp&&(
+                      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                        <div style={{display:"flex",justifyContent:"flex-start",gap:7,flexWrap:"wrap"}}>
+                          {OPP_COLORS.map(function(c){return(<div key={c} onClick={function(){setOppColor(c);}} style={{width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",outline:oppColor===c?"2px solid rgba(255,255,255,0.8)":"1px solid rgba(255,255,255,0.12)",outlineOffset:oppColor===c?2:0,transition:"outline 0.1s"}}/>);})}
+                        </div>
+                        <DD value={oppFmt} options={avF.map(function(v){return {value:v,label:v};})} onChange={function(v){loadOpp(v);}} accent="#F02040" bg="#1A1A1A" up={true}/>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
+              <div style={{padding:"8px 12px",borderTop:"1px solid rgba(255,255,255,0.08)",background:"#131313",flexShrink:0}}>
+                {ActionBar({compact:true})}
+              </div>
+              </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {tab==="profile"&&(
+          <div style={{flex:1,overflow:"auto",padding:"36px 24px"}} className="fu">
+            <div style={{maxWidth:440,margin:"0 auto",display:"flex",flexDirection:"column",gap:16,alignItems:"center",minHeight:"60vh",justifyContent:"center",textAlign:"center"}}>
+              {!user ? (
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:14}}>
+                  <div style={{fontSize:48,opacity:0.16}}>&#x1F464;</div>
+                  <h2 style={{fontWeight:700,fontSize:24,letterSpacing:"0.06em"}}>Your Profile</h2>
+                  <p style={{color:T.sub,maxWidth:260,lineHeight:1.75,fontSize:14,fontFamily:"'Poppins',sans-serif"}}>Sign in to save formations and build your player card.</p>
+                  <button onClick={function(){setShowAuth(true);}} className="btn btn-primary btn-md" style={{marginTop:8}}>Sign In</button>
+                </div>
+              ) : (
+                <div style={{display:"flex",flexDirection:"column",gap:14,width:"100%",textAlign:"left"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:14}}>
+                    <div style={{width:48,height:48,borderRadius:"50%",border:"1px solid "+T.voltBd,display:"flex",alignItems:"center",justifyContent:"center",fontSize:21,fontWeight:700,color:T.volt,flexShrink:0,background:T.voltBg}}>{user.name[0].toUpperCase()}</div>
+                    <div>
+                      <div style={{fontWeight:700,fontSize:19}}>{user.name}</div>
+                      <div style={{color:T.ghost,fontSize:12,marginTop:2,fontFamily:"'Poppins',sans-serif"}}>{user.email}</div>
+                    </div>
+                  </div>
+
+                  {/* Save current formation */}
+                  <button className="btn btn-primary btn-md" style={{width:"100%",gap:6}}
+                    onClick={function(){
+                      var state={title,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor};
+                      var fn = savedId ? updateFormation(savedId, state) : saveFormation(state);
+                      fn.then(function(row){
+                        setSavedId(row.id);
+                        notify(savedId ? "Formation updated!" : "Formation saved!");
+                        return loadFormations().then(setSavedFormations);
+                      }).catch(function(e){notify("Error: "+e.message);});
+                    }}>
+                    <span>&#x2193;</span> {savedId ? "Update Formation" : "Save Formation"}
+                  </button>
+
+                  {/* Saved formations list */}
+                  <div style={{border:"1px solid "+T.b,borderRadius:6,overflow:"hidden"}}>
+                    <div style={{padding:"10px 14px",borderBottom:"1px solid "+T.b,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                      <SL c={"Saved Formations"+(savedFormations.length>0?" ("+savedFormations.length+")":"")}/>
+                      <button className="btn btn-secondary btn-sm" onClick={function(){
+                        loadFormations().then(setSavedFormations).catch(function(e){notify(e.message);});
+                      }}>Refresh</button>
+                    </div>
+                    {savedFormations.length===0?(
+                      <div style={{padding:16}}>
+                        <p style={{color:T.ghost,fontSize:13,fontFamily:"'Poppins',sans-serif"}}>No formations saved yet.</p>
+                      </div>
+                    ):(
+                      <div style={{maxHeight:320,overflowY:"auto"}}>
+                        {savedFormations.map(function(f){
+                          return (
+                            <div key={f.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:"1px solid "+T.b}}>
+                              <div style={{flex:1,minWidth:0}}>
+                                <div style={{fontSize:13,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</div>
+                                <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:2}}>{f.game_fmt} &bull; {f.formation}</div>
+                              </div>
+                              <button className="btn btn-volt-outline btn-sm" onClick={function(){
+                                setTitle(f.title); setGameFmt(f.game_fmt); setFormation(f.formation);
+                                setSurface(f.surface); setPaletteId(f.palette_id);
+                                setPlayers(f.players); setLines(f.lines); setSubs(f.subs);
+                                setPhases(f.phases); setBallPos(f.ball_pos);
+                                setShowOpp(f.show_opp); setOppFmt(f.opp_fmt||"4-4-2");
+                                setOppList(f.opp_list||[]); setOppColor(f.opp_color||"#EE2244");
+                                setSavedId(f.id); setTab("pitch");
+                                notify("Loaded: "+f.title);
+                              }}>Load</button>
+                              <button className="btn btn-danger btn-sm" onClick={function(){
+                                deleteFormation(f.id).then(function(){
+                                  setSavedFormations(function(prev){return prev.filter(function(x){return x.id!==f.id;});});
+                                  if(savedId===f.id) setSavedId(null);
+                                  notify("Deleted.");
+                                }).catch(function(e){notify(e.message);});
+                              }}>Del</button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {tab==="playbook"&&(
+          <div style={{flex:1,overflow:"auto",padding:"36px 24px"}} className="fu">
+            <div style={{maxWidth:780,margin:"0 auto"}}>
+              <h1 style={{fontWeight:700,fontSize:26,letterSpacing:"0.06em",marginBottom:6}}>PLAYBOOK</h1>
+              <p style={{color:T.ghost,fontSize:13,fontFamily:"'Poppins',sans-serif",marginBottom:24}}>Tactics, formations, and coaching insights.</p>
+              <div style={{border:"1px solid "+T.voltBd,borderLeft:"2px solid "+T.volt,borderRadius:6,padding:22,marginBottom:16,cursor:"pointer",background:T.voltBg}}>
+                <div style={{fontSize:9,color:"rgba(200,255,0,0.5)",fontWeight:800,letterSpacing:"0.22em",textTransform:"uppercase",marginBottom:8,fontFamily:"'Rajdhani',sans-serif"}}>{"FEATURED - "+POSTS[0].cat.toUpperCase()}</div>
+                <h2 style={{fontWeight:700,fontSize:17,marginBottom:7}}>{POSTS[0].title}</h2>
+                <p style={{color:T.sub,lineHeight:1.7,fontSize:13,fontFamily:"'Poppins',sans-serif",marginBottom:12}}>{POSTS[0].body}</p>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))",gap:10}}>
+                {POSTS.slice(1).map(function(p){return(
+                  <div key={p.id} style={{border:"1px solid "+T.b,borderRadius:6,padding:15,cursor:"pointer"}} onMouseEnter={function(e){e.currentTarget.style.borderColor=T.bhi;e.currentTarget.style.background="rgba(255,255,255,0.02)";}} onMouseLeave={function(e){e.currentTarget.style.borderColor=T.b;e.currentTarget.style.background="transparent";}}>
+                    <div style={{fontSize:8,color:"rgba(200,255,0,0.38)",fontWeight:800,letterSpacing:"0.18em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",marginBottom:6}}>{p.cat}</div>
+                    <h3 style={{fontWeight:700,fontSize:13,marginBottom:5,lineHeight:1.3}}>{p.title}</h3>
+                    <p style={{color:T.ghost,fontSize:11,lineHeight:1.6,fontFamily:"'Poppins',sans-serif"}}>{p.body}</p>
+                  </div>
+                );})}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab==="about"&&(
+          <div style={{flex:1,overflow:"auto",padding:"36px 24px"}} className="fu">
+            <div style={{maxWidth:500,margin:"0 auto",display:"flex",flexDirection:"column",gap:18}}>
+              <div>
+                <h1 style={{fontWeight:700,fontSize:24,letterSpacing:"0.06em"}}>ABOUT FCROSTER</h1>
+                <p style={{color:T.sub,marginTop:7,lineHeight:1.8,fontSize:14,fontFamily:"'Poppins',sans-serif"}}>Tactical soccer platform for coaches, players, and fans.</p>
+              </div>
+              <div style={{border:"1px solid "+T.b,borderRadius:6,padding:18}}>
+                <SL c="Contact"/>
+                <div style={{display:"flex",flexDirection:"column",gap:9}}>
+                  <div><label>Name</label><input placeholder="Alex Ferguson"/></div>
+                  <div><label>Email</label><input type="email" placeholder="coach@club.com"/></div>
+                  <div><label>Message</label><textarea rows={3} placeholder="Feedback or questions..."/></div>
+                  <button onClick={function(){notify("Message sent!");}} className="btn btn-volt-outline btn-sm">Send</button>
+                </div>
+              </div>
+              <p style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>2026 FCRoster.com</p>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {showAuth&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(12px)"}} onClick={function(e){if(e.target===e.currentTarget){setShowAuth(false);setAuthErr("");}}}>
+          <div style={{background:"#1A1A1A",border:"1px solid "+T.bhi,borderTop:"2px solid "+T.volt,borderRadius:10,padding:28,width:"100%",maxWidth:340,boxShadow:"0 36px 80px rgba(0,0,0,0.88)"}} className="fu">
+            <h2 style={{fontWeight:700,fontSize:19,letterSpacing:"0.06em",marginBottom:4}}>{authMode==="signin"?"WELCOME BACK":"JOIN FCROSTER"}</h2>
+            <p style={{color:T.ghost,fontSize:12,marginBottom:20,fontFamily:"'Poppins',sans-serif"}}>Unlock pass, run, and shot drawing tools.</p>
+            <button onClick={function(){
+              setAuthErr(""); setAuthBusy(true);
+              signInGoogle().catch(function(err){setAuthErr(err.message);setAuthBusy(false);});
+            }} className="btn btn-secondary btn-md" style={{width:"100%",marginBottom:12,gap:8}} disabled={authBusy}>
+              {authBusy?"Connecting...":"Continue with Google"}
+            </button>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+              <div style={{flex:1,height:1,background:T.b}}/>
+              <span style={{fontSize:9,color:T.ghost,fontWeight:700,letterSpacing:"0.16em",fontFamily:"'Rajdhani',sans-serif"}}>OR</span>
+              <div style={{flex:1,height:1,background:T.b}}/>
+            </div>
+            {authErr&&<div style={{fontSize:11,color:"rgba(240,80,80,0.9)",fontFamily:"'Poppins',sans-serif",marginBottom:10,padding:"8px 10px",borderRadius:5,background:"rgba(240,50,50,0.08)",border:"1px solid rgba(240,50,50,0.2)"}}>{authErr}</div>}
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {authMode==="signup"&&(<div><label>Full Name</label><input placeholder="Lionel Messi" value={aName} onChange={function(e){setAName(e.target.value);}}/></div>)}
+              <div><label>Email</label><input type="email" placeholder="coach@club.com" value={aEmail} onChange={function(e){setAEmail(e.target.value);}}/></div>
+              <div><label>Password</label><input type="password" placeholder="Password" value={aPass} onChange={function(e){setAPass(e.target.value);}}/></div>
+              <button disabled={authBusy} onClick={function(){
+                setAuthErr(""); setAuthBusy(true);
+                var fn = authMode==="signin"
+                  ? signInEmail(aEmail, aPass)
+                  : signUpEmail(aEmail, aPass, aName);
+                fn.then(function(){
+                  setShowAuth(false); setAuthBusy(false);
+                  setAEmail(""); setAPass(""); setAName("");
+                  notify(authMode==="signin"?"Signed in!":"Account created! Check your email.");
+                }).catch(function(err){
+                  setAuthErr(err.message); setAuthBusy(false);
+                });
+              }} className="btn btn-primary btn-lg" style={{width:"100%",marginTop:4}}>
+                {authBusy?"Please wait...":(authMode==="signin"?"Sign In":"Create Account")}
+              </button>
+            </div>
+            <p style={{textAlign:"center",marginTop:14,fontSize:11,color:T.ghost,fontFamily:"'Poppins',sans-serif"}}>
+              {authMode==="signin"?"No account? ":"Have one? "}
+              <span style={{color:"rgba(200,255,0,0.7)",cursor:"pointer",fontWeight:600}} onClick={function(){setAuthMode(function(m){return m==="signin"?"signup":"signin";});setAuthErr("");}}>
+                {authMode==="signin"?"Sign Up":"Sign In"}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {editP&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(10px)"}}
+          onClick={function(e){if(e.target===e.currentTarget)setEditP(null);}}
+          onTouchStart={function(e){e.stopPropagation();}}>
+          <div style={{background:"#1A1A1A",border:"1px solid "+T.bhi,borderTop:"2px solid "+T.volt,borderRadius:10,padding:22,width:"100%",maxWidth:280}} className="fu">
+            <h3 style={{fontWeight:700,fontSize:16,marginBottom:18,letterSpacing:"0.05em"}}>ASSIGN PLAYER</h3>
+            <div style={{marginBottom:10}}><label>Position</label><input value={editP.n} onChange={function(e){setEditP(function(p){return Object.assign({},p,{n:e.target.value.slice(0,4).toUpperCase()});});}} maxLength={4} placeholder="GK"/></div>
+            <div style={{marginBottom:10}}><label>Starter Name</label><input autoFocus value={editP.name||""} onChange={function(e){setEditP(function(p){return Object.assign({},p,{name:e.target.value});});}} placeholder="e.g. De Gea" maxLength={16}/></div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <button onClick={function(){setPlayers(function(prev){return prev.map(function(x){return x.id===editP.id?Object.assign({},x,editP):x;});});setEditP(null);notify("Player updated.");}} className="btn btn-primary btn-sm">Save</button>
+              <button onClick={function(){setEditP(null);}} className="btn btn-danger btn-sm">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast&&(
+        <div style={{position:"fixed",bottom:22,left:"50%",transform:"translateX(-50%)",zIndex:300,pointerEvents:"none",background:"#222",border:"1px solid "+T.bhi,borderRadius:5,padding:"9px 18px",fontSize:12,fontWeight:600,letterSpacing:"0.05em",whiteSpace:"nowrap",color:T.sub,boxShadow:"0 10px 36px rgba(0,0,0,0.6)",fontFamily:"'Poppins',sans-serif"}} className="fu">
+          {toast}
+        </div>
+      )}
+    </div>
+  );
+}
