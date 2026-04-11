@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FCRoster — Signing in...</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      background: #111111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Rajdhani', sans-serif;
+      color: #fff;
+    }
+    .wrap { text-align: center; }
+    .logo { font-size: 28px; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 20px; }
+    .logo span { color: #C8FF00; }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #C8FF00; display: inline-block;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    .msg { font-size: 14px; color: rgba(255,255,255,0.5); margin-top: 16px; font-family: 'Poppins', sans-serif; }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&family=Poppins:wght@400&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo"><span>FC</span>ROSTER</div>
+    <div class="dot"></div>
+    <div class="msg">Signing you in...</div>
+  </div>
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    var supabase = createClient(
+      "https://myorudjfmsmixgjygsuk.supabase.co",
+      "sb_publishable_yRmySD6gXjrkykbv5bbeJQ_5Ho99mBE",
+      { auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true, flowType: "implicit" } }
+    );
+
+    async function handleCallback() {
+      try {
+        // Get session from URL hash (implicit flow)
+        var { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+
+        if (data.session) {
+          // Session established — go to app
+          window.location.replace("/");
+        } else {
+          // Try exchanging code if present (PKCE fallback)
+          var params = new URLSearchParams(window.location.search);
+          var code = params.get("code");
+          if (code) {
+            var { error: exchError } = await supabase.auth.exchangeCodeForSession(code);
+            if (exchError) throw exchError;
+          }
+          window.location.replace("/");
+        }
+      } catch (err) {
+        console.error("Auth callback error:", err);
+        window.location.replace("/?auth_error=" + encodeURIComponent(err.message));
+      }
+    }
+
+    handleCallback();
+  </script>
+</body>
+</html>
