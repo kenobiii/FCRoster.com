@@ -38,6 +38,27 @@ var UC = {GK:"#F0B429",DEF:"#1E3A8A",MID:"#3B82F6",ATT:"#93C5FD"};
 function unitCol(n){ if(n==="GK")return UC.GK; if(["CB","RB","LB","RWB","LWB"].includes(n))return UC.DEF; if(["ST","RW","LW","CF"].includes(n))return UC.ATT; return UC.MID; }
 function txtOnFill(f){ return ["#F0B429","#93C5FD","#DEDEDE","#C4920A","#E8C200","#D4B87A","#C4A265","#C8860A","#D4920C"].includes(f)?"rgba(0,0,0,0.88)":"#fff"; }
 
+var DEMO_PLAYERS = [
+  {id:"gk",  pos:"GK",  x:32.5, y:88, name:"Martínez",  jersey:1,  foot:"Right", skill:"Pro",      avail:true, age:28, notes:""},
+  {id:"rb",  pos:"RB",  x:55,   y:72, name:"Trent",     jersey:2,  foot:"Right", skill:"Pro",      avail:true, age:25, notes:""},
+  {id:"cb1", pos:"CB",  x:42,   y:75, name:"Van Dijk",  jersey:4,  foot:"Left",  skill:"Pro",      avail:true, age:32, notes:""},
+  {id:"cb2", pos:"CB",  x:23,   y:75, name:"Stones",    jersey:5,  foot:"Right", skill:"Pro",      avail:true, age:29, notes:""},
+  {id:"lb",  pos:"LB",  x:10,   y:72, name:"Robertson", jersey:3,  foot:"Left",  skill:"Pro",      avail:true, age:29, notes:""},
+  {id:"cm1", pos:"CM",  x:18,   y:52, name:"Gravenberch",jersey:38,foot:"Right", skill:"Pro",      avail:true, age:22, notes:""},
+  {id:"cm2", pos:"CM",  x:32.5, y:48, name:"Mac Allister",jersey:10,foot:"Right",skill:"Pro",      avail:true, age:25, notes:""},
+  {id:"cm3", pos:"CM",  x:47,   y:52, name:"Szoboszlai",jersey:8,  foot:"Right", skill:"Pro",      avail:true, age:23, notes:""},
+  {id:"lw",  pos:"LW",  x:10,   y:30, name:"Díaz",      jersey:7,  foot:"Right", skill:"Pro",      avail:true, age:27, notes:""},
+  {id:"st",  pos:"ST",  x:32.5, y:22, name:"Núñez",     jersey:9,  foot:"Right", skill:"Pro",      avail:true, age:24, notes:""},
+  {id:"rw",  pos:"RW",  x:55,   y:30, name:"Salah",     jersey:11, foot:"Left",  skill:"Semi-Pro", avail:true, age:31, notes:""},
+];
+var DEMO_LINES = [
+  {tool:"pass", pts:[{x:32.5,y:88},{x:32.5,y:75}]},
+  {tool:"pass", pts:[{x:32.5,y:75},{x:18,y:52}]},
+  {tool:"run",  pts:[{x:18,y:52},{x:32.5,y:48}]},
+  {tool:"pass", pts:[{x:32.5,y:48},{x:55,y:30}]},
+  {tool:"shot", pts:[{x:55,y:30},{x:32.5,y:12}]},
+];
+
 var PALETTES = [
   {id:"unit",    name:"Team",    primary:null,       secondary:null},
   {id:"white",   name:"White",   primary:"#DEDEDE",  secondary:"#111"},
@@ -85,6 +106,7 @@ var CSS = [
   "input,select,textarea{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:rgba(255,255,255,0.9);padding:9px 11px;font-family:'Poppins',sans-serif;font-size:13px;width:100%;outline:none;transition:border-color .16s;}",
   "input:focus,select:focus,textarea:focus{border-color:rgba(200,255,0,0.4);}",
   "label{font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.24);margin-bottom:5px;display:block;font-family:'Rajdhani',sans-serif;}",
+  "@keyframes demoPulse { 0%,100%{opacity:0.85} 50%{opacity:1} }",
   "@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}",
   ".fu{animation:fadeUp .24s ease both}",
   ".ps{flex:1;display:grid;grid-template-columns:200px 1fr 196px;overflow:hidden;min-height:0;}",
@@ -335,6 +357,7 @@ export default function FCRoster() {
   var [authBusy,  setAuthBusy]  = useState(false);
   var [savedFormations, setSavedFormations] = useState([]);
   var [savedId,   setSavedId]   = useState(null);
+  var [demoMode,  setDemoMode]  = useState(true);
 
   // Real Supabase auth listener -- event-aware to prevent OAuth loop
   useEffect(function() {
@@ -343,16 +366,33 @@ export default function FCRoster() {
         if (session && session.user) {
           var u = session.user;
           setUser({ id: u.id, name: (u.user_metadata && u.user_metadata.full_name) || u.email.split("@")[0], email: u.email });
+          setDemoMode(false);
           loadFormations().then(setSavedFormations).catch(function(){});
         }
       } else if (event === "SIGNED_OUT") {
         setUser(null);
         setSavedFormations([]);
         setSavedId(null);
+        // Restore demo state when signed out
+        setPlayers(DEMO_PLAYERS.map(function(p){return Object.assign({},p);}));
+        setLines(DEMO_LINES);
+        setTitle("FCRoster Demo");
+        setFormation("4-3-3");
+        setGameFmt("11v11");
+        setDemoMode(true);
       }
     });
     return function() { subscription.unsubscribe(); };
   }, []);
+  // Load demo state on first mount for anonymous users
+  useEffect(function() {
+    setPlayers(DEMO_PLAYERS.map(function(p){return Object.assign({},p);}));
+    setLines(DEMO_LINES);
+    setTitle("FCRoster Demo");
+    setFormation("4-3-3");
+    setGameFmt("11v11");
+  }, []);
+
   var [dragId,    setDragId]    = useState(null);
   var [editP,     setEditP]     = useState(null);
   var [subs,      setSubs]      = useState([]);
@@ -1425,6 +1465,23 @@ export default function FCRoster() {
                     </button>
                   )}
                 </div>
+                {demoMode && !user && (
+                  <div onClick={function(){setShowAuth(true);}} style={{
+                    background:"linear-gradient(90deg,rgba(200,255,0,0.12),rgba(200,255,0,0.06))",
+                    borderBottom:"1px solid rgba(200,255,0,0.25)",
+                    padding:"7px 16px",
+                    display:"flex",alignItems:"center",justifyContent:"space-between",
+                    cursor:"pointer",flexShrink:0,
+                    animation:"demoPulse 3s ease-in-out infinite"
+                  }}>
+                    <span style={{fontSize:11,fontFamily:"'Poppins',sans-serif",color:"rgba(200,255,0,0.85)"}}>
+                      ⚽ <strong>Live demo</strong> — Sign in to build your own roster
+                    </span>
+                    <span style={{fontSize:11,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",color:"#C8FF00",border:"1px solid rgba(200,255,0,0.4)",padding:"2px 10px",borderRadius:4}}>
+                      SIGN IN FREE →
+                    </span>
+                  </div>
+                )}
                 <div className="pw">{PitchSVG()}</div>
                 <div className="d-bar">{ActionBar({compact:false})}</div>
               </div>

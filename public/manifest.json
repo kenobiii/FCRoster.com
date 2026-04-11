@@ -1,0 +1,44 @@
+{
+  "name": "FCRoster — Soccer Tactics Builder",
+  "short_name": "FCRoster",
+  "description": "Build formations, plan substitutions, and design plays.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["sports", "utilities"],
+  "screenshots": [
+    {
+      "src": "/screenshots/pitch.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tactical pitch builder"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Formation",
+      "short_name": "New",
+      "description": "Start a new formation",
+      "url": "/?new=1",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+    }
+  ]
+}
