@@ -39,25 +39,81 @@ function unitCol(n){ if(n==="GK")return UC.GK; if(["CB","RB","LB","RWB","LWB"].i
 function txtOnFill(f){ return ["#F0B429","#93C5FD","#DEDEDE","#C4920A","#E8C200","#D4B87A","#C4A265","#C8860A","#D4920C"].includes(f)?"rgba(0,0,0,0.88)":"#fff"; }
 
 var DEMO_PLAYERS = [
-  {id:1,  n:"GK", x:32, y:88, name:"Martínez",   jersey:1,  foot:"Right", skill:"Pro",      avail:true, age:28, notes:""},
-  {id:2,  n:"RB", x:52, y:73, name:"Trent",      jersey:2,  foot:"Right", skill:"Pro",      avail:true, age:25, notes:""},
-  {id:3,  n:"CB", x:41, y:76, name:"Van Dijk",   jersey:4,  foot:"Left",  skill:"Pro",      avail:true, age:32, notes:""},
-  {id:4,  n:"CB", x:24, y:76, name:"Stones",     jersey:5,  foot:"Right", skill:"Pro",      avail:true, age:29, notes:""},
-  {id:5,  n:"LB", x:13, y:73, name:"Robertson",  jersey:3,  foot:"Left",  skill:"Pro",      avail:true, age:29, notes:""},
-  {id:6,  n:"CM", x:43, y:55, name:"Gravenberch",jersey:38, foot:"Right", skill:"Pro",      avail:true, age:22, notes:""},
-  {id:7,  n:"CM", x:32, y:52, name:"Mac Allister",jersey:10,foot:"Right", skill:"Pro",      avail:true, age:25, notes:""},
-  {id:8,  n:"CM", x:22, y:55, name:"Szoboszlai", jersey:8,  foot:"Right", skill:"Pro",      avail:true, age:23, notes:""},
-  {id:9,  n:"RW", x:49, y:30, name:"Salah",      jersey:11, foot:"Left",  skill:"Semi-Pro", avail:true, age:31, notes:""},
-  {id:10, n:"ST", x:32, y:24, name:"Núñez",      jersey:9,  foot:"Right", skill:"Pro",      avail:true, age:24, notes:""},
-  {id:11, n:"LW", x:16, y:30, name:"Díaz",       jersey:7,  foot:"Right", skill:"Pro",      avail:true, age:27, notes:""},
+  {id:1,  n:"GK", x:32, y:88, name:"Martínez",    jersey:1,  foot:"Right", skill:"Pro",      avail:true, age:28, notes:""},
+  {id:2,  n:"RB", x:52, y:73, name:"Trent",       jersey:2,  foot:"Right", skill:"Pro",      avail:true, age:25, notes:""},
+  {id:3,  n:"CB", x:41, y:76, name:"Van Dijk",    jersey:4,  foot:"Left",  skill:"Pro",      avail:true, age:32, notes:""},
+  {id:4,  n:"CB", x:24, y:76, name:"Stones",      jersey:5,  foot:"Right", skill:"Pro",      avail:true, age:29, notes:""},
+  {id:5,  n:"LB", x:13, y:73, name:"Robertson",   jersey:3,  foot:"Left",  skill:"Pro",      avail:true, age:29, notes:""},
+  {id:6,  n:"CM", x:43, y:55, name:"Gravenberch", jersey:38, foot:"Right", skill:"Pro",      avail:true, age:22, notes:""},
+  {id:7,  n:"CM", x:32, y:52, name:"Mac Allister",jersey:10, foot:"Right", skill:"Pro",      avail:true, age:25, notes:""},
+  {id:8,  n:"CM", x:22, y:55, name:"Szoboszlai",  jersey:8,  foot:"Right", skill:"Pro",      avail:true, age:23, notes:""},
+  {id:9,  n:"RW", x:49, y:30, name:"Salah",       jersey:11, foot:"Left",  skill:"Semi-Pro", avail:true, age:31, notes:""},
+  {id:10, n:"ST", x:32, y:24, name:"Núñez",       jersey:9,  foot:"Right", skill:"Pro",      avail:true, age:24, notes:""},
+  {id:11, n:"LW", x:16, y:30, name:"Díaz",        jersey:7,  foot:"Right", skill:"Pro",      avail:true, age:27, notes:""},
 ];
-var DEMO_LINES = [
-  {tool:"pass", pts:[{x:32,y:88},{x:32,y:76}]},
-  {tool:"pass", pts:[{x:32,y:76},{x:22,y:55}]},
-  {tool:"run",  pts:[{x:22,y:55},{x:32,y:52}]},
-  {tool:"pass", pts:[{x:32,y:52},{x:49,y:30}]},
-  {tool:"shot", pts:[{x:49,y:30},{x:32,y:10}]},
+
+// 4-phase Liverpool-style build-up: GK → CB → CM → Salah → GOAL
+// Each phase: { ball, lines, players (positions for that moment) }
+var DEMO_PHASES = [
+  {
+    // Phase 1: GK distributes to Van Dijk. Trent begins overlap run.
+    ball: {x:32, y:88},
+    lines: [
+      {tool:"pass", pts:[{x:32,y:88},{x:24,y:76}]},   // GK → Van Dijk
+      {tool:"run",  pts:[{x:52,y:73},{x:55,y:50}]},   // Trent overlaps
+    ],
+    players: [
+      {id:1,x:32,y:88},{id:2,x:52,y:73},{id:3,x:41,y:76},{id:4,x:24,y:76},
+      {id:5,x:13,y:73},{id:6,x:43,y:55},{id:7,x:32,y:52},{id:8,x:22,y:55},
+      {id:9,x:49,y:30},{id:10,x:32,y:24},{id:11,x:16,y:30},
+    ],
+  },
+  {
+    // Phase 2: Van Dijk plays to Mac Allister. Szoboszlai 3rd man. Núñez drags CB.
+    ball: {x:24, y:76},
+    lines: [
+      {tool:"pass", pts:[{x:24,y:76},{x:32,y:52}]},   // Van Dijk → Mac Allister
+      {tool:"run",  pts:[{x:22,y:55},{x:36,y:36}]},   // Szoboszlai 3rd man run
+      {tool:"run",  pts:[{x:32,y:24},{x:20,y:18}]},   // Núñez drags CB wide
+      {tool:"run",  pts:[{x:52,y:73},{x:57,y:40}]},   // Trent continues overlap
+    ],
+    players: [
+      {id:1,x:32,y:88},{id:2,x:54,y:58},{id:3,x:41,y:76},{id:4,x:24,y:76},
+      {id:5,x:13,y:65},{id:6,x:43,y:52},{id:7,x:32,y:52},{id:8,x:22,y:55},
+      {id:9,x:49,y:30},{id:10,x:32,y:24},{id:11,x:16,y:30},
+    ],
+  },
+  {
+    // Phase 3: Mac Allister releases Salah. Three bodies converge on box.
+    ball: {x:32, y:52},
+    lines: [
+      {tool:"pass", pts:[{x:32,y:52},{x:49,y:30}]},   // Mac Allister → Salah
+      {tool:"run",  pts:[{x:20,y:18},{x:26,y:11}]},   // Núñez near post
+      {tool:"run",  pts:[{x:16,y:30},{x:18,y:13}]},   // Díaz far post
+      {tool:"run",  pts:[{x:36,y:36},{x:36,y:18}]},   // Szoboszlai late arrival
+    ],
+    players: [
+      {id:1,x:32,y:88},{id:2,x:57,y:38},{id:3,x:38,y:68},{id:4,x:22,y:70},
+      {id:5,x:13,y:62},{id:6,x:43,y:48},{id:7,x:32,y:52},{id:8,x:26,y:42},
+      {id:9,x:49,y:30},{id:10,x:22,y:18},{id:11,x:16,y:28},
+    ],
+  },
+  {
+    // Phase 4: Salah cuts inside, SHOOTS. Goal!
+    ball: {x:49, y:30},
+    lines: [
+      {tool:"shot", pts:[{x:49,y:30},{x:36,y:6}]},    // Salah shoots — top corner
+      {tool:"run",  pts:[{x:22,y:18},{x:28,y:10}]},   // Núñez near post arriving
+      {tool:"run",  pts:[{x:18,y:13},{x:22,y:8}]},    // Díaz second ball
+    ],
+    players: [
+      {id:1,x:32,y:88},{id:2,x:57,y:32},{id:3,x:38,y:65},{id:4,x:22,y:66},
+      {id:5,x:13,y:60},{id:6,x:43,y:44},{id:7,x:34,y:46},{id:8,x:30,y:30},
+      {id:9,x:44,y:24},{id:10,x:24,y:14},{id:11,x:19,y:11},
+    ],
+  },
 ];
+var DEMO_LINES = DEMO_PHASES[0].lines;
 
 var PALETTES = [
   {id:"unit",    name:"Team",    primary:null,       secondary:null},
@@ -107,6 +163,7 @@ var CSS = [
   "input:focus,select:focus,textarea:focus{border-color:rgba(200,255,0,0.4);}",
   "label{font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.24);margin-bottom:5px;display:block;font-family:'Rajdhani',sans-serif;}",
   "@keyframes demoPulse { 0%,100%{opacity:0.85} 50%{opacity:1} }",
+  "@keyframes goalGlow { 0%{opacity:0} 20%{opacity:1} 80%{opacity:0.8} 100%{opacity:0} }",
   "@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}",
   ".fu{animation:fadeUp .24s ease both}",
   ".ps{flex:1;display:grid;grid-template-columns:200px 1fr 196px;overflow:hidden;min-height:0;}",
@@ -358,6 +415,9 @@ export default function FCRoster() {
   var [savedFormations, setSavedFormations] = useState([]);
   var [savedId,   setSavedId]   = useState(null);
   var [demoMode,  setDemoMode]  = useState(true);
+  var [demoPhase, setDemoPhase] = useState(0);
+  var [goalFlash, setGoalFlash] = useState(false);
+  var demoRef     = useRef(null);
 
   // Real Supabase auth listener -- event-aware to prevent OAuth loop
   useEffect(function() {
@@ -375,10 +435,13 @@ export default function FCRoster() {
         setSavedId(null);
         // Restore demo state when signed out
         setPlayers(DEMO_PLAYERS.map(function(p){return Object.assign({},p);}));
-        setLines(DEMO_LINES);
+        setLines(DEMO_PHASES[0].lines);
+        setBallPos(DEMO_PHASES[0].ball);
         setTitle("FCRoster Demo");
         setFormation("4-3-3");
         setGameFmt("11v11");
+        setDemoPhase(0);
+        setGoalFlash(false);
         setDemoMode(true);
       }
     });
@@ -387,11 +450,45 @@ export default function FCRoster() {
   // Load demo state on first mount for anonymous users
   useEffect(function() {
     setPlayers(DEMO_PLAYERS.map(function(p){return Object.assign({},p);}));
-    setLines(DEMO_LINES);
+    setLines(DEMO_PHASES[0].lines);
+    setBallPos(DEMO_PHASES[0].ball);
     setTitle("FCRoster Demo");
     setFormation("4-3-3");
     setGameFmt("11v11");
   }, []);
+
+  // Auto-animate demo loop
+  useEffect(function() {
+    if (!demoMode) { if (demoRef.current) { clearInterval(demoRef.current); demoRef.current = null; } return; }
+    // Start after 1.5s delay
+    var startTimeout = setTimeout(function() {
+      var phase = 0;
+      function advance() {
+        phase = (phase + 1) % DEMO_PHASES.length;
+        var ph = DEMO_PHASES[phase];
+        // Update players positions for this phase
+        setPlayers(function(prev) {
+          return prev.map(function(p) {
+            var match = ph.players.find(function(dp){return dp.id===p.id;});
+            return match ? Object.assign({},p,{x:match.x,y:match.y}) : p;
+          });
+        });
+        setLines(ph.lines);
+        setBallPos(ph.ball);
+        setDemoPhase(phase);
+        // Goal flash on phase 4 (index 3)
+        if (phase === 3) {
+          setTimeout(function(){setGoalFlash(true);},800);
+          setTimeout(function(){setGoalFlash(false);},2000);
+        }
+      }
+      demoRef.current = setInterval(advance, 2800);
+    }, 1500);
+    return function() {
+      clearTimeout(startTimeout);
+      if (demoRef.current) { clearInterval(demoRef.current); demoRef.current = null; }
+    };
+  }, [demoMode]);
 
   var [dragId,    setDragId]    = useState(null);
   var [editP,     setEditP]     = useState(null);
@@ -1072,7 +1169,18 @@ export default function FCRoster() {
           <path key={i} d={pts2d(ln.pts)} stroke={TC[ln.tool]} strokeWidth={ln.tool==="shot"?"0.65":"0.52"} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.92" strokeDasharray={ln.tool==="run"?"1.7,0.85":"none"}/>
         );})}
         {curLine && <path d={pts2d(curLine.pts)} stroke={TC[curLine.tool]} strokeWidth="0.52" fill="none" strokeLinecap="round" opacity="0.55" strokeDasharray={curLine.tool==="run"?"1.7,0.85":"none"}/>}
-        {ballPos && <text x={ballPos.x} y={ballPos.y+1.5} textAnchor="middle" fontSize="3" style={{userSelect:"none",pointerEvents:"none"}}>&#x26BD;</text>}
+        {ballPos && (
+          <g style={{pointerEvents:"none"}}>
+            <circle cx={ballPos.x} cy={ballPos.y} r="2.2" fill="white" opacity="0.9" style={{filter:"drop-shadow(0 0 1px rgba(255,255,255,0.8))"}}/>
+            <text x={ballPos.x} y={ballPos.y+1} textAnchor="middle" dominantBaseline="middle" fontSize="2.4" style={{userSelect:"none",pointerEvents:"none",transition:"cx 0.8s ease,cy 0.8s ease"}}>&#x26BD;</text>
+          </g>
+        )}
+        {goalFlash && (
+          <g style={{pointerEvents:"none"}}>
+            <rect x="22" y="1" width="21" height="8" fill="#C8FF00" opacity="0.35" rx="1" style={{animation:"goalGlow 1.2s ease-out forwards"}}/>
+            <text x="32.5" y="6" textAnchor="middle" dominantBaseline="middle" fontSize="3.5" fontWeight="bold" fill="#C8FF00" fontFamily="Rajdhani,sans-serif" style={{animation:"goalGlow 1.2s ease-out forwards",letterSpacing:"0.1em"}}>GOAL!</text>
+          </g>
+        )}
 
         {showOpp && oppList.map(function(p){return(
           <g key={"o"+p.id} transform={"translate("+p.x+","+p.y+")"} style={{pointerEvents:"none"}}>
@@ -1465,24 +1573,25 @@ export default function FCRoster() {
                     </button>
                   )}
                 </div>
+                <div className="pw">{PitchSVG()}</div>
                 {demoMode && !user && (
                   <div onClick={function(){setShowAuth(true);}} style={{
-                    background:"linear-gradient(90deg,rgba(200,255,0,0.12),rgba(200,255,0,0.06))",
-                    borderBottom:"1px solid rgba(200,255,0,0.25)",
-                    padding:"7px 16px",
+                    background:"rgba(200,255,0,0.07)",
+                    borderTop:"1px solid rgba(200,255,0,0.2)",
+                    borderBottom:"1px solid rgba(200,255,0,0.1)",
+                    padding:"8px 16px",
                     display:"flex",alignItems:"center",justifyContent:"space-between",
-                    cursor:"pointer",flexShrink:0,
-                    animation:"demoPulse 3s ease-in-out infinite"
+                    cursor:"pointer",flexShrink:0,minHeight:44,
                   }}>
-                    <span style={{fontSize:11,fontFamily:"'Poppins',sans-serif",color:"rgba(200,255,0,0.85)"}}>
-                      ⚽ <strong>Live demo</strong> — Sign in to build your own roster
+                    <span style={{fontSize:11,fontFamily:"'Poppins',sans-serif",color:"rgba(200,255,0,0.8)",display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{fontSize:13}}>⚽</span>
+                      <span><strong style={{color:"#C8FF00"}}>Live demo</strong> — Sign in to build your own roster &amp; plays</span>
                     </span>
-                    <span style={{fontSize:11,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",color:"#C8FF00",border:"1px solid rgba(200,255,0,0.4)",padding:"2px 10px",borderRadius:4}}>
+                    <span style={{fontSize:11,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.12em",color:"#111",background:"#C8FF00",padding:"3px 12px",borderRadius:4,flexShrink:0,whiteSpace:"nowrap"}}>
                       SIGN IN FREE →
                     </span>
                   </div>
                 )}
-                <div className="pw">{PitchSVG()}</div>
                 <div className="d-bar">{ActionBar({compact:false})}</div>
               </div>
               <div className="rp">{RightPanel()}</div>
