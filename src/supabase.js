@@ -74,6 +74,7 @@ export var supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     autoRefreshToken: true,
     persistSession:   true,
     detectSessionInUrl: true,
+    flowType: 'implicit',
   },
 });
 
@@ -87,9 +88,12 @@ export async function getUser() {
 
 // Sign in with Google (OAuth redirect)
 export async function signInGoogle() {
+  var redirectTo = window.location.hostname === "localhost"
+    ? window.location.origin
+    : "https://www.fcroster.com";
   var { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: window.location.hostname === "localhost" ? window.location.origin : "https://www.fcroster.com" },
+    options: { redirectTo },
   });
   if (error) throw error;
 }
