@@ -423,7 +423,7 @@ export default function FCRoster() {
   // Real Supabase auth listener -- event-aware to prevent OAuth loop
   useEffect(function() {
     var { data: { subscription } } = supabase.auth.onAuthStateChange(function(event, session) {
-      if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
+      if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
         if (session && session.user) {
           var u = session.user;
           setUser({ id: u.id, name: (u.user_metadata && u.user_metadata.full_name) || u.email.split("@")[0], email: u.email });
@@ -436,6 +436,12 @@ export default function FCRoster() {
           setBallPos(null);
           setTitle("My FCRoster");
           loadFormations().then(setSavedFormations).catch(function(){});
+        }
+      } else if (event === "TOKEN_REFRESHED") {
+        // Token silently refreshed (window regain focus) — only update user, NEVER touch pitch state
+        if (session && session.user) {
+          var u = session.user;
+          setUser({ id: u.id, name: (u.user_metadata && u.user_metadata.full_name) || u.email.split("@")[0], email: u.email });
         }
       } else if (event === "SIGNED_OUT") {
         setUser(null);
@@ -543,7 +549,7 @@ export default function FCRoster() {
                 setDemoPhase(0);
                 setGoalFlash(false);
                 setDemoMode(false); // unlock pitch — Reset/Undo work again
-                // showBanner stays true so CTA remains visible
+                setShowBanner(false); // banner gone — demo has played
               }, 3000);
 
             }, 2800);
