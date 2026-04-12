@@ -1240,8 +1240,7 @@ export default function FCRoster() {
         {ballPos && (
           <g transform={"translate("+ballPos.x+","+ballPos.y+")"}
              style={{transition:"transform 0.7s ease",pointerEvents:"none"}}>
-            <circle r="2.8" fill="#C8FF00" stroke="#111" strokeWidth="0.5" opacity="0.95"/>
-            <circle r="1.0" fill="#111" opacity="0.5"/>
+            <text textAnchor="middle" dominantBaseline="middle" fontSize="4" style={{userSelect:"none"}}>&#x26BD;</text>
           </g>
         )}
         {goalFlash && (
