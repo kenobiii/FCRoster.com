@@ -438,7 +438,7 @@ export default function FCRoster() {
           loadFormations().then(setSavedFormations).catch(function(){});
         }
       } else if (event === "TOKEN_REFRESHED") {
-        // Token silently refreshed (window regain focus) — only update user, NEVER touch pitch state
+        // Silent token refresh on window focus — only update user, never touch pitch
         if (session && session.user) {
           var u = session.user;
           setUser({ id: u.id, name: (u.user_metadata && u.user_metadata.full_name) || u.email.split("@")[0], email: u.email });
@@ -549,7 +549,7 @@ export default function FCRoster() {
                 setDemoPhase(0);
                 setGoalFlash(false);
                 setDemoMode(false); // unlock pitch — Reset/Undo work again
-                setShowBanner(false); // banner gone — demo has played
+                setShowBanner(false); // banner gone after demo played
               }, 3000);
 
             }, 2800);
