@@ -2066,9 +2066,9 @@ export default function FCRoster() {
             </div>
             {authErr&&<div style={{fontSize:11,color:"rgba(240,80,80,0.9)",fontFamily:"'Poppins',sans-serif",marginBottom:10,padding:"8px 10px",borderRadius:5,background:"rgba(240,50,50,0.08)",border:"1px solid rgba(240,50,50,0.2)"}}>{authErr}</div>}
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {authMode==="signup"&&(<div><label>Full Name</label><input placeholder="Lionel Messi" value={aName} onChange={function(e){setAName(e.target.value);}}/></div>)}
-              <div><label>Email</label><input type="email" placeholder="coach@club.com" value={aEmail} onChange={function(e){setAEmail(e.target.value);}}/></div>
-              <div><label>Password</label><input type="password" placeholder="Password" value={aPass} onChange={function(e){setAPass(e.target.value);}}/></div>
+              {authMode==="signup"&&(<div><label htmlFor="auth-name">Full Name</label><input id="auth-name" name="name" autoComplete="name" placeholder="Lionel Messi" value={aName} onChange={function(e){setAName(e.target.value);}}/></div>)}
+              <div><label htmlFor="auth-email">Email</label><input id="auth-email" name="email" type="email" autoComplete="email" placeholder="coach@club.com" value={aEmail} onChange={function(e){setAEmail(e.target.value);}}/></div>
+              <div><label htmlFor="auth-pass">Password</label><input id="auth-pass" name="password" type="password" autoComplete="current-password" placeholder="Password" value={aPass} onChange={function(e){setAPass(e.target.value);}}/></div>
               <button disabled={authBusy} onClick={function(){
                 setAuthErr(""); setAuthBusy(true);
                 var fn = authMode==="signin"
