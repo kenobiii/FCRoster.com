@@ -415,6 +415,7 @@ export default function FCRoster() {
   var [savedFormations, setSavedFormations] = useState([]);
   var [savedId,   setSavedId]   = useState(null);
   var [demoMode,  setDemoMode]  = useState(true);
+  var [showBanner,setShowBanner]= useState(true);  // CTA banner — stays visible after demo ends
   var [demoPhase, setDemoPhase] = useState(0);
   var [goalFlash, setGoalFlash] = useState(false);
   var demoRef     = useRef(null);
@@ -427,6 +428,7 @@ export default function FCRoster() {
           var u = session.user;
           setUser({ id: u.id, name: (u.user_metadata && u.user_metadata.full_name) || u.email.split("@")[0], email: u.email });
           setDemoMode(false);
+          setShowBanner(false);
           loadFormations().then(setSavedFormations).catch(function(){});
         }
       } else if (event === "SIGNED_OUT") {
@@ -443,6 +445,7 @@ export default function FCRoster() {
         setDemoPhase(0);
         setGoalFlash(false);
         setDemoMode(true);
+        setShowBanner(true);
       }
     });
     return function() { subscription.unsubscribe(); };
@@ -510,14 +513,15 @@ export default function FCRoster() {
               t6 = setTimeout(function(){setGoalFlash(true);}, 800);
               t7 = setTimeout(function(){setGoalFlash(false);}, 2200);
 
-              // Step 5 — 3s after goal: reset to clean default 4-3-3, STOP. No restart.
+              // Step 5 — 3s after goal: reset to clean default 4-3-3, STOP. Pitch fully unlocked.
               t8 = setTimeout(function() {
                 setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
                 setLines([]);
                 setBallPos(null);
                 setDemoPhase(0);
                 setGoalFlash(false);
-                // demoMode stays true so banner stays visible, but sequence is done
+                setDemoMode(false); // unlock pitch — Reset/Undo work again
+                // showBanner stays true so CTA remains visible
               }, 3000);
 
             }, 2800);
@@ -1616,7 +1620,7 @@ export default function FCRoster() {
                   )}
                 </div>
                 <div className="pw">{PitchSVG()}</div>
-                {demoMode && !user && (
+                {showBanner && !user && (
                   <div onClick={function(){setShowAuth(true);}} style={{
                     background:"rgba(200,255,0,0.07)",
                     borderTop:"1px solid rgba(200,255,0,0.2)",
