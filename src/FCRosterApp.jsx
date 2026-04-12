@@ -457,73 +457,77 @@ export default function FCRoster() {
     setGameFmt("11v11");
   }, []);
 
-  // Auto-animate demo loop — plays once through all 4 phases, then resets to clean 4-3-3, then repeats
+  // Demo sequence: plays ONCE through 4 phases, then resets to clean default 4-3-3 and STOPS.
   useEffect(function() {
     if (!demoMode) {
       if (demoRef.current) { clearInterval(demoRef.current); demoRef.current = null; }
       return;
     }
 
-    var startTimeout;
-    var resetTimeout;
-    var restartTimeout;
+    var t1, t2, t3, t4, t5, t6, t7, t8;
 
-    function resetToClean() {
-      // Reset to default 4-3-3 — no names, no lines, no ball, clean pitch
-      setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
-      setLines([]);
-      setBallPos(null);
-      setDemoPhase(0);
-      setGoalFlash(false);
-    }
+    // Each step is a named timeout — no loops, no restarts, just a clean one-way sequence
 
-    function runSequence() {
-      var phase = 0;
-      // Load phase 1 immediately (ball at keeper)
-      setBallPos({x:32, y:88});
-      setLines(DEMO_PHASES[0].lines);
+    // Step 0 — 1.5s delay, then show ball at keeper + Phase 1 lines
+    t1 = setTimeout(function() {
       setPlayers(DEMO_PLAYERS.map(function(p){return Object.assign({},p);}));
+      setLines(DEMO_PHASES[0].lines);
+      setBallPos({x:32, y:88});
+      setDemoPhase(0);
 
-      function advance() {
-        phase = phase + 1;
-        if (phase >= DEMO_PHASES.length) {
-          // Sequence complete — stop interval
-          clearInterval(demoRef.current);
-          demoRef.current = null;
-          // 2.5s after goal, reset to clean pitch
-          resetTimeout = setTimeout(function() {
-            resetToClean();
-            // 1.5s after reset, start again
-            restartTimeout = setTimeout(runSequence, 1500);
-          }, 2500);
-          return;
-        }
-        var ph = DEMO_PHASES[phase];
-        setPlayers(function(prev) {
-          return prev.map(function(p) {
-            var match = ph.players.find(function(dp){return dp.id===p.id;});
-            return match ? Object.assign({},p,{x:match.x,y:match.y}) : p;
-          });
-        });
+      // Step 1 — 2.8s: ball arrives at Stones
+      t2 = setTimeout(function() {
+        var ph = DEMO_PHASES[0];
+        setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
         setLines(ph.lines);
         setBallPos(ph.ball);
-        setDemoPhase(phase);
-        // Goal flash on phase 4 (index 3)
-        if (phase === 3) {
-          setTimeout(function(){setGoalFlash(true);}, 800);
-          setTimeout(function(){setGoalFlash(false);}, 2000);
-        }
-      }
+        setDemoPhase(1);
 
-      demoRef.current = setInterval(advance, 2800);
-    }
+        // Step 2 — 2.8s: Stones plays to Mac Allister
+        t3 = setTimeout(function() {
+          var ph = DEMO_PHASES[1];
+          setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
+          setLines(ph.lines);
+          setBallPos(ph.ball);
+          setDemoPhase(2);
 
-    startTimeout = setTimeout(runSequence, 1500);
+          // Step 3 — 2.8s: Mac Allister releases Salah
+          t4 = setTimeout(function() {
+            var ph = DEMO_PHASES[2];
+            setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
+            setLines(ph.lines);
+            setBallPos(ph.ball);
+            setDemoPhase(3);
+
+            // Step 4 — 2.8s: Salah shoots — GOAL
+            t5 = setTimeout(function() {
+              var ph = DEMO_PHASES[3];
+              setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
+              setLines(ph.lines);
+              setBallPos(ph.ball);
+              setDemoPhase(4);
+              // Goal flash
+              t6 = setTimeout(function(){setGoalFlash(true);}, 800);
+              t7 = setTimeout(function(){setGoalFlash(false);}, 2200);
+
+              // Step 5 — 3s after goal: reset to clean default 4-3-3, STOP. No restart.
+              t8 = setTimeout(function() {
+                setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
+                setLines([]);
+                setBallPos(null);
+                setDemoPhase(0);
+                setGoalFlash(false);
+                // demoMode stays true so banner stays visible, but sequence is done
+              }, 3000);
+
+            }, 2800);
+          }, 2800);
+        }, 2800);
+      }, 2800);
+    }, 1500);
 
     return function() {
-      clearTimeout(startTimeout);
-      clearTimeout(resetTimeout);
-      clearTimeout(restartTimeout);
+      [t1,t2,t3,t4,t5,t6,t7,t8].forEach(function(t){clearTimeout(t);});
       if (demoRef.current) { clearInterval(demoRef.current); demoRef.current = null; }
     };
   }, [demoMode]);
