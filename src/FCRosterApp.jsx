@@ -429,6 +429,12 @@ export default function FCRoster() {
           setUser({ id: u.id, name: (u.user_metadata && u.user_metadata.full_name) || u.email.split("@")[0], email: u.email });
           setDemoMode(false);
           setShowBanner(false);
+          setGoalFlash(false);
+          // Wipe demo state — give user a clean blank pitch
+          setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
+          setLines([]);
+          setBallPos(null);
+          setTitle("My FCRoster");
           loadFormations().then(setSavedFormations).catch(function(){});
         }
       } else if (event === "SIGNED_OUT") {
@@ -450,14 +456,30 @@ export default function FCRoster() {
     });
     return function() { subscription.unsubscribe(); };
   }, []);
-  // Load demo state on first mount for anonymous users
+  // Mount: only load demo if no active session — logged-in users get a clean pitch
   useEffect(function() {
-    setPlayers(DEMO_PLAYERS.map(function(p){return Object.assign({},p);}));
-    setLines(DEMO_PHASES[0].lines);
-    setBallPos({x:32, y:88}); // Ball starts with keeper
-    setTitle("FCRoster Demo");
-    setFormation("4-3-3");
-    setGameFmt("11v11");
+    supabase.auth.getSession().then(function(res) {
+      var hasSession = res.data && res.data.session && res.data.session.user;
+      if (!hasSession) {
+        // Anonymous — show demo
+        setPlayers(DEMO_PLAYERS.map(function(p){return Object.assign({},p);}));
+        setLines(DEMO_PHASES[0].lines);
+        setBallPos({x:32, y:88});
+        setTitle("FCRoster Demo");
+        setFormation("4-3-3");
+        setGameFmt("11v11");
+        setDemoMode(true);
+        setShowBanner(true);
+      } else {
+        // Already logged in — clean blank pitch, no demo
+        setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
+        setLines([]);
+        setBallPos(null);
+        setTitle("My FCRoster");
+        setDemoMode(false);
+        setShowBanner(false);
+      }
+    });
   }, []);
 
   // Demo sequence: plays ONCE through 4 phases, then resets to clean default 4-3-3 and STOPS.
@@ -478,7 +500,7 @@ export default function FCRoster() {
       setBallPos({x:32, y:88});
       setDemoPhase(0);
 
-      // Step 1 — 1.5s: ball arrives at Stones
+      // Step 1 — 2.8s: ball arrives at Stones
       t2 = setTimeout(function() {
         var ph = DEMO_PHASES[0];
         setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
@@ -486,7 +508,7 @@ export default function FCRoster() {
         setBallPos(ph.ball);
         setDemoPhase(1);
 
-        // Step 2 — 1.5s: Stones plays to Mac Allister
+        // Step 2 — 2.8s: Stones plays to Mac Allister
         t3 = setTimeout(function() {
           var ph = DEMO_PHASES[1];
           setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
@@ -494,7 +516,7 @@ export default function FCRoster() {
           setBallPos(ph.ball);
           setDemoPhase(2);
 
-          // Step 3 — 1.5s: Mac Allister releases Salah
+          // Step 3 — 2.8s: Mac Allister releases Salah
           t4 = setTimeout(function() {
             var ph = DEMO_PHASES[2];
             setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
@@ -502,7 +524,7 @@ export default function FCRoster() {
             setBallPos(ph.ball);
             setDemoPhase(3);
 
-            // Step 4 — 1.5s: Salah shoots — GOAL
+            // Step 4 — 2.8s: Salah shoots — GOAL
             t5 = setTimeout(function() {
               var ph = DEMO_PHASES[3];
               setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
@@ -510,10 +532,10 @@ export default function FCRoster() {
               setBallPos(ph.ball);
               setDemoPhase(4);
               // Goal flash
-              t6 = setTimeout(function(){setGoalFlash(true);}, 500);
-              t7 = setTimeout(function(){setGoalFlash(false);}, 1600);
+              t6 = setTimeout(function(){setGoalFlash(true);}, 800);
+              t7 = setTimeout(function(){setGoalFlash(false);}, 2200);
 
-              // Step 5 — 2s after goal: reset to clean default 4-3-3, STOP. Pitch fully unlocked.
+              // Step 5 — 3s after goal: reset to clean default 4-3-3, STOP. Pitch fully unlocked.
               t8 = setTimeout(function() {
                 setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
                 setLines([]);
@@ -522,13 +544,13 @@ export default function FCRoster() {
                 setGoalFlash(false);
                 setDemoMode(false); // unlock pitch — Reset/Undo work again
                 // showBanner stays true so CTA remains visible
-              }, 2000);
+              }, 3000);
 
-            }, 1500);
-          }, 1500);
-        }, 1500);
-      }, 1500);
-    }, 800);
+            }, 2800);
+          }, 2800);
+        }, 2800);
+      }, 2800);
+    }, 1500);
 
     return function() {
       [t1,t2,t3,t4,t5,t6,t7,t8].forEach(function(t){clearTimeout(t);});
@@ -1216,9 +1238,10 @@ export default function FCRoster() {
         );})}
         {curLine && <path d={pts2d(curLine.pts)} stroke={TC[curLine.tool]} strokeWidth="0.52" fill="none" strokeLinecap="round" opacity="0.55" strokeDasharray={curLine.tool==="run"?"1.7,0.85":"none"}/>}
         {ballPos && (
-          <g style={{pointerEvents:"none"}}>
-            <circle cx={ballPos.x} cy={ballPos.y} r="2.2" fill="white" opacity="0.9" style={{filter:"drop-shadow(0 0 1px rgba(255,255,255,0.8))"}}/>
-            <text x={ballPos.x} y={ballPos.y+1} textAnchor="middle" dominantBaseline="middle" fontSize="2.4" style={{userSelect:"none",pointerEvents:"none",transition:"cx 0.8s ease,cy 0.8s ease"}}>&#x26BD;</text>
+          <g transform={"translate("+ballPos.x+","+ballPos.y+")"}
+             style={{transition:"transform 0.7s ease",pointerEvents:"none"}}>
+            <circle r="2.8" fill="#C8FF00" stroke="#111" strokeWidth="0.5" opacity="0.95"/>
+            <circle r="1.0" fill="#111" opacity="0.5"/>
           </g>
         )}
         {goalFlash && (
@@ -1611,8 +1634,7 @@ export default function FCRoster() {
                   ) : (
                     <button onClick={function(e){e.stopPropagation();setEditTitle(true);}}
                       style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",padding:"5px 14px",borderRadius:5,border:"1px solid rgba(200,255,0,0.3)",background:"rgba(200,255,0,0.05)",transition:"all 0.15s",outline:"none",pointerEvents:"all"}}>
-                      {demoMode && <span style={{fontSize:9,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.12em",color:"#111",background:"#C8FF00",padding:"1px 6px",borderRadius:3,flexShrink:0,display:"flex",alignItems:"center",gap:3}}><span style={{width:5,height:5,borderRadius:"50%",background:"#111",display:"inline-block",animation:"demoPulse 1s ease-in-out infinite"}}/>LIVE</span>}
-                  <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:"rgba(200,255,0,0.55)",flexShrink:0}}>SQUAD NAME</span>
+                      <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:"rgba(200,255,0,0.55)",flexShrink:0}}>SQUAD NAME</span>
                       <span style={{fontSize:14,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:title==="My FCRoster"?"rgba(255,255,255,0.25)":T.text,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                         {title==="My FCRoster"?"Click to name your squad":title}
                       </span>
