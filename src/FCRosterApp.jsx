@@ -478,7 +478,7 @@ export default function FCRoster() {
       setBallPos({x:32, y:88});
       setDemoPhase(0);
 
-      // Step 1 — 2.8s: ball arrives at Stones
+      // Step 1 — 1.5s: ball arrives at Stones
       t2 = setTimeout(function() {
         var ph = DEMO_PHASES[0];
         setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
@@ -486,7 +486,7 @@ export default function FCRoster() {
         setBallPos(ph.ball);
         setDemoPhase(1);
 
-        // Step 2 — 2.8s: Stones plays to Mac Allister
+        // Step 2 — 1.5s: Stones plays to Mac Allister
         t3 = setTimeout(function() {
           var ph = DEMO_PHASES[1];
           setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
@@ -494,7 +494,7 @@ export default function FCRoster() {
           setBallPos(ph.ball);
           setDemoPhase(2);
 
-          // Step 3 — 2.8s: Mac Allister releases Salah
+          // Step 3 — 1.5s: Mac Allister releases Salah
           t4 = setTimeout(function() {
             var ph = DEMO_PHASES[2];
             setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
@@ -502,7 +502,7 @@ export default function FCRoster() {
             setBallPos(ph.ball);
             setDemoPhase(3);
 
-            // Step 4 — 2.8s: Salah shoots — GOAL
+            // Step 4 — 1.5s: Salah shoots — GOAL
             t5 = setTimeout(function() {
               var ph = DEMO_PHASES[3];
               setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
@@ -510,10 +510,10 @@ export default function FCRoster() {
               setBallPos(ph.ball);
               setDemoPhase(4);
               // Goal flash
-              t6 = setTimeout(function(){setGoalFlash(true);}, 800);
-              t7 = setTimeout(function(){setGoalFlash(false);}, 2200);
+              t6 = setTimeout(function(){setGoalFlash(true);}, 500);
+              t7 = setTimeout(function(){setGoalFlash(false);}, 1600);
 
-              // Step 5 — 3s after goal: reset to clean default 4-3-3, STOP. Pitch fully unlocked.
+              // Step 5 — 2s after goal: reset to clean default 4-3-3, STOP. Pitch fully unlocked.
               t8 = setTimeout(function() {
                 setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
                 setLines([]);
@@ -522,13 +522,13 @@ export default function FCRoster() {
                 setGoalFlash(false);
                 setDemoMode(false); // unlock pitch — Reset/Undo work again
                 // showBanner stays true so CTA remains visible
-              }, 3000);
+              }, 2000);
 
-            }, 2800);
-          }, 2800);
-        }, 2800);
-      }, 2800);
-    }, 1500);
+            }, 1500);
+          }, 1500);
+        }, 1500);
+      }, 1500);
+    }, 800);
 
     return function() {
       [t1,t2,t3,t4,t5,t6,t7,t8].forEach(function(t){clearTimeout(t);});
@@ -1611,7 +1611,8 @@ export default function FCRoster() {
                   ) : (
                     <button onClick={function(e){e.stopPropagation();setEditTitle(true);}}
                       style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",padding:"5px 14px",borderRadius:5,border:"1px solid rgba(200,255,0,0.3)",background:"rgba(200,255,0,0.05)",transition:"all 0.15s",outline:"none",pointerEvents:"all"}}>
-                      <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:"rgba(200,255,0,0.55)",flexShrink:0}}>SQUAD NAME</span>
+                      {demoMode && <span style={{fontSize:9,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.12em",color:"#111",background:"#C8FF00",padding:"1px 6px",borderRadius:3,flexShrink:0,display:"flex",alignItems:"center",gap:3}}><span style={{width:5,height:5,borderRadius:"50%",background:"#111",display:"inline-block",animation:"demoPulse 1s ease-in-out infinite"}}/>LIVE</span>}
+                  <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:"rgba(200,255,0,0.55)",flexShrink:0}}>SQUAD NAME</span>
                       <span style={{fontSize:14,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:title==="My FCRoster"?"rgba(255,255,255,0.25)":T.text,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                         {title==="My FCRoster"?"Click to name your squad":title}
                       </span>
