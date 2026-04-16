@@ -90,6 +90,23 @@ var CSS = [
   "label{font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.24);margin-bottom:5px;display:block;font-family:'Rajdhani',sans-serif;}",
   "@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}",
   "@keyframes fadeHint{from{opacity:0.15}to{opacity:0.45}}",
+  ".moz-img{mix-blend-mode:multiply;pointer-events:none;}",
+  ".moz-g{pointer-events:none;will-change:transform;}",
+  ".moz-1{animation:moz1 3.8s ease-in-out infinite 0s}",
+  ".moz-2{animation:moz2 4.6s ease-in-out infinite 0.7s}",
+  ".moz-3{animation:moz3 2.9s ease-in-out infinite 1.3s}",
+  ".moz-4{animation:moz4 2.4s ease-in-out infinite 0s}",
+  ".moz-5{animation:moz5 5.2s ease-in-out infinite 2.1s}",
+  ".moz-6{animation:moz6 4.1s ease-in-out infinite 0.8s}",
+  ".moz-7{animation:moz7 5.0s ease-in-out infinite 2.5s}",
+  ".moz-8{animation:moz8 3.5s ease-in-out infinite 0.5s}",
+  ".moz-9{animation:moz9 4.4s ease-in-out infinite 0.6s}",
+  ".moz-10{animation:moz10 3.2s ease-in-out infinite 0.4s}",
+  ".moz-11{animation:moz11 3.3s ease-in-out infinite 2.0s}",
+  ".moz-12{animation:moz12 2.8s ease-in-out infinite 1.1s}",
+  ".moz-13{animation:moz13 3.7s ease-in-out infinite 1.8s}",
+  ".moz-14{animation:moz14 4.0s ease-in-out infinite 1.5s}",
+  ".moz-15{animation:moz15 3.6s ease-in-out infinite 3.0s}",
   "@keyframes moz1{0%{transform:translate(0px,0px) rotate(-15deg)}25%{transform:translate(1.2px,-0.8px) rotate(-22deg)}50%{transform:translate(0.4px,-1.4px) rotate(-10deg)}75%{transform:translate(-0.8px,-0.6px) rotate(-20deg)}100%{transform:translate(0px,0px) rotate(-15deg)}}",
   "@keyframes moz2{0%{transform:translate(0px,0px) rotate(25deg)}20%{transform:translate(-1.5px,0.6px) rotate(18deg)}45%{transform:translate(-0.5px,1.2px) rotate(32deg)}70%{transform:translate(1.0px,0.4px) rotate(20deg)}100%{transform:translate(0px,0px) rotate(25deg)}}",
   "@keyframes moz3{0%{transform:translate(0px,0px) rotate(8deg)}30%{transform:translate(1.8px,-0.4px) rotate(15deg)}55%{transform:translate(0.6px,1.0px) rotate(2deg)}80%{transform:translate(-1.2px,0.2px) rotate(12deg)}100%{transform:translate(0px,0px) rotate(8deg)}}",
@@ -125,7 +142,7 @@ var CSS = [
   "  .d-hdr,.d-bar{display:none!important;}",
   "  .mob-ctrl{display:flex;flex-direction:column;flex-shrink:0;background:#1E1E1E;border-top:1px solid rgba(255,255,255,0.08);}",
   "  .mob-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.08);background:#111111;}",
-  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:90px;overflow-y:auto;-webkit-overflow-scrolling:touch;transition:max-height 0.3s ease;overscroll-behavior:contain;}",
+  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:90px;overflow-y:auto;-webkit-overflow-scrolling:touch;transition:max-height 0.3s ease;overscroll-behavior:contain;scrollbar-width:none;}",
   "}",
   "@media(max-width:639px){.nav-sec{display:none!important}.nav-more{display:flex!important}}",
   "@media(min-width:768px) and (max-width:1099px){.ps{grid-template-columns:172px 1fr 168px}}",
@@ -361,6 +378,10 @@ export default function FCRoster() {
   var [pendingResult,setPendingResult] = useState({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
   // Expandable player row on mobile
   var [expandedPlayer,setExpandedPlayer] = useState(null);
+  var [focusPlayerId,setFocusPlayerId] = useState(null);
+  var [expandedResult,setExpandedResult] = useState(null); // formation id with inline result editor open
+  var [editingResult,setEditingResult]   = useState({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
+  var [focusPlayerId,setFocusPlayerId]   = useState(null); // mobile: tap circle → focus lineup input
 
 
   // Real Supabase auth listener -- event-aware to prevent OAuth loop
@@ -762,6 +783,21 @@ export default function FCRoster() {
     setPlaying(false);
   }
 
+  // roundRect polyfill for Firefox < 112
+  function polyRoundRect(ctx, x, y, w, h, r) {
+    if (ctx.roundRect) { ctx.roundRect(x, y, w, h, r); return; }
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
   function doExport(){
     var svgEl=svgRef.current;
     if(!svgEl){notify("Nothing to export.");return;}
@@ -870,7 +906,7 @@ export default function FCRoster() {
           var chipFill=tFill(pos);
           ctx.fillStyle=chipFill;
           ctx.beginPath();
-          ctx.roundRect(C1,ty+4*SCALE,30*SCALE,16*SCALE,3*SCALE);
+          ctx.beginPath(); polyRoundRect(ctx,C1,ty+4*SCALE,30*SCALE,16*SCALE,3*SCALE);
           ctx.fill();
           ctx.fillStyle=txtOnFill(chipFill);
           ctx.font="bold "+(7*SCALE)+"px Arial,sans-serif";
@@ -1088,7 +1124,7 @@ export default function FCRoster() {
 
   function PitchSVG() {
     return (
-      <svg ref={svgRef} width="100%" height="100%" viewBox="0 0 65 100"
+      <svg ref={svgRef} width="100%" height="100%" viewBox="0 0 65 100" style={{shapeRendering:"geometricPrecision",textRendering:"optimizeLegibility"}}
         style={{display:"block",borderRadius:8,touchAction:"none",cursor:dragId!==null?"grabbing":tool==="drag"?"grab":tool?"crosshair":"default"}}
         onMouseDown={function(e){if(inlineName)setInlineName(null);svgDown(e);}} onMouseMove={svgMove} onMouseUp={svgUp} onMouseLeave={svgUp}
         onTouchEnd={svgUp}>
@@ -1129,54 +1165,54 @@ export default function FCRoster() {
             <ellipse cx="30" cy="90" rx="3"  ry="1.5" fill="#a07840" opacity="0.2"/>
             {/* Herrema wildlife — 15 resident mosquitos, evenly distributed */}
             {/* Row 1: y=8-20 — top of pitch */}
-            <g style={{animation:"moz4 2.4s ease-in-out infinite 0s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="5"  y="8"  width="3.5" height="1.8" style={{mixBlendMode:"multiply",opacity:0.72,pointerEvents:"none"}}/>
+            <g className="moz-g moz-4">
+              <image href={MOZ_URI} x="5"  y="8"  width="3.5" height="1.8" className="moz-img" style={{opacity:0.72}}/>
             </g>
-            <g style={{animation:"moz8 3.5s ease-in-out infinite 0.5s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="28" y="12" width="4.2" height="2.1" style={{mixBlendMode:"multiply",opacity:0.78,pointerEvents:"none"}}/>
+            <g className="moz-g moz-8">
+              <image href={MOZ_URI} x="28" y="12" width="4.2" height="2.1" className="moz-img" style={{opacity:0.78}}/>
             </g>
-            <g style={{animation:"moz12 2.8s ease-in-out infinite 1.1s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="52" y="9"  width="3.8" height="1.9" style={{mixBlendMode:"multiply",opacity:0.70,pointerEvents:"none"}}/>
+            <g className="moz-g moz-12">
+              <image href={MOZ_URI} x="52" y="9"  width="3.8" height="1.9" className="moz-img" style={{opacity:0.70}}/>
             </g>
             {/* Row 2: y=25-35 — defensive third */}
-            <g style={{animation:"moz6 4.1s ease-in-out infinite 0.8s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="10" y="27" width="4.8" height="2.4" style={{mixBlendMode:"multiply",opacity:0.85,pointerEvents:"none"}}/>
+            <g className="moz-g moz-6">
+              <image href={MOZ_URI} x="10" y="27" width="4.8" height="2.4" className="moz-img" style={{opacity:0.85}}/>
             </g>
-            <g style={{animation:"moz11 3.3s ease-in-out infinite 2.0s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="44" y="30" width="4.0" height="2.0" style={{mixBlendMode:"multiply",opacity:0.80,pointerEvents:"none"}}/>
+            <g className="moz-g moz-11">
+              <image href={MOZ_URI} x="44" y="30" width="4.0" height="2.0" className="moz-img" style={{opacity:0.80}}/>
             </g>
             {/* Row 3: y=38-52 — midfield */}
-            <g style={{animation:"moz1 3.8s ease-in-out infinite 0s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="5"  y="42" width="5.5" height="2.8" style={{mixBlendMode:"multiply",opacity:0.90,pointerEvents:"none"}}/>
+            <g className="moz-g moz-1">
+              <image href={MOZ_URI} x="5"  y="42" width="5.5" height="2.8" className="moz-img" style={{opacity:0.90}}/>
             </g>
-            <g style={{animation:"moz3 2.9s ease-in-out infinite 1.3s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="26" y="46" width="4.5" height="2.2" style={{mixBlendMode:"multiply",opacity:0.82,pointerEvents:"none"}}/>
+            <g className="moz-g moz-3">
+              <image href={MOZ_URI} x="26" y="46" width="4.5" height="2.2" className="moz-img" style={{opacity:0.82}}/>
             </g>
-            <g style={{animation:"moz9 4.4s ease-in-out infinite 0.6s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="50" y="40" width="4.2" height="2.1" style={{mixBlendMode:"multiply",opacity:0.76,pointerEvents:"none"}}/>
+            <g className="moz-g moz-9">
+              <image href={MOZ_URI} x="50" y="40" width="4.2" height="2.1" className="moz-img" style={{opacity:0.76}}/>
             </g>
             {/* Row 4: y=55-68 — attacking third */}
-            <g style={{animation:"moz2 4.6s ease-in-out infinite 0.7s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="14" y="58" width="4.8" height="2.4" style={{mixBlendMode:"multiply",opacity:0.85,pointerEvents:"none"}}/>
+            <g className="moz-g moz-2">
+              <image href={MOZ_URI} x="14" y="58" width="4.8" height="2.4" className="moz-img" style={{opacity:0.85}}/>
             </g>
-            <g style={{animation:"moz13 3.7s ease-in-out infinite 1.8s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="36" y="62" width="3.8" height="1.9" style={{mixBlendMode:"multiply",opacity:0.78,pointerEvents:"none"}}/>
+            <g className="moz-g moz-13">
+              <image href={MOZ_URI} x="36" y="62" width="3.8" height="1.9" className="moz-img" style={{opacity:0.78}}/>
             </g>
-            <g style={{animation:"moz7 5.0s ease-in-out infinite 2.5s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="54" y="56" width="4.0" height="2.0" style={{mixBlendMode:"multiply",opacity:0.82,pointerEvents:"none"}}/>
+            <g className="moz-g moz-7">
+              <image href={MOZ_URI} x="54" y="56" width="4.0" height="2.0" className="moz-img" style={{opacity:0.82}}/>
             </g>
             {/* Row 5: y=72-90 — bottom of pitch near mud */}
-            <g style={{animation:"moz10 3.2s ease-in-out infinite 0.4s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="7"  y="74" width="3.5" height="1.8" style={{mixBlendMode:"multiply",opacity:0.75,pointerEvents:"none"}}/>
+            <g className="moz-g moz-10">
+              <image href={MOZ_URI} x="7"  y="74" width="3.5" height="1.8" className="moz-img" style={{opacity:0.75}}/>
             </g>
-            <g style={{animation:"moz5 5.2s ease-in-out infinite 2.1s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="30" y="84" width="4.5" height="2.2" style={{mixBlendMode:"multiply",opacity:0.88,pointerEvents:"none"}}/>
+            <g className="moz-g moz-5">
+              <image href={MOZ_URI} x="30" y="84" width="4.5" height="2.2" className="moz-img" style={{opacity:0.88}}/>
             </g>
-            <g style={{animation:"moz14 4.0s ease-in-out infinite 1.5s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="50" y="78" width="4.2" height="2.1" style={{mixBlendMode:"multiply",opacity:0.80,pointerEvents:"none"}}/>
+            <g className="moz-g moz-14">
+              <image href={MOZ_URI} x="50" y="78" width="4.2" height="2.1" className="moz-img" style={{opacity:0.80}}/>
             </g>
-            <g style={{animation:"moz15 3.6s ease-in-out infinite 3.0s",pointerEvents:"none"}}>
-              <image href={MOZ_URI} x="22" y="70" width="3.8" height="1.9" style={{mixBlendMode:"multiply",opacity:0.73,pointerEvents:"none"}}/>
+            <g className="moz-g moz-15">
+              <image href={MOZ_URI} x="22" y="70" width="3.8" height="1.9" className="moz-img" style={{opacity:0.73}}/>
             </g>
           </g>
         )}
@@ -1251,6 +1287,19 @@ export default function FCRoster() {
                   e.stopPropagation();
                   if (!user) { notify("Sign in to name your players"); return; }
                   if(window.gtag) window.gtag("event","player_name_tapped",{formation:formation,gameFmt:gameFmt});
+                  // Mobile: open LINEUP panel, expand that row, scroll & focus input
+                  var isMobile = window.innerWidth < 768;
+                  if (isMobile) {
+                    setSheetTab("lineup");
+                    setExpandedPlayer(p.id);
+                    setFocusPlayerId(p.id);
+                    setTimeout(function(){
+                      var el = document.getElementById("mob-player-input-"+p.id);
+                      if(el){el.scrollIntoView({block:"center",behavior:"smooth"});el.focus();}
+                    }, 150);
+                    return;
+                  }
+                  // Desktop: inline tooltip
                   var svg = svgRef.current; if (!svg) return;
                   var rect = svg.getBoundingClientRect();
                   setInlineName({id:p.id, name:p.name||"", screenX:rect.left+p.x*(rect.width/65), screenY:rect.top+p.y*(rect.height/100)});
@@ -1528,7 +1577,7 @@ export default function FCRoster() {
   }
 
   return (
-    <div style={{fontFamily:"'Rajdhani',sans-serif",background:T.bg,color:T.text,height:"100dvh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{fontFamily:"'Rajdhani',sans-serif",background:T.bg,color:T.text,height:"100dvh",minHeight:"100vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style dangerouslySetInnerHTML={{__html:CSS}}/>
 
       <header style={{background:T.nav,borderBottom:"1px solid "+T.b,display:"flex",alignItems:"center",padding:"0 16px",height:50,flexShrink:0,zIndex:50}}>
@@ -1640,11 +1689,18 @@ export default function FCRoster() {
                 {/* Three pill nav buttons */}
                 <div style={{display:"flex",gap:6,flex:1,justifyContent:"flex-end"}}>
                   {[["pitch","PITCH"],["lineup","LINEUP"],["draw","DRAW"]].map(function(item){
-                    var active = sheetTab===item[0];
+                    var active = sheetTab===item[0] || (item[0]==="pitch" && sheetTab==="collapsed");
                     return (
                       <button key={item[0]}
                         onClick={function(){
-                          setSheetTab(item[0]);
+                          // PITCH pill: if already on pitch (panel showing), collapse to full pitch
+                          // If on another tab, go to pitch section
+                          // LINEUP/DRAW: open that section
+                          if(item[0]==="pitch" && active){
+                            setSheetTab("collapsed");
+                          } else {
+                            setSheetTab(item[0]);
+                          }
                           if(navigator.vibrate) navigator.vibrate(8);
                         }}
                         onTouchStart={function(e){e.currentTarget.style.opacity="0.75";e.currentTarget.style.transform="scale(0.95)";}}
@@ -1670,32 +1726,69 @@ export default function FCRoster() {
 
               {/* Section content — always rendered when not pitch */}
               {sheetTab==="pitch"&&(
-                <div style={{padding:"10px 14px 10px",display:"flex",flexDirection:"column",gap:10}}>
-                  <div style={{display:"flex",gap:8,alignItems:"center"}}>                    <span style={{fontSize:10,fontWeight:700,color:T.ghost,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",flexShrink:0,width:70}}>Surface</span>
-                    <div style={{flex:1}}><DD value={surface} options={surfOpts} onChange={setSurface} bg="#1A1A1A" up={true}/></div>
-                  </div>
-                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                    <span style={{fontSize:10,fontWeight:700,color:T.ghost,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",flexShrink:0,width:70}}>Kit</span>
-                    <div style={{flex:1}}><KitPicker value={paletteId} onChange={setPaletteId} bg="#1A1A1A" up={true}/></div>
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",paddingTop:2}}>
-                    <span style={{fontSize:12,fontWeight:600,color:T.sub,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase"}}>Opposition</span>
-                    <Toggle on={showOpp} toggle={function(){setShowOpp(function(v){return !v;});}} ac="#F02040"/>
+                <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:6}}>
+                  {/* Compact surface / kit / opposition row */}
+                  <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+                    <div style={{flex:1,minWidth:100}}><DD value={surface} options={surfOpts} onChange={setSurface} bg="#1A1A1A" up={true}/></div>
+                    <div style={{flex:1,minWidth:100}}><KitPicker value={paletteId} onChange={setPaletteId} bg="#1A1A1A" up={true}/></div>
+                    <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+                      <span style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.1em"}}>OPP</span>
+                      <Toggle on={showOpp} toggle={function(){setShowOpp(function(v){return !v;});}} ac="#F02040"/>
+                    </div>
                   </div>
                   {showOpp&&(
-                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                      <div style={{display:"flex",justifyContent:"flex-start",gap:7,flexWrap:"wrap"}}>
-                        {OPP_COLORS.map(function(c){return(<div key={c} onClick={function(){setOppColor(c);}} style={{width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",outline:oppColor===c?"2px solid rgba(255,255,255,0.8)":"1px solid rgba(255,255,255,0.12)",outlineOffset:oppColor===c?2:0,transition:"outline 0.1s"}}/>);})}
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                      <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                        {OPP_COLORS.map(function(c){return(<div key={c} onClick={function(){setOppColor(c);}} style={{width:20,height:20,borderRadius:"50%",background:c,cursor:"pointer",outline:oppColor===c?"2px solid rgba(255,255,255,0.8)":"1px solid rgba(255,255,255,0.12)",outlineOffset:oppColor===c?2:0}}/>);})}
                       </div>
-                      <DD value={oppFmt} options={avF.map(function(v){return {value:v,label:v};})} onChange={function(v){loadOpp(v);}} accent="#F02040" bg="#1A1A1A" up={true}/>
+                      <div style={{flex:1,minWidth:90}}><DD value={oppFmt} options={avF.map(function(v){return {value:v,label:v};})} onChange={function(v){loadOpp(v);}} accent="#F02040" bg="#1A1A1A" up={true}/></div>
                     </div>
                   )}
-                  <div style={{paddingTop:4}}>{ActionBar({compact:true})}</div>
+                  {/* Quick-load saved lineups from pitch */}
+                  {user&&savedFormations.length>0&&(
+                    <div style={{borderTop:"1px solid rgba(255,255,255,0.06)",paddingTop:6}}>
+                      <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.16em",color:T.ghost,fontFamily:"'Rajdhani',sans-serif",marginBottom:5}}>MY LINEUPS</div>
+                      <div style={{maxHeight:"min(26dvh,26vh)",overflowY:"auto",display:"flex",flexDirection:"column",gap:4,overscrollBehavior:"contain"}}>
+                        {savedFormations.map(function(f){return(
+                          <div key={f.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:5,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)"}}>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{display:"flex",alignItems:"center",gap:5}}>
+                                <span style={{fontSize:11,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</span>
+                                {f.result&&(
+                                  <span style={{fontSize:8,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"1px 5px",borderRadius:3,flexShrink:0,
+                                    background:f.result==="W"?"rgba(34,204,68,0.15)":f.result==="L"?"rgba(240,32,64,0.15)":"rgba(245,190,0,0.15)",
+                                    color:f.result==="W"?"#22CC44":f.result==="L"?"#F02040":"#F5BE00"}}>
+                                    {f.result}{f.score_for!=null?" "+f.score_for+"-"+f.score_against:""}
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{fontSize:9,color:T.ghost,fontFamily:"'Poppins',sans-serif"}}>
+                                {f.formation}{f.opponent&&" · vs "+f.opponent}{f.game_date&&" · "+new Date(f.game_date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}
+                              </div>
+                            </div>
+                            <button className="btn btn-volt-outline btn-sm" style={{flexShrink:0,fontSize:10,padding:"4px 10px"}}
+                              onClick={function(){
+                                setTitle(f.title);setGameFmt(f.game_fmt);setFormation(f.formation);
+                                setSurface(f.surface);setPaletteId(f.palette_id);
+                                setPlayers(f.players);setLines(f.lines||[]);setSubs(f.subs||[]);
+                                setPhases(f.phases||[null,null,null,null,null]);setBallPos(f.ball_pos||null);
+                                setShowOpp(f.show_opp||false);setOppFmt(f.opp_fmt||"4-4-2");
+                                setOppList(f.opp_list||[]);setOppColor(f.opp_color||"#EE2244");
+                                if(f.team_name) setTeamName(f.team_name);
+                                setSavedId(f.id);
+                                notify("Loaded: "+f.title);
+                              }}>Load</button>
+                          </div>
+                        );})}
+                      </div>
+                    </div>
+                  )}
+                  <div style={{paddingTop:2}}>{ActionBar({compact:true})}</div>
                 </div>
               )}
 
               {sheetTab==="lineup"&&(
-                <div className="mob-panel" style={{maxHeight:"44dvh"}}>
+                <div className="mob-panel" style={{maxHeight:"min(44dvh, 44vh)"}}>
                   <div style={{display:"flex",flexDirection:"column",gap:6,padding:"10px 14px 12px",width:"100%"}}>
                     {MobPhaseBar()}
                     <SL c="Player Names"/>
@@ -1710,6 +1803,15 @@ export default function FCRoster() {
                               <span style={{fontSize:9,fontWeight:900,color:txtOnFill(col),fontFamily:"'Rajdhani',sans-serif"}}>{p.n.slice(0,3)}</span>
                             </div>
                             <input
+                              id={"mob-player-input-"+p.id}
+                              ref={function(el){
+                                if(el && focusPlayerId===p.id){
+                                  setTimeout(function(){
+                                    el.focus();el.scrollIntoView({block:"center",behavior:"smooth"});
+                                    setFocusPlayerId(null);
+                                  },80);
+                                }
+                              }}
                               value={p.name||""}
                               placeholder={"TAP TO NAME"}
                               maxLength={14}
@@ -1718,7 +1820,19 @@ export default function FCRoster() {
                                 setPlayers(function(prev){return prev.map(function(x){return x.id===p.id?Object.assign({},x,{name:v}):x;});});
                                 if(v.trim()) setHasNamedAny(true);
                               }}
-                              style={{flex:1,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:5,color:T.text,fontSize:13,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",padding:"6px 8px",outline:"none",textTransform:"uppercase"}}
+                              onKeyDown={function(e){
+                                if(e.key==="Enter"){
+                                  e.target.blur();
+                                  setExpandedPlayer(null);
+                                  setSheetTab("collapsed");
+                                }
+                              }}
+                              onBlur={function(){
+                                if(window.gtag&&p.name&&p.name.trim()) window.gtag("event","player_name_saved",{formation:formation,gameFmt:gameFmt});
+                              }}
+                              style={{flex:1,background:"rgba(255,255,255,0.05)",
+                                border:"1px solid "+(focusPlayerId===p.id?"rgba(200,255,0,0.45)":"rgba(255,255,255,0.1)"),
+                                borderRadius:5,color:T.text,fontSize:13,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",padding:"6px 8px",outline:"none",textTransform:"uppercase"}}
                             />
                             {/* Expand chevron */}
                             <button onClick={function(){setExpandedPlayer(isExpanded?null:p.id);}}
@@ -1867,6 +1981,38 @@ export default function FCRoster() {
                     </div>
                   )}
 
+                  {/* Start New Season */}
+                  <div style={{border:"1px solid rgba(200,255,0,0.15)",borderRadius:6,padding:"12px 14px",background:"rgba(200,255,0,0.03)"}}>
+                    <div style={{fontWeight:700,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.volt,marginBottom:6}}>
+                      Season Management
+                    </div>
+                    <p style={{fontSize:11,color:T.ghost,fontFamily:"'Poppins',sans-serif",lineHeight:1.6,marginBottom:10}}>
+                      Archive your current squad and saved games, then start fresh for a new season. Your history is always kept.
+                    </p>
+                    <button className="btn btn-volt-outline btn-sm" style={{gap:5,width:"100%"}}
+                      onClick={function(){
+                        if(!window.confirm("Start a new season? Your current saves will be kept in history. Your squad will be cleared for a fresh start.")) return;
+                        // Tag existing saves with current team name + date
+                        var seasonTag = teamName+" — "+new Date().toLocaleDateString("en-GB",{month:"short",year:"numeric"});
+                        Promise.all(savedFormations.map(function(f){
+                          return supabase.from("formations").update({team_name: seasonTag}).eq("id",f.id);
+                        })).then(function(){
+                          // Clear squad names on pitch
+                          setPlayers(function(prev){return prev.map(function(p){return Object.assign({},p,{name:"",number:"",age:"",notes:"",foot:"R",skill:3,availability:"available"});});});
+                          setLines([]);setSubs([]);
+                          setPhases([null,null,null,null,null]);setBallPos(null);
+                          setSavedId(null);
+                          // Update team name
+                          setTeamName(teamName+" (New Season)");
+                          return loadFormations().then(setSavedFormations);
+                        }).then(function(){
+                          notify("New season started! History archived under: "+seasonTag);
+                        }).catch(function(e){notify("Error: "+e.message);});
+                      }}>
+                      &#x2728; Start New Season
+                    </button>
+                  </div>
+
                   {/* Team name + Save Squad */}
                   <div style={{border:"1px solid "+T.b,borderRadius:6,padding:"12px 14px",background:T.raised,display:"flex",flexDirection:"column",gap:8}}>
                     <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -1876,13 +2022,33 @@ export default function FCRoster() {
                         style={{flex:1,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:5,
                           color:T.text,fontSize:13,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",padding:"5px 8px",outline:"none"}}/>
                     </div>
-                    <button className="btn btn-secondary btn-sm" style={{gap:5}}
-                      onClick={function(){saveSquad(players, teamName);}}>
-                      <span>&#x1F465;</span> Save Squad to Profile
-                    </button>
+                    <div style={{display:"flex",gap:6}}>
+                      <button className="btn btn-secondary btn-sm" style={{gap:5,flex:1}}
+                        onClick={function(){saveSquad(players, teamName);}}>
+                        <span>&#x1F465;</span> Save Squad
+                      </button>
+                      <button className="btn btn-danger btn-sm" style={{gap:4,flexShrink:0}}
+                        title="Archive this team's saves and start fresh"
+                        onClick={function(){
+                          if(!window.confirm("Archive "+teamName+" and start a new team? Your saves will still be accessible below.")) return;
+                          // Tag all current saves with this team name for grouping
+                          Promise.all(savedFormations.map(function(f){
+                            return supabase.from("formations").update({team_name:teamName}).eq("id",f.id);
+                          })).then(function(){
+                            setTeamName("My New Team");
+                            setSavedId(null);
+                            setPlayers(FORMATIONS[gameFmt][formation].map(function(p){return Object.assign({},p);}));
+                            setLines([]);setSubs([]);setPhases([null,null,null,null,null]);setBallPos(null);
+                            setTitle("My FCRoster");
+                            notify("Archived — starting fresh!");
+                          });
+                        }}>
+                        Archive &#x2192; New
+                      </button>
+                    </div>
                     {squad&&squad.updated_at&&(
                       <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>
-                        Last saved {new Date(squad.updated_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
+                        Squad last saved {new Date(squad.updated_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
                       </div>
                     )}
                   </div>
@@ -1916,10 +2082,17 @@ export default function FCRoster() {
                     </button>
                   </div>
 
-                  {/* Saved list -- Rosters + Plays */}
+                  {/* Saved list -- grouped by team */}
                   {(function(){
                     var rosters=savedFormations.filter(function(f){return !f.type||f.type==="roster";});
                     var plays=savedFormations.filter(function(f){return f.type==="play";});
+                    // Group rosters by team_name
+                    var teamGroups={};
+                    rosters.forEach(function(f){
+                      var tn=f.team_name||"Uncategorised";
+                      if(!teamGroups[tn]) teamGroups[tn]=[];
+                      teamGroups[tn].push(f);
+                    });
                     function SavedList(items, label) {
                       return (
                         <div style={{border:"1px solid "+T.b,borderRadius:6,overflow:"hidden"}}>
@@ -1932,44 +2105,120 @@ export default function FCRoster() {
                           ):(
                             <div style={{maxHeight:220,overflowY:"auto"}}>
                               {items.map(function(f){return(
-                                <div key={f.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderBottom:"1px solid "+T.b}}>
-                                  <div style={{flex:1,minWidth:0}}>
-                                    <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-                                      <span style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</span>
-                                      {f.result&&(
-                                        <span style={{fontSize:9,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",
-                                          padding:"1px 6px",borderRadius:3,flexShrink:0,
-                                          background:f.result==="W"?"rgba(34,204,68,0.15)":f.result==="L"?"rgba(240,32,64,0.15)":"rgba(245,190,0,0.15)",
-                                          color:f.result==="W"?"#22CC44":f.result==="L"?"#F02040":"#F5BE00",
-                                          border:"1px solid "+(f.result==="W"?"rgba(34,204,68,0.4)":f.result==="L"?"rgba(240,32,64,0.4)":"rgba(245,190,0,0.4)")}}>
-                                          {f.result}{f.score_for!=null?" "+f.score_for+"-"+f.score_against:""}
-                                        </span>
-                                      )}
+                                <div key={f.id} style={{borderBottom:"1px solid "+T.b}}>
+                                  {/* Main card row */}
+                                  <div style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px"}}>
+                                    <div style={{flex:1,minWidth:0}}>
+                                      <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                                        <span style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</span>
+                                        {/* Result badge — tap to edit */}
+                                        {f.result ? (
+                                          <span
+                                            onClick={function(){
+                                              setExpandedResult(expandedResult===f.id?null:f.id);
+                                              setEditingResult({result:f.result||"",scoreFor:f.score_for!=null?String(f.score_for):"",scoreAgainst:f.score_against!=null?String(f.score_against):"",opponent:f.opponent||"",date:f.game_date||""});
+                                            }}
+                                            style={{fontSize:9,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",
+                                              padding:"2px 7px",borderRadius:3,flexShrink:0,cursor:"pointer",
+                                              background:f.result==="W"?"rgba(34,204,68,0.15)":f.result==="L"?"rgba(240,32,64,0.15)":"rgba(245,190,0,0.15)",
+                                              color:f.result==="W"?"#22CC44":f.result==="L"?"#F02040":"#F5BE00",
+                                              border:"1px solid "+(f.result==="W"?"rgba(34,204,68,0.4)":f.result==="L"?"rgba(240,32,64,0.4)":"rgba(245,190,0,0.4)")}}>
+                                            {f.result}{f.score_for!=null?" "+f.score_for+"-"+f.score_against:""} ✎
+                                          </span>
+                                        ) : (
+                                          <span
+                                            onClick={function(){
+                                              setExpandedResult(expandedResult===f.id?null:f.id);
+                                              setEditingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
+                                            }}
+                                            style={{fontSize:9,fontWeight:600,fontFamily:"'Poppins',sans-serif",
+                                              color:"rgba(255,255,255,0.22)",cursor:"pointer",
+                                              padding:"2px 6px",borderRadius:3,border:"1px dashed rgba(255,255,255,0.15)"}}>
+                                            + result
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div style={{fontSize:9,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:1}}>
+                                        {f.game_fmt} &bull; {f.formation}
+                                        {f.opponent&&<span> &bull; vs {f.opponent}</span>}
+                                        {f.game_date&&<span> &bull; {new Date(f.game_date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}</span>}
+                                        {f.team_name&&f.team_name!==teamName&&<span style={{color:T.volt,opacity:0.6}}> &bull; {f.team_name}</span>}
+                                      </div>
                                     </div>
-                                    <div style={{fontSize:9,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:1}}>
-                                      {f.game_fmt} &bull; {f.formation}
-                                      {f.opponent&&<span> &bull; vs {f.opponent}</span>}
-                                      {f.game_date&&<span> &bull; {new Date(f.game_date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}</span>}
-                                    </div>
+                                    <button className="btn btn-volt-outline btn-sm" style={{flexShrink:0}} onClick={function(){
+                                      setTitle(f.title); setGameFmt(f.game_fmt); setFormation(f.formation);
+                                      setSurface(f.surface); setPaletteId(f.palette_id);
+                                      setPlayers(f.players); setLines(f.lines||[]); setSubs(f.subs||[]);
+                                      setPhases(f.phases||[null,null,null,null,null]); setBallPos(f.ball_pos||null);
+                                      setShowOpp(f.show_opp||false); setOppFmt(f.opp_fmt||"4-4-2");
+                                      setOppList(f.opp_list||[]); setOppColor(f.opp_color||"#EE2244");
+                                      if(f.team_name) setTeamName(f.team_name);
+                                      setSavedId(f.id); setTab("pitch");
+                                      notify("Loaded: "+f.title);
+                                    }}>Load</button>
+                                    <button className="btn btn-danger btn-sm" style={{flexShrink:0}} onClick={function(){
+                                      deleteFormation(f.id).then(function(){
+                                        setSavedFormations(function(prev){return prev.filter(function(x){return x.id!==f.id;});});
+                                        if(savedId===f.id) setSavedId(null);
+                                        notify("Deleted.");
+                                      }).catch(function(e){notify(e.message);});
+                                    }}>&#x2715;</button>
                                   </div>
-                                  <button className="btn btn-volt-outline btn-sm" onClick={function(){
-                                    setTitle(f.title); setGameFmt(f.game_fmt); setFormation(f.formation);
-                                    setSurface(f.surface); setPaletteId(f.palette_id);
-                                    setPlayers(f.players); setLines(f.lines||[]); setSubs(f.subs||[]);
-                                    setPhases(f.phases||[null,null,null,null,null]); setBallPos(f.ball_pos||null);
-                                    setShowOpp(f.show_opp||false); setOppFmt(f.opp_fmt||"4-4-2");
-                                    setOppList(f.opp_list||[]); setOppColor(f.opp_color||"#EE2244");
-                                    if(f.team_name) setTeamName(f.team_name);
-                                    setSavedId(f.id); setTab("pitch");
-                                    notify("Loaded: "+f.title);
-                                  }}>Load</button>
-                                  <button className="btn btn-danger btn-sm" onClick={function(){
-                                    deleteFormation(f.id).then(function(){
-                                      setSavedFormations(function(prev){return prev.filter(function(x){return x.id!==f.id;});});
-                                      if(savedId===f.id) setSavedId(null);
-                                      notify("Deleted.");
-                                    }).catch(function(e){notify(e.message);});
-                                  }}>&#x2715;</button>
+                                  {/* Inline result editor */}
+                                  {expandedResult===f.id&&(
+                                    <div style={{padding:"10px 14px 14px",borderTop:"1px solid rgba(255,255,255,0.06)",background:"rgba(255,255,255,0.02)"}}>
+                                      {/* W / D / L */}
+                                      <div style={{display:"flex",gap:6,marginBottom:10}}>
+                                        {[["W","#22CC44","Win"],["D","#F5BE00","Draw"],["L","#F02040","Loss"]].map(function(item){
+                                          var active=editingResult.result===item[0];
+                                          return (
+                                            <button key={item[0]}
+                                              onClick={function(){setEditingResult(function(r){return Object.assign({},r,{result:item[0]});});}}
+                                              style={{flex:1,height:44,borderRadius:6,
+                                                border:"2px solid "+(active?item[1]:T.b),
+                                                background:active?"rgba(255,255,255,0.05)":"transparent",
+                                                color:active?item[1]:"rgba(255,255,255,0.3)",
+                                                fontFamily:"'Rajdhani',sans-serif",fontWeight:900,fontSize:16,
+                                                cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+                                              {item[0]}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                      {/* Score */}
+                                      <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:8}}>
+                                        <input type="number" min="0" max="99" placeholder="0"
+                                          value={editingResult.scoreFor}
+                                          onChange={function(e){setEditingResult(function(r){return Object.assign({},r,{scoreFor:e.target.value});});}}
+                                          style={{flex:1,textAlign:"center",fontSize:20,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"6px 0"}}/>
+                                        <span style={{color:T.ghost,fontWeight:700}}>–</span>
+                                        <input type="number" min="0" max="99" placeholder="0"
+                                          value={editingResult.scoreAgainst}
+                                          onChange={function(e){setEditingResult(function(r){return Object.assign({},r,{scoreAgainst:e.target.value});});}}
+                                          style={{flex:1,textAlign:"center",fontSize:20,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"6px 0"}}/>
+                                      </div>
+                                      {/* Opponent + Date inline */}
+                                      <div style={{display:"flex",gap:6,marginBottom:10}}>
+                                        <input value={editingResult.opponent} placeholder="vs Opponent"
+                                          onChange={function(e){setEditingResult(function(r){return Object.assign({},r,{opponent:e.target.value});});}}
+                                          style={{flex:2,fontSize:12,padding:"5px 8px"}}/>
+                                        <input type="date" value={editingResult.date}
+                                          onChange={function(e){setEditingResult(function(r){return Object.assign({},r,{date:e.target.value});});}}
+                                          style={{flex:1,fontSize:11,padding:"5px 6px",color:editingResult.date?T.text:"rgba(255,255,255,0.3)"}}/>
+                                      </div>
+                                      {/* Save / Cancel */}
+                                      <div style={{display:"flex",gap:6}}>
+                                        <button className="btn btn-primary btn-sm" style={{flex:1}}
+                                          onClick={function(){
+                                            saveResult(f.id, editingResult);
+                                            setExpandedResult(null);
+                                            notify("Result saved!");
+                                          }}>Save</button>
+                                        <button className="btn btn-secondary btn-sm" style={{flex:1}}
+                                          onClick={function(){setExpandedResult(null);}}>Cancel</button>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               );})}
                             </div>
@@ -1979,8 +2228,17 @@ export default function FCRoster() {
                     }
                     return (
                       <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                        {SavedList(rosters,"Saved Rosters")}
-                        {SavedList(plays,"Saved Plays")}
+                        {Object.keys(teamGroups).map(function(tn){
+                          return (
+                            <div key={tn}>
+                              <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.18em",color:T.volt,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",padding:"4px 0 6px"}}>
+                                &#x1F3F9; {tn}
+                              </div>
+                              {SavedList(teamGroups[tn],"")}
+                            </div>
+                          );
+                        })}
+                        {plays.length>0&&SavedList(plays,"Saved Plays")}
                       </div>
                     );
                   })()}
@@ -2140,7 +2398,7 @@ export default function FCRoster() {
       </div>
 
       {showAuth&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(12px)"}} onClick={function(e){if(e.target===e.currentTarget){setShowAuth(false);setAuthErr("");}}}>
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)"}} onClick={function(e){if(e.target===e.currentTarget){setShowAuth(false);setAuthErr("");}}}>
           <div style={{background:"#1A1A1A",border:"1px solid "+T.bhi,borderTop:"2px solid "+T.volt,borderRadius:10,padding:28,width:"100%",maxWidth:340,boxShadow:"0 36px 80px rgba(0,0,0,0.88)"}} className="fu">
             <h2 style={{fontWeight:700,fontSize:19,letterSpacing:"0.06em",marginBottom:4}}>{authMode==="signin"?"WELCOME BACK":"JOIN FCROSTER"}</h2>
             <p style={{color:T.ghost,fontSize:12,marginBottom:20,fontFamily:"'Poppins',sans-serif"}}>Unlock pass, run, and shot drawing tools.</p>
@@ -2250,7 +2508,7 @@ export default function FCRoster() {
 
       {/* Result modal — shown after saving a lineup */}
       {resultModal&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(12px)"}}
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)"}}
           onClick={function(e){if(e.target===e.currentTarget){setResultModal(null);notify("Lineup saved!");}}}>
           <div style={{background:"#1A1A1A",border:"1px solid "+T.bhi,borderTop:"2px solid "+T.volt,borderRadius:10,padding:22,width:"100%",maxWidth:300}} className="fu">
             <h3 style={{fontWeight:700,fontSize:15,letterSpacing:"0.08em",marginBottom:16,textAlign:"center"}}>HOW DID IT GO?</h3>
@@ -2304,7 +2562,7 @@ export default function FCRoster() {
       )}
 
       {editP&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(10px)"}}
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)"}}
           onClick={function(e){if(e.target===e.currentTarget)setEditP(null);}}
           onTouchStart={function(e){e.stopPropagation();}}>
           <div style={{background:"#1A1A1A",border:"1px solid "+T.bhi,borderTop:"2px solid "+T.volt,borderRadius:10,padding:22,width:"100%",maxWidth:320,maxHeight:"90vh",overflowY:"auto"}} className="fu">
