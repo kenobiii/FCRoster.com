@@ -142,7 +142,7 @@ var CSS = [
   "  .d-hdr,.d-bar{display:none!important;}",
   "  .mob-ctrl{display:flex;flex-direction:column;flex-shrink:0;background:#1E1E1E;border-top:1px solid rgba(255,255,255,0.08);}",
   "  .mob-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.08);background:#111111;}",
-  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:64px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scrollbar-width:none;padding-bottom:max(env(safe-area-inset-bottom,0px),20px);width:100%;}",
+  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:64px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scrollbar-width:none;width:100%;}",
   "}",
   "@media(max-width:639px){.nav-sec{display:none!important}.nav-more{display:flex!important}}",
   "@media(min-width:768px) and (max-width:1099px){.ps{grid-template-columns:172px 1fr 168px}}",
@@ -1739,7 +1739,29 @@ export default function FCRoster() {
               <div className="pc">
                 {PhaseStrip()}
                 {/* Squad name bar -- desktop only, above pitch */}
-                <div className="d-hdr" style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"6px 16px",borderBottom:"1px solid rgba(255,255,255,0.06)",background:"#131313",flexShrink:0,gap:10}}>
+                <div className="d-hdr" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 16px",borderBottom:"1px solid rgba(255,255,255,0.06)",background:"#131313",flexShrink:0,gap:10}}>
+                  {/* Save Roster — left side of squad header bar */}
+                  <button onClick={function(){
+                      if(!user){setShowAuth(true);return;}
+                      var saveTitle = titleEdited ? title : autoTitle();
+                      var saveDate  = todayISO();
+                      var state={title:saveTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
+                      var state2 = Object.assign({}, state, {team_name: teamName, game_date: saveDate});
+                      var fn = savedId ? updateFormation(savedId, state2) : saveFormation(state2);
+                      fn.then(function(row){
+                        setSavedId(row.id);setTitle(saveTitle);setTitleEdited(false);
+                        setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:saveDate});
+                        setResultModal({id: row.id});
+                        return loadFormations().then(setSavedFormations);
+                      }).catch(function(e){notify("Error: "+e.message);});
+                    }}
+                    className="btn btn-primary btn-sm"
+                    style={{gap:5,fontWeight:900,minWidth:120,
+                      boxShadow:user?"0 0 12px rgba(200,255,0,0.25)":"none",
+                      opacity:user?1:0.5}}>
+                    <span>&#x2193;</span>
+                    <span>{savedId?"Update Roster":"Save Roster"}</span>
+                  </button>
                   {editTitle ? (
                     <input
                       value={title}
@@ -1829,8 +1851,8 @@ export default function FCRoster() {
 
               {/* Section content — always rendered when not pitch */}
               {sheetTab==="pitch"&&(
-                <div className="mob-panel" style={{maxHeight:"min(52dvh,52vh)"}}>
-                <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:6,width:"100%"}}>
+                <div className="mob-panel" style={{maxHeight:"min(58dvh,58vh)"}}>
+                <div style={{padding:"8px 12px 0",display:"flex",flexDirection:"column",gap:6,width:"100%"}}>
                   {/* Compact surface / kit / opposition row */}
                   <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                     <div style={{flex:1,minWidth:100}}><DD value={surface} options={surfOpts} onChange={setSurface} bg="#1A1A1A" up={true}/></div>
@@ -1887,13 +1909,14 @@ export default function FCRoster() {
                       </div>
                     </div>
                   )}
-                  <div style={{paddingTop:2,paddingBottom:8}}>{ActionBar({compact:true})}</div>
+                  <div style={{paddingTop:2}}>{ActionBar({compact:true})}</div>
+                  <div style={{height:"max(env(safe-area-inset-bottom,0px),28px)",flexShrink:0}}/>
                 </div>
                 </div>
               )}
 
               {sheetTab==="lineup"&&(
-                <div className="mob-panel" style={{maxHeight:"min(52dvh,52vh)"}}>
+                <div className="mob-panel" style={{maxHeight:"min(58dvh,58vh)"}}>
                   <div style={{display:"flex",flexDirection:"column",gap:6,padding:"10px 14px 12px",width:"100%"}}>
                     {MobPhaseBar()}
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -2067,16 +2090,18 @@ export default function FCRoster() {
                     {SubPlanner()}
                     <HR/>
                     {ActionBar({compact:true})}
+                    <div style={{height:"max(env(safe-area-inset-bottom,0px),28px)",flexShrink:0}}/>
                   </div>
                 </div>
               )}
 
               {sheetTab==="draw"&&(
-                <div className="mob-panel" style={{maxHeight:"min(52dvh,52vh)"}}>
-                <div style={{display:"flex",flexDirection:"column",alignItems:"stretch",gap:10,padding:"10px 14px 12px",width:"100%"}}>
+                <div className="mob-panel" style={{maxHeight:"min(58dvh,58vh)"}}>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"stretch",gap:10,padding:"10px 14px 0",width:"100%"}}>
                   {MobPhaseBar()}
                   {ToolRow()}
-                  <div style={{paddingTop:4,paddingBottom:8}}>{ActionBar({compact:true})}</div>
+                  <div style={{paddingTop:4}}>{ActionBar({compact:true})}</div>
+                  <div style={{height:"max(env(safe-area-inset-bottom,0px),28px)",flexShrink:0}}/>
                 </div>
                 </div>
               )}
@@ -2099,8 +2124,8 @@ export default function FCRoster() {
                   {/* ── Desktop 3-column grid / Mobile single column ── */}
                   <div style={{
                     display:"grid",
-                    gridTemplateColumns:"repeat(auto-fit, minmax(260px, 1fr))",
-                    gap:20,
+                    gridTemplateColumns: window.innerWidth >= 900 ? "280px 1fr 260px" : "1fr",
+                    gap: window.innerWidth >= 900 ? 24 : 16,
                     alignItems:"start",
                   }}>
 
