@@ -38,82 +38,6 @@ var UC = {GK:"#F0B429",DEF:"#1E3A8A",MID:"#3B82F6",ATT:"#93C5FD"};
 function unitCol(n){ if(n==="GK")return UC.GK; if(["CB","RB","LB","RWB","LWB"].includes(n))return UC.DEF; if(["ST","RW","LW","CF"].includes(n))return UC.ATT; return UC.MID; }
 function txtOnFill(f){ return ["#F0B429","#93C5FD","#DEDEDE","#C4920A","#E8C200","#D4B87A","#C4A265","#C8860A","#D4920C"].includes(f)?"rgba(0,0,0,0.88)":"#fff"; }
 
-var DEMO_PLAYERS = [
-  {id:1,  n:"GK", x:32, y:88, name:"Martínez",    jersey:1,  foot:"Right", skill:"Pro",      avail:true, age:28, notes:""},
-  {id:2,  n:"RB", x:52, y:73, name:"Trent",       jersey:2,  foot:"Right", skill:"Pro",      avail:true, age:25, notes:""},
-  {id:3,  n:"CB", x:41, y:76, name:"Van Dijk",    jersey:4,  foot:"Left",  skill:"Pro",      avail:true, age:32, notes:""},
-  {id:4,  n:"CB", x:24, y:76, name:"Stones",      jersey:5,  foot:"Right", skill:"Pro",      avail:true, age:29, notes:""},
-  {id:5,  n:"LB", x:13, y:73, name:"Robertson",   jersey:3,  foot:"Left",  skill:"Pro",      avail:true, age:29, notes:""},
-  {id:6,  n:"CM", x:43, y:55, name:"Gravenberch", jersey:38, foot:"Right", skill:"Pro",      avail:true, age:22, notes:""},
-  {id:7,  n:"CM", x:32, y:52, name:"Mac Allister",jersey:10, foot:"Right", skill:"Pro",      avail:true, age:25, notes:""},
-  {id:8,  n:"CM", x:22, y:55, name:"Szoboszlai",  jersey:8,  foot:"Right", skill:"Pro",      avail:true, age:23, notes:""},
-  {id:9,  n:"RW", x:49, y:30, name:"Salah",       jersey:11, foot:"Left",  skill:"Semi-Pro", avail:true, age:31, notes:""},
-  {id:10, n:"ST", x:32, y:24, name:"Núñez",       jersey:9,  foot:"Right", skill:"Pro",      avail:true, age:24, notes:""},
-  {id:11, n:"LW", x:16, y:30, name:"Díaz",        jersey:7,  foot:"Right", skill:"Pro",      avail:true, age:27, notes:""},
-];
-
-// 4-phase Liverpool build-up — fully audited: every run/pass starts from player's actual position
-// Phase players show WHERE players ARE at the start of that phase's action
-var DEMO_PHASES = [
-  {
-    // Phase 1: GK (32,88) → Stones (24,76). Trent (52,73) begins overlap.
-    ball: {x:24, y:76},
-    lines: [
-      {tool:"pass", pts:[{x:32,y:88},{x:24,y:76}]},  // GK → Stones ✓
-      {tool:"run",  pts:[{x:52,y:73},{x:55,y:50}]},  // Trent from (52,73) ✓
-    ],
-    players: [
-      {id:1,x:32,y:88},{id:2,x:52,y:73},{id:3,x:41,y:76},{id:4,x:24,y:76},
-      {id:5,x:13,y:73},{id:6,x:43,y:55},{id:7,x:32,y:52},{id:8,x:22,y:55},
-      {id:9,x:49,y:30},{id:10,x:32,y:24},{id:11,x:16,y:30},
-    ],
-  },
-  {
-    // Phase 2: Stones (24,76) → Mac Allister (32,52). Trent (55,50) continues. Szoboszlai (22,55) 3rd man. Núñez (32,24) drags.
-    ball: {x:32, y:52},
-    lines: [
-      {tool:"pass", pts:[{x:24,y:76},{x:32,y:52}]},  // Stones → Mac Allister ✓
-      {tool:"run",  pts:[{x:55,y:50},{x:58,y:35}]},  // Trent from (55,50) ✓
-      {tool:"run",  pts:[{x:22,y:55},{x:36,y:36}]},  // Szoboszlai from (22,55) ✓
-      {tool:"run",  pts:[{x:32,y:24},{x:20,y:18}]},  // Núñez from (32,24) ✓
-    ],
-    players: [
-      {id:1,x:32,y:88},{id:2,x:55,y:50},{id:3,x:41,y:76},{id:4,x:24,y:76},
-      {id:5,x:13,y:65},{id:6,x:43,y:55},{id:7,x:32,y:52},{id:8,x:22,y:55},
-      {id:9,x:49,y:30},{id:10,x:32,y:24},{id:11,x:16,y:30},
-    ],
-  },
-  {
-    // Phase 3: Mac Allister (32,52) → Salah (49,30). Szoboszlai (36,36) box run. Núñez (20,18) near post. Díaz (16,30) far post.
-    ball: {x:49, y:30},
-    lines: [
-      {tool:"pass", pts:[{x:32,y:52},{x:49,y:30}]},  // Mac Allister → Salah ✓
-      {tool:"run",  pts:[{x:36,y:36},{x:36,y:18}]},  // Szoboszlai from (36,36) ✓
-      {tool:"run",  pts:[{x:20,y:18},{x:26,y:11}]},  // Núñez from (20,18) ✓
-      {tool:"run",  pts:[{x:16,y:30},{x:18,y:13}]},  // Díaz from (16,30) ✓
-    ],
-    players: [
-      {id:1,x:32,y:88},{id:2,x:58,y:35},{id:3,x:41,y:76},{id:4,x:22,y:70},
-      {id:5,x:13,y:62},{id:6,x:43,y:50},{id:7,x:32,y:52},{id:8,x:36,y:36},
-      {id:9,x:49,y:30},{id:10,x:20,y:18},{id:11,x:16,y:30},
-    ],
-  },
-  {
-    // Phase 4: Salah (49,30) shoots top corner. Núñez (24,12) near post. Díaz (18,14) far post.
-    ball: {x:36, y:6},
-    lines: [
-      {tool:"shot", pts:[{x:49,y:30},{x:36,y:6}]},   // Salah shoots from (49,30) ✓
-      {tool:"run",  pts:[{x:24,y:12},{x:28,y:8}]},   // Núñez from (24,12) ✓
-      {tool:"run",  pts:[{x:18,y:14},{x:22,y:8}]},   // Díaz from (18,14) ✓
-    ],
-    players: [
-      {id:1,x:32,y:88},{id:2,x:58,y:28},{id:3,x:41,y:74},{id:4,x:22,y:66},
-      {id:5,x:13,y:60},{id:6,x:42,y:46},{id:7,x:34,y:46},{id:8,x:36,y:18},
-      {id:9,x:49,y:30},{id:10,x:24,y:12},{id:11,x:18,y:14},
-    ],
-  },
-];
-var DEMO_LINES = DEMO_PHASES[0].lines;
 
 var PALETTES = [
   {id:"unit",    name:"Team",    primary:null,       secondary:null},
@@ -162,8 +86,6 @@ var CSS = [
   "input,select,textarea{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:rgba(255,255,255,0.9);padding:9px 11px;font-family:'Poppins',sans-serif;font-size:13px;width:100%;outline:none;transition:border-color .16s;}",
   "input:focus,select:focus,textarea:focus{border-color:rgba(200,255,0,0.4);}",
   "label{font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.24);margin-bottom:5px;display:block;font-family:'Rajdhani',sans-serif;}",
-  "@keyframes demoPulse { 0%,100%{opacity:0.85} 50%{opacity:1} }",
-  "@keyframes goalGlow { 0%{opacity:0} 20%{opacity:1} 80%{opacity:0.8} 100%{opacity:0} }",
   "@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}",
   ".fu{animation:fadeUp .24s ease both}",
   ".ps{flex:1;display:grid;grid-template-columns:200px 1fr 196px;overflow:hidden;min-height:0;}",
@@ -180,12 +102,12 @@ var CSS = [
   "@media(max-width:767px){",
   "  .ps{grid-template-columns:1fr;height:100%;display:flex;flex-direction:column;overflow:hidden;}",
   "  .lp,.rp{display:none!important}",
-  "  .pc{flex:1;min-height:0;padding:0;background:#131313;align-items:stretch;justify-content:flex-start;}",
+  "  .pc{flex:1;min-height:0;padding:0;background:#131313;align-items:stretch;justify-content:flex-start;min-height:240px;}",
   "  .pw{max-height:100%;width:auto;aspect-ratio:65/100;max-width:100%;margin:0 auto;}",
   "  .d-hdr,.d-bar{display:none!important;}",
   "  .mob-ctrl{display:flex;flex-direction:column;flex-shrink:0;background:#1E1E1E;border-top:1px solid rgba(255,255,255,0.08);}",
   "  .mob-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.08);background:#111111;}",
-  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:90px;max-height:34vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}",
+  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:90px;overflow-y:auto;-webkit-overflow-scrolling:touch;transition:max-height 0.3s ease;}",
   "}",
   "@media(max-width:639px){.nav-sec{display:none!important}.nav-more{display:flex!important}}",
   "@media(min-width:768px) and (max-width:1099px){.ps{grid-template-columns:172px 1fr 168px}}",
@@ -414,11 +336,7 @@ export default function FCRoster() {
   var [authBusy,  setAuthBusy]  = useState(false);
   var [savedFormations, setSavedFormations] = useState([]);
   var [savedId,   setSavedId]   = useState(null);
-  var [demoMode,  setDemoMode]  = useState(true);
-  var [showBanner,setShowBanner]= useState(true);  // CTA banner — stays visible after demo ends
-  var [demoPhase, setDemoPhase] = useState(0);
-  var [goalFlash, setGoalFlash] = useState(false);
-  var demoRef     = useRef(null);
+
 
   // Real Supabase auth listener -- event-aware to prevent OAuth loop
   useEffect(function() {
@@ -427,10 +345,6 @@ export default function FCRoster() {
         if (session && session.user) {
           var u = session.user;
           setUser({ id: u.id, name: (u.user_metadata && u.user_metadata.full_name) || u.email.split("@")[0], email: u.email });
-          setDemoMode(false);
-          setShowBanner(false);
-          setGoalFlash(false);
-          // Wipe demo state — give user a clean blank pitch
           setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
           setLines([]);
           setBallPos(null);
@@ -447,122 +361,22 @@ export default function FCRoster() {
         setUser(null);
         setSavedFormations([]);
         setSavedId(null);
-        // Restore demo state when signed out
-        setPlayers(DEMO_PLAYERS.map(function(p){return Object.assign({},p);}));
-        setLines(DEMO_PHASES[0].lines);
-        setBallPos({x:32, y:88}); // Ball back to keeper
-        setTitle("FCRoster Demo");
-        setFormation("4-3-3");
-        setGameFmt("11v11");
-        setDemoPhase(0);
-        setGoalFlash(false);
-        setDemoMode(true);
-        setShowBanner(true);
-      }
-    });
-    return function() { subscription.unsubscribe(); };
-  }, []);
-  // Mount: only load demo if no active session — logged-in users get a clean pitch
-  useEffect(function() {
-    supabase.auth.getSession().then(function(res) {
-      var hasSession = res.data && res.data.session && res.data.session.user;
-      if (!hasSession) {
-        // Anonymous — show demo
-        setPlayers(DEMO_PLAYERS.map(function(p){return Object.assign({},p);}));
-        setLines(DEMO_PHASES[0].lines);
-        setBallPos({x:32, y:88});
-        setTitle("FCRoster Demo");
-        setFormation("4-3-3");
-        setGameFmt("11v11");
-        setDemoMode(true);
-        setShowBanner(true);
-      } else {
-        // Already logged in — clean blank pitch, no demo
         setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
         setLines([]);
         setBallPos(null);
         setTitle("My FCRoster");
-        setDemoMode(false);
-        setShowBanner(false);
       }
     });
+    return function() { subscription.unsubscribe(); };
+  }, []);
+  // Mount: clean default pitch for all users
+  useEffect(function() {
+    setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
+    setLines([]);
+    setBallPos(null);
+    setTitle("My FCRoster");
   }, []);
 
-  // Demo sequence: plays ONCE through 4 phases, then resets to clean default 4-3-3 and STOPS.
-  useEffect(function() {
-    if (!demoMode) {
-      if (demoRef.current) { clearInterval(demoRef.current); demoRef.current = null; }
-      return;
-    }
-
-    var t1, t2, t3, t4, t5, t6, t7, t8;
-
-    // Each step is a named timeout — no loops, no restarts, just a clean one-way sequence
-
-    // Step 0 — 1.5s delay, then show ball at keeper + Phase 1 lines
-    t1 = setTimeout(function() {
-      setPlayers(DEMO_PLAYERS.map(function(p){return Object.assign({},p);}));
-      setLines(DEMO_PHASES[0].lines);
-      setBallPos({x:32, y:88});
-      setDemoPhase(0);
-
-      // Step 1 — 2.8s: ball arrives at Stones
-      t2 = setTimeout(function() {
-        var ph = DEMO_PHASES[0];
-        setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
-        setLines(ph.lines);
-        setBallPos(ph.ball);
-        setDemoPhase(1);
-
-        // Step 2 — 2.8s: Stones plays to Mac Allister
-        t3 = setTimeout(function() {
-          var ph = DEMO_PHASES[1];
-          setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
-          setLines(ph.lines);
-          setBallPos(ph.ball);
-          setDemoPhase(2);
-
-          // Step 3 — 2.8s: Mac Allister releases Salah
-          t4 = setTimeout(function() {
-            var ph = DEMO_PHASES[2];
-            setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
-            setLines(ph.lines);
-            setBallPos(ph.ball);
-            setDemoPhase(3);
-
-            // Step 4 — 2.8s: Salah shoots — GOAL
-            t5 = setTimeout(function() {
-              var ph = DEMO_PHASES[3];
-              setPlayers(function(prev){return prev.map(function(p){var m=ph.players.find(function(d){return d.id===p.id;});return m?Object.assign({},p,{x:m.x,y:m.y}):p;});});
-              setLines(ph.lines);
-              setBallPos(ph.ball);
-              setDemoPhase(4);
-              // Goal flash
-              t6 = setTimeout(function(){setGoalFlash(true);}, 800);
-              t7 = setTimeout(function(){setGoalFlash(false);}, 2200);
-
-              // Step 5 — 3s after goal: reset to clean default 4-3-3, STOP. Pitch fully unlocked.
-              t8 = setTimeout(function() {
-                setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
-                setLines([]);
-                setBallPos(null);
-                setDemoPhase(0);
-                setGoalFlash(false);
-                setDemoMode(false); // unlock pitch — Reset/Undo work again
-                setShowBanner(false); // banner gone after demo played
-              }, 3000);
-
-            }, 2800);
-          }, 2800);
-        }, 2800);
-      }, 2800);
-    }, 1500);
-
-    return function() {
-      [t1,t2,t3,t4,t5,t6,t7,t8].forEach(function(t){clearTimeout(t);});
-      if (demoRef.current) { clearInterval(demoRef.current); demoRef.current = null; }
-    };
-  }, [demoMode]);
 
   var [dragId,    setDragId]    = useState(null);
   var [editP,     setEditP]     = useState(null);
@@ -574,7 +388,23 @@ export default function FCRoster() {
   var [toast,     setToast]     = useState(null);
   var [moreOpen,  setMoreOpen]  = useState(false);
   var [sheetTab,  setSheetTab]  = useState("lineup");
-  var [mobMenu,   setMobMenu]   = useState(true);
+  var [mobMenu,   setMobMenu]   = useState(function(){
+    try { return localStorage.getItem("fcr_panel") || "pitch"; } catch(e){ return "pitch"; }
+  });
+  var [showHint,  setShowHint]  = useState(true);
+
+  // Hint auto-hides after 3s on first load
+  useEffect(function() {
+    if (!showHint) return;
+    var t = setTimeout(function(){setShowHint(false);}, 3000);
+    return function(){clearTimeout(t);};
+  }, []);
+
+  // Persist panel state
+  function setPanel(v) {
+    setMobMenu(v);
+    try { localStorage.setItem("fcr_panel", v); } catch(e){}
+  }
 
   var svgRef      = useRef(null);
   var moreRef     = useRef(null);
@@ -588,9 +418,13 @@ export default function FCRoster() {
   useOutside(moreRef, useCallback(function(){setMoreOpen(false);}, []), moreOpen);
 
   // Keep refs current so native listeners always see latest values
-  var toolRef = useRef(tool);
+  var toolRef   = useRef(tool);
+  var userRef   = useRef(user);
+  var notifyRef = useRef(notify);
   useEffect(function() { toolRef.current = tool; }, [tool]);
+  useEffect(function() { userRef.current = user; }, [user]);
   playersRef.current  = players;
+  notifyRef.current   = notify;
   setEditPRef.current = setEditP;
 
   useEffect(function() {
@@ -617,23 +451,22 @@ export default function FCRoster() {
         var isText = target && target.tagName && target.tagName.toLowerCase() === "text";
         var targetY = isText ? parseFloat(target.getAttribute("y") || "0") : 0;
         if (isText && targetY > 5) {
+          e.preventDefault(); // block synthetic click + scroll
+          if (!userRef.current) { if(notifyRef.current) notifyRef.current("Sign in to name your players"); return; }
           var node = target;
-          var pid3 = null;
-          while (node && node !== el) {
-            var nid3 = node.id || "";
-            if (nid3.indexOf("tkn-") === 0) { pid3 = parseInt(nid3.slice(4), 10); break; }
+          var pid2 = null;
+          while (node) {
+            if (node.id && node.id.indexOf("tkn-") === 0) { pid2 = parseInt(node.id.slice(4), 10); break; }
             node = node.parentNode;
           }
-          if (pid3 !== null && setEditPRef.current && playersRef.current) {
-            var plr = playersRef.current.find(function(x){return x.id===pid3;});
-            if (plr) {
-              // preventDefault kills the synthesized click that would bleed
-              // through to the modal backdrop or bottom menu 300ms later
-              e.preventDefault();
-              setEditPRef.current(Object.assign({}, plr));
-              return;
+          if (pid2 !== null && playersRef.current && svgRef.current) {
+            var plr2 = playersRef.current.find(function(x){return x.id===pid2;});
+            if (plr2) {
+              var rect2 = svgRef.current.getBoundingClientRect();
+              setInlineName({id:plr2.id, name:plr2.name||"", screenX:rect2.left+plr2.x*(rect2.width/65), screenY:rect2.top+plr2.y*(rect2.height/100)});
             }
           }
+          return;
         }
       }
 
@@ -756,7 +589,6 @@ export default function FCRoster() {
     dIdRef.current=id;
     setDragId(id);
   }
-  function pDbl(e,p){e.stopPropagation();setEditP(Object.assign({},p));}
 
 
   function pts2d(pts){if(pts.length<2)return"";return pts.map(function(p,i){return(i===0?"M":"L")+" "+p.x+" "+p.y;}).join(" ");}
@@ -1184,7 +1016,7 @@ export default function FCRoster() {
     return (
       <svg ref={svgRef} width="100%" height="100%" viewBox="0 0 65 100"
         style={{display:"block",borderRadius:8,touchAction:"none",cursor:dragId!==null?"grabbing":tool==="drag"?"grab":tool?"crosshair":"default"}}
-        onMouseDown={svgDown} onMouseMove={svgMove} onMouseUp={svgUp} onMouseLeave={svgUp}
+        onMouseDown={function(e){if(inlineName)setInlineName(null);svgDown(e);}} onMouseMove={svgMove} onMouseUp={svgUp} onMouseLeave={svgUp}
         onTouchEnd={svgUp}>
         <defs>
           
@@ -1249,12 +1081,6 @@ export default function FCRoster() {
             <text textAnchor="middle" dominantBaseline="middle" fontSize="4" style={{userSelect:"none"}}>&#x26BD;</text>
           </g>
         )}
-        {goalFlash && (
-          <g style={{pointerEvents:"none"}}>
-            <rect x="22" y="1" width="21" height="8" fill="#C8FF00" opacity="0.35" rx="1" style={{animation:"goalGlow 1.2s ease-out forwards"}}/>
-            <text x="32.5" y="6" textAnchor="middle" dominantBaseline="middle" fontSize="3.5" fontWeight="bold" fill="#C8FF00" fontFamily="Rajdhani,sans-serif" style={{animation:"goalGlow 1.2s ease-out forwards",letterSpacing:"0.1em"}}>GOAL!</text>
-          </g>
-        )}
 
         {showOpp && oppList.map(function(p){return(
           <g key={"o"+p.id} transform={"translate("+p.x+","+p.y+")"} style={{pointerEvents:"none"}}>
@@ -1272,7 +1098,6 @@ export default function FCRoster() {
             <g key={p.id} id={"tkn-"+p.id}
               transform={"translate("+p.x+","+p.y+")"}
               onMouseDown={function(e){pMD(e,p.id);}}
-              onDoubleClick={function(e){pDbl(e,p);}}
               style={{cursor:tool==="drag"?"grab":tool?"crosshair":"default"}}>
               <circle r="3.1" fill="rgba(0,0,0,0.4)" cx="0.22" cy="0.58" filter="url(#tsh)"/>
               <circle r="3.1" fill={fill} strokeWidth="0.3" stroke="rgba(255,255,255,0.3)"/>
@@ -1282,8 +1107,14 @@ export default function FCRoster() {
               </text>
               <text y="5.5" textAnchor="middle" fontSize="1.8"
                 fill={hasName?"rgba(255,255,255,0.93)":"rgba(255,255,255,0.38)"}
-                onClick={function(e){e.stopPropagation();setEditP(Object.assign({},p));}}
-                style={{userSelect:"none",pointerEvents:"all",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.04em"}}>
+                onClick={function(e){
+                  e.stopPropagation();
+                  if (!user) { notify("Sign in to name your players"); return; }
+                  var svg = svgRef.current; if (!svg) return;
+                  var rect = svg.getBoundingClientRect();
+                  setInlineName({id:p.id, name:p.name||"", screenX:rect.left+p.x*(rect.width/65), screenY:rect.top+p.y*(rect.height/100)});
+                }}
+                style={{userSelect:"none",pointerEvents:"all",cursor:user?"text":"default",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.04em"}}>
                 {hasName?p.name.slice(0,12):"STARTER"}
               </text>
 
@@ -1648,42 +1479,58 @@ export default function FCRoster() {
                   )}
                 </div>
                 <div className="pw">{PitchSVG()}</div>
-                {showBanner && !user && (
-                  <div onClick={function(){setShowAuth(true);}} style={{
-                    background:"rgba(200,255,0,0.07)",
-                    borderTop:"1px solid rgba(200,255,0,0.2)",
-                    borderBottom:"1px solid rgba(200,255,0,0.1)",
-                    padding:"8px 16px",
-                    display:"flex",alignItems:"center",justifyContent:"space-between",
-                    cursor:"pointer",flexShrink:0,minHeight:44,
-                  }}>
-                    <span style={{fontSize:11,fontFamily:"'Poppins',sans-serif",color:"rgba(200,255,0,0.8)",display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{fontSize:13}}>⚽</span>
-                      <span><strong style={{color:"#C8FF00"}}>Live demo</strong> — Sign in to build your own roster &amp; plays</span>
-                    </span>
-                    <span style={{fontSize:11,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.12em",color:"#111",background:"#C8FF00",padding:"3px 12px",borderRadius:4,flexShrink:0,whiteSpace:"nowrap"}}>
-                      SIGN IN FREE →
-                    </span>
-                  </div>
-                )}
                 <div className="d-bar">{ActionBar({compact:false})}</div>
               </div>
               <div className="rp">{RightPanel()}</div>
             </div>
 
             <div className="mob-ctrl">
-              {/* Auto-hide handle -- always visible, toggles menu */}
-              <div onClick={function(){setMobMenu(function(v){return !v;});}}
-                style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-                  gap:4,minHeight:44,cursor:"pointer",flexShrink:0,
-                  borderBottom:mobMenu?"1px solid rgba(255,255,255,0.06)":"none",
-                  background:"#131313",userSelect:"none",WebkitTapHighlightColor:"transparent"}}>
-                <div style={{width:48,height:5,borderRadius:10,background:"rgba(255,255,255,0.22)",transition:"background 0.15s"}}/>
-                <span style={{fontSize:10,color:"rgba(255,255,255,0.22)",lineHeight:1,transition:"color 0.15s"}}>
-                  {mobMenu ? "\u2335" : "\u2303"}
-                </span>
+              {/* 3-state handle: pitch → half → panel */}
+              <div
+                style={{position:"relative",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                  gap:3,minHeight:44,cursor:"pointer",flexShrink:0,
+                  borderBottom:mobMenu!=="pitch"?"1px solid rgba(255,255,255,0.06)":"none",
+                  background:"#131313",userSelect:"none",WebkitTapHighlightColor:"transparent"}}
+                onClick={function(){
+                  var next = mobMenu==="pitch"?"half":mobMenu==="half"?"panel":"pitch";
+                  setPanel(next);
+                  setShowHint(false);
+                }}>
+                {/* Drag handle bar */}
+                <div style={{width:40,height:4,borderRadius:8,background:"rgba(255,255,255,0.22)"}}/>
+                {/* State indicator row */}
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  {mobMenu==="pitch"&&(
+                    <span style={{fontSize:9,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",
+                      color:"rgba(255,255,255,0.35)"}}>
+                      {gameFmt} · {formation} &nbsp;&#x2303;&#x2303;
+                    </span>
+                  )}
+                  {mobMenu==="half"&&(
+                    <span style={{fontSize:9,color:"rgba(255,255,255,0.28)",letterSpacing:"0.06em",fontFamily:"'Rajdhani',sans-serif"}}>
+                      &#x2013;&#x2013; EDITING &#x2013;&#x2013;
+                    </span>
+                  )}
+                  {mobMenu==="panel"&&(
+                    <span style={{fontSize:9,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",
+                      color:"rgba(255,255,255,0.35)"}}>
+                      &#x2302;&#x2302; PITCH
+                    </span>
+                  )}
+                </div>
+                {/* First-load hint */}
+                {showHint&&mobMenu==="pitch"&&(
+                  <div style={{position:"absolute",bottom:44,left:"50%",transform:"translateX(-50%)",
+                    background:"rgba(0,0,0,0.75)",border:"1px solid rgba(200,255,0,0.25)",
+                    borderRadius:20,padding:"4px 12px",whiteSpace:"nowrap",pointerEvents:"none",
+                    animation:"fadeUp 0.3s ease"}}>
+                    <span style={{fontSize:10,color:"rgba(200,255,0,0.8)",fontFamily:"'Poppins',sans-serif"}}>
+                      &#x2191; swipe up to edit lineup
+                    </span>
+                  </div>
+                )}
               </div>
-              {mobMenu&&(
+              {mobMenu!=="pitch"&&(
                 <div style={{display:"flex",flexDirection:"column",overflow:"hidden"}}>
                   {MobPhaseBar()}
                   <div className="mob-tabs">
@@ -1691,7 +1538,7 @@ export default function FCRoster() {
                       <button key={item[0]} onClick={function(){setSheetTab(item[0]);}} className={"mob-tab-btn"+(sheetTab===item[0]?" active":"")}>{item[1]}</button>
                     );})}
                   </div>
-                  <div className="mob-panel">
+                  <div className="mob-panel" style={{maxHeight:mobMenu==="panel"?"52dvh":"32dvh"}}>
 
                 {sheetTab==="lineup"&&(
                   <div style={{display:"flex",flexDirection:"column",gap:6,padding:"10px 14px 12px",width:"100%"}}>
@@ -2124,6 +1971,59 @@ export default function FCRoster() {
               </span>
             </p>
           </div>
+        </div>
+      )}
+
+      {inlineName&&(
+        <div
+          style={{
+            position:"fixed",
+            left:Math.min(inlineName.screenX-80, window.innerWidth-180),
+            top:Math.max(inlineName.screenY-78, 60),
+            width:168,
+            background:"#1A1A1A",
+            border:"1px solid rgba(200,255,0,0.35)",
+            borderRadius:8,
+            padding:"10px 12px",
+            zIndex:250,
+            boxShadow:"0 8px 32px rgba(0,0,0,0.7)",
+          }}
+          onMouseDown={function(e){e.stopPropagation();}}
+          onTouchStart={function(e){e.stopPropagation();}}>
+          <div style={{position:"absolute",bottom:-7,left:"50%",transform:"translateX(-50%)",width:14,height:8,overflow:"hidden"}}>
+            <div style={{width:10,height:10,background:"#1A1A1A",border:"1px solid rgba(200,255,0,0.35)",transform:"rotate(45deg)",margin:"1px 0 0 2px"}}/>
+          </div>
+          <label style={{fontSize:9,fontWeight:700,letterSpacing:"0.16em",color:"rgba(255,255,255,0.3)",fontFamily:"'Rajdhani',sans-serif",marginBottom:5,display:"block"}}>PLAYER NAME</label>
+          <input
+            autoFocus
+            value={inlineName.name}
+            maxLength={16}
+            placeholder="e.g. De Gea"
+            onChange={function(e){setInlineName(function(s){return Object.assign({},s,{name:e.target.value});});}}
+            onKeyDown={function(e){
+              if(e.key==="Enter"){
+                setPlayers(function(prev){return prev.map(function(x){return x.id===inlineName.id?Object.assign({},x,{name:inlineName.name}):x;});});
+                setInlineName(null);
+              }
+              if(e.key==="Escape"){setInlineName(null);}
+            }}
+            onBlur={function(){
+              setPlayers(function(prev){return prev.map(function(x){return x.id===inlineName.id?Object.assign({},x,{name:inlineName.name}):x;});});
+              setInlineName(null);
+            }}
+            style={{width:"100%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:5,color:"rgba(255,255,255,0.92)",padding:"6px 9px",fontSize:13,fontFamily:"'Poppins',sans-serif",outline:"none",marginBottom:8}}
+          />
+          <button
+            onMouseDown={function(e){
+              e.preventDefault();
+              setPlayers(function(prev){return prev.map(function(x){return x.id===inlineName.id?Object.assign({},x,{name:inlineName.name}):x;});});
+              var p = players.find(function(x){return x.id===inlineName.id;});
+              if(p) setEditP(Object.assign({},p,{name:inlineName.name}));
+              setInlineName(null);
+            }}
+            style={{width:"100%",background:"transparent",border:"none",color:"rgba(200,255,0,0.7)",fontSize:11,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.1em",cursor:"pointer",textAlign:"right",padding:0}}>
+            FULL PROFILE →
+          </button>
         </div>
       )}
 
