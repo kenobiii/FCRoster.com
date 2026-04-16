@@ -87,6 +87,11 @@ var CSS = [
   "input:focus,select:focus,textarea:focus{border-color:rgba(200,255,0,0.4);}",
   "label{font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.24);margin-bottom:5px;display:block;font-family:'Rajdhani',sans-serif;}",
   "@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}",
+  "@keyframes moz1{0%{transform:translate(0px,0px) rotate(-15deg)}25%{transform:translate(1.2px,-0.8px) rotate(-22deg)}50%{transform:translate(0.4px,-1.4px) rotate(-10deg)}75%{transform:translate(-0.8px,-0.6px) rotate(-20deg)}100%{transform:translate(0px,0px) rotate(-15deg)}}",
+  "@keyframes moz2{0%{transform:translate(0px,0px) rotate(25deg)}20%{transform:translate(-1.5px,0.6px) rotate(18deg)}45%{transform:translate(-0.5px,1.2px) rotate(32deg)}70%{transform:translate(1.0px,0.4px) rotate(20deg)}100%{transform:translate(0px,0px) rotate(25deg)}}",
+  "@keyframes moz3{0%{transform:translate(0px,0px) rotate(8deg)}30%{transform:translate(1.8px,-0.4px) rotate(15deg)}55%{transform:translate(0.6px,1.0px) rotate(2deg)}80%{transform:translate(-1.2px,0.2px) rotate(12deg)}100%{transform:translate(0px,0px) rotate(8deg)}}",
+  "@keyframes moz4{0%{transform:translate(0px,0px) rotate(-40deg)}15%{transform:translate(-1.0px,-1.2px) rotate(-50deg)}40%{transform:translate(0.8px,-0.8px) rotate(-32deg)}65%{transform:translate(1.2px,0.6px) rotate(-44deg)}85%{transform:translate(-0.4px,1.0px) rotate(-36deg)}100%{transform:translate(0px,0px) rotate(-40deg)}}",
+  "@keyframes moz5{0%{transform:translate(0px,0px) rotate(55deg)}35%{transform:translate(-0.6px,1.4px) rotate(62deg)}60%{transform:translate(1.4px,0.8px) rotate(48deg)}100%{transform:translate(0px,0px) rotate(55deg)}}",
   ".fu{animation:fadeUp .24s ease both}",
   ".ps{flex:1;display:grid;grid-template-columns:200px 1fr 196px;overflow:hidden;min-height:0;}",
   ".lp,.rp{overflow-y:auto;overflow-x:hidden;background:#1E1E1E;}",
@@ -1054,12 +1059,39 @@ export default function FCRoster() {
             <ellipse cx="30" cy="10" rx="3"  ry="1.5" fill="#a07840" opacity="0.2"/>
             <ellipse cx="34" cy="94" rx="3"  ry="1.5" fill="#a07840" opacity="0.2"/>
             <ellipse cx="30" cy="90" rx="3"  ry="1.5" fill="#a07840" opacity="0.2"/>
-            {/* Herrema wildlife — resident mosquitos */}
-            <image href="/mosquito.png" x="8"  y="22" width="4.5" height="4.5" opacity="0.82" transform="rotate(-15,10.25,24.25)" style={{pointerEvents:"none"}}/>
-            <image href="/mosquito.png" x="48" y="44" width="3.8" height="3.8" opacity="0.75" transform="rotate(25,49.9,45.9)"   style={{pointerEvents:"none"}}/>
-            <image href="/mosquito.png" x="20" y="68" width="5.2" height="5.2" opacity="0.88" transform="rotate(8,22.6,70.6)"    style={{pointerEvents:"none"}}/>
-            <image href="/mosquito.png" x="54" y="15" width="3.5" height="3.5" opacity="0.70" transform="rotate(-40,55.75,16.75)" style={{pointerEvents:"none"}}/>
-            <image href="/mosquito.png" x="35" y="82" width="4.0" height="4.0" opacity="0.80" transform="rotate(55,37,84)"        style={{pointerEvents:"none"}}/>
+            {/* Herrema wildlife — 5 resident mosquitos, individually animated */}
+            <defs>
+              <clipPath id="moz-clip-1"><rect x="0" y="0" width="340" height="300"/></clipPath>
+              <clipPath id="moz-clip-2"><rect x="340" y="0" width="340" height="300"/></clipPath>
+              <clipPath id="moz-clip-3"><rect x="680" y="0" width="340" height="300"/></clipPath>
+              <clipPath id="moz-clip-4"><rect x="85" y="300" width="340" height="300"/></clipPath>
+              <clipPath id="moz-clip-5"><rect x="510" y="300" width="340" height="300"/></clipPath>
+            </defs>
+            {/* Moz 1 — left midfield, slow hover, large, close up */}
+            <g style={{animation:"moz1 3.8s ease-in-out infinite",pointerEvents:"none"}}>
+              <image href="/mosquito.png" x="6" y="38" width="6" height="3"
+                style={{mixBlendMode:"multiply",opacity:0.9,pointerEvents:"none"}}/>
+            </g>
+            {/* Moz 2 — right side, medium drift */}
+            <g style={{animation:"moz2 4.6s ease-in-out infinite 0.7s",pointerEvents:"none"}}>
+              <image href="/mosquito.png" x="46" y="56" width="5" height="2.5"
+                style={{mixBlendMode:"multiply",opacity:0.85,pointerEvents:"none"}}/>
+            </g>
+            {/* Moz 3 — centre circle area, erratic */}
+            <g style={{animation:"moz3 2.9s ease-in-out infinite 1.3s",pointerEvents:"none"}}>
+              <image href="/mosquito.png" x="26" y="46" width="4.5" height="2.2"
+                style={{mixBlendMode:"multiply",opacity:0.8,pointerEvents:"none"}}/>
+            </g>
+            {/* Moz 4 — top right corner, small/distant, fast */}
+            <g style={{animation:"moz4 2.4s ease-in-out infinite 0.3s",pointerEvents:"none"}}>
+              <image href="/mosquito.png" x="52" y="18" width="3.5" height="1.8"
+                style={{mixBlendMode:"multiply",opacity:0.75,pointerEvents:"none"}}/>
+            </g>
+            {/* Moz 5 — bottom near goal mud, tight circles */}
+            <g style={{animation:"moz5 5.2s ease-in-out infinite 2.1s",pointerEvents:"none"}}>
+              <image href="/mosquito.png" x="30" y="84" width="4" height="2"
+                style={{mixBlendMode:"multiply",opacity:0.88,pointerEvents:"none"}}/>
+            </g>
           </g>
         )}
 
