@@ -142,10 +142,14 @@ var CSS = [
   "  .d-hdr,.d-bar{display:none!important;}",
   "  .mob-ctrl{display:flex;flex-direction:column;flex-shrink:0;background:#1E1E1E;border-top:1px solid rgba(255,255,255,0.08);}",
   "  .mob-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.08);background:#111111;}",
-  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:64px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scrollbar-width:none;width:100%;}",
+  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:64px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scrollbar-width:none;width:100%;scroll-padding-bottom:48px;}",
   "}",
   "@media(max-width:639px){.nav-sec{display:none!important}.nav-more{display:flex!important}}",
   "@media(min-width:768px) and (max-width:1099px){.ps{grid-template-columns:172px 1fr 168px}}",
+  /* Profile page 3-col grid */
+  ".profile-grid{display:grid;grid-template-columns:1fr;gap:16px;align-items:start;}",
+  "@media(min-width:860px){.profile-grid{grid-template-columns:280px 1fr 260px;gap:24px;}}",
+  ".profile-col{display:flex;flex-direction:column;gap:12px;}",
   /* Button system */
   ".btn{display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.14s;border:none;outline:none;}",
   ".btn:active{transform:scale(0.96);}",
@@ -1583,15 +1587,24 @@ export default function FCRoster() {
         <HR/>
         <div style={{marginBottom:0}}>
           <SL c="Drawing Key"/>
-          {[["pass","#F5BE00","Pass"],["run","#22CC44","Run"],["shot","#F02040","Shot"]].map(function(item){return(
-            <div key={item[0]} style={{display:"flex",alignItems:"center",gap:10,marginBottom:7}}>
-              <svg width="20" height="9" style={{flexShrink:0}}>
-                <line x1="0" y1="4.5" x2="14" y2="4.5" stroke={item[1]} strokeWidth={item[0]==="shot"?"2.2":"1.7"} strokeDasharray={item[0]==="run"?"4,2":"none"} strokeLinecap="round"/>
-                
-              </svg>
-              <span style={{fontSize:12,color:T.sub,fontFamily:"'Poppins',sans-serif",fontWeight:400}}>{item[2]}</span>
-            </div>
-          );})}
+          <div style={{display:"flex",gap:5}}>
+            {[["pass","#F5BE00","Pass"],["run","#22CC44","Run"],["shot","#F02040","Shot"]].map(function(item){
+              var act = tool===item[0];
+              return (
+                <button key={item[0]}
+                  onClick={function(){if(!user){setShowAuth(true);return;}setTool(act?null:item[0]);}}
+                  style={{flex:1,padding:"6px 4px 5px",borderRadius:"4px 4px 0 0",cursor:"pointer",
+                    background:act?"rgba(255,255,255,0.06)":"transparent",
+                    border:"none",borderBottom:"2.5px solid "+item[1],
+                    color:act?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.5)",
+                    fontSize:10,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",
+                    letterSpacing:"0.1em",textTransform:"uppercase",
+                    WebkitTapHighlightColor:"transparent"}}>
+                  {item[2]}
+                </button>
+              );
+            })}
+          </div>
         </div>
         <HR/>
         <div>
@@ -1851,7 +1864,7 @@ export default function FCRoster() {
 
               {/* Section content — always rendered when not pitch */}
               {sheetTab==="pitch"&&(
-                <div className="mob-panel" style={{maxHeight:"min(58dvh,58vh)"}}>
+                <div className="mob-panel" style={{maxHeight:"min(65dvh,65vh)"}}>
                 <div style={{padding:"8px 12px 0",display:"flex",flexDirection:"column",gap:6,width:"100%"}}>
                   {/* Compact surface / kit / opposition row */}
                   <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
@@ -1910,13 +1923,13 @@ export default function FCRoster() {
                     </div>
                   )}
                   <div style={{paddingTop:2}}>{ActionBar({compact:true})}</div>
-                  <div style={{height:"max(env(safe-area-inset-bottom,0px),28px)",flexShrink:0}}/>
+                  <div style={{height:"max(env(safe-area-inset-bottom,0px),56px)",flexShrink:0}}/>
                 </div>
                 </div>
               )}
 
               {sheetTab==="lineup"&&(
-                <div className="mob-panel" style={{maxHeight:"min(58dvh,58vh)"}}>
+                <div className="mob-panel" style={{maxHeight:"min(65dvh,65vh)"}}>
                   <div style={{display:"flex",flexDirection:"column",gap:6,padding:"10px 14px 12px",width:"100%"}}>
                     {MobPhaseBar()}
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -2090,18 +2103,18 @@ export default function FCRoster() {
                     {SubPlanner()}
                     <HR/>
                     {ActionBar({compact:true})}
-                    <div style={{height:"max(env(safe-area-inset-bottom,0px),28px)",flexShrink:0}}/>
+                    <div style={{height:"max(env(safe-area-inset-bottom,0px),56px)",flexShrink:0}}/>
                   </div>
                 </div>
               )}
 
               {sheetTab==="draw"&&(
-                <div className="mob-panel" style={{maxHeight:"min(58dvh,58vh)"}}>
+                <div className="mob-panel" style={{maxHeight:"min(65dvh,65vh)"}}>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"stretch",gap:10,padding:"10px 14px 0",width:"100%"}}>
                   {MobPhaseBar()}
                   {ToolRow()}
                   <div style={{paddingTop:4}}>{ActionBar({compact:true})}</div>
-                  <div style={{height:"max(env(safe-area-inset-bottom,0px),28px)",flexShrink:0}}/>
+                  <div style={{height:"max(env(safe-area-inset-bottom,0px),56px)",flexShrink:0}}/>
                 </div>
                 </div>
               )}
@@ -2122,17 +2135,12 @@ export default function FCRoster() {
               ) : (
                 <div style={{width:"100%",textAlign:"left"}}>
                   {/* ── Desktop 3-column grid / Mobile single column ── */}
-                  <div style={{
-                    display:"grid",
-                    gridTemplateColumns: window.innerWidth >= 900 ? "280px 1fr 260px" : "1fr",
-                    gap: window.innerWidth >= 900 ? 24 : 16,
-                    alignItems:"start",
-                  }}>
+                  <div className="profile-grid">
 
                     {/* ════════════════════════════════
                         LEFT — Identity & Actions
                         ════════════════════════════════ */}
-                    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                    <div className="profile-col">
 
                       {/* User identity */}
                       <div style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",
@@ -2271,7 +2279,7 @@ export default function FCRoster() {
                     {/* ════════════════════════════════
                         CENTRE — Match History
                         ════════════════════════════════ */}
-                    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                    <div className="profile-col">
 
                       {(function(){
                         var rosters=savedFormations.filter(function(f){return !f.type||f.type==="roster";});
@@ -2460,7 +2468,7 @@ export default function FCRoster() {
                     {/* ════════════════════════════════
                         RIGHT — Intelligence & Season
                         ════════════════════════════════ */}
-                    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                    <div className="profile-col">
 
                       {/* Season stats summary */}
                       {(function(){
