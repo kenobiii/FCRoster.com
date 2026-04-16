@@ -89,6 +89,7 @@ var CSS = [
   "input:focus,select:focus,textarea:focus{border-color:rgba(200,255,0,0.4);}",
   "label{font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.24);margin-bottom:5px;display:block;font-family:'Rajdhani',sans-serif;}",
   "@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}",
+  "@keyframes fadeHint{from{opacity:0.15}to{opacity:0.45}}",
   "@keyframes moz1{0%{transform:translate(0px,0px) rotate(-15deg)}25%{transform:translate(1.2px,-0.8px) rotate(-22deg)}50%{transform:translate(0.4px,-1.4px) rotate(-10deg)}75%{transform:translate(-0.8px,-0.6px) rotate(-20deg)}100%{transform:translate(0px,0px) rotate(-15deg)}}",
   "@keyframes moz2{0%{transform:translate(0px,0px) rotate(25deg)}20%{transform:translate(-1.5px,0.6px) rotate(18deg)}45%{transform:translate(-0.5px,1.2px) rotate(32deg)}70%{transform:translate(1.0px,0.4px) rotate(20deg)}100%{transform:translate(0px,0px) rotate(25deg)}}",
   "@keyframes moz3{0%{transform:translate(0px,0px) rotate(8deg)}30%{transform:translate(1.8px,-0.4px) rotate(15deg)}55%{transform:translate(0.6px,1.0px) rotate(2deg)}80%{transform:translate(-1.2px,0.2px) rotate(12deg)}100%{transform:translate(0px,0px) rotate(8deg)}}",
@@ -398,6 +399,7 @@ export default function FCRoster() {
   var [dragId,    setDragId]    = useState(null);
   var [editP,     setEditP]     = useState(null);
   var [inlineName,setInlineName]= useState(null);
+  var [hasNamedAny,setHasNamedAny]= useState(false);
   var [subs,      setSubs]      = useState([]);
   var [phases,    setPhases]    = useState([null,null,null,null,null]);
   var [activePhase, setActivePhase] = useState(null);
@@ -1124,6 +1126,16 @@ export default function FCRoster() {
           <circle cx="32" cy="87" r="0.6" fill={sf.line} stroke="none"/>
         </g>
 
+        {/* Empty state hint — fades once first player named */}
+        {!hasNamedAny&&(
+          <text x="32.5" y="50" textAnchor="middle" dominantBaseline="middle"
+            fontSize="2.2" fill="rgba(255,255,255,0.28)"
+            style={{userSelect:"none",pointerEvents:"none",fontFamily:"'Poppins',sans-serif",fontStyle:"italic",
+              animation:"fadeHint 2s ease-in-out infinite alternate"}}>
+            tap a player to add their name
+          </text>
+        )}
+
         {lines.map(function(ln,i){return(
           <path key={i} d={pts2d(ln.pts)} stroke={TC[ln.tool]} strokeWidth={ln.tool==="shot"?"0.65":"0.52"} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.92" strokeDasharray={ln.tool==="run"?"1.7,0.85":"none"}/>
         );})}
@@ -1153,22 +1165,28 @@ export default function FCRoster() {
               onMouseDown={function(e){pMD(e,p.id);}}
               style={{cursor:tool==="drag"?"grab":tool?"crosshair":"default"}}>
               <circle r="3.1" fill="rgba(0,0,0,0.4)" cx="0.22" cy="0.58" filter="url(#tsh)"/>
-              <circle r="3.1" fill={fill} strokeWidth="0.3" stroke="rgba(255,255,255,0.3)"/>
+              {/* Named: volt-tint ring. Unnamed: ghost ring */}
+              <circle r="3.1" fill={fill}
+                strokeWidth={hasName?"0.55":"0.3"}
+                stroke={hasName?"rgba(200,255,0,0.55)":"rgba(255,255,255,0.3)"}/>
+              {/* Subtle outer glow ring for named players */}
+              {hasName&&<circle r="3.6" fill="none" strokeWidth="0.3" stroke="rgba(200,255,0,0.18)"/>}
               <text y="0.6" textAnchor="middle" fontSize="1.6" fontWeight="700" fill={txt}
                 style={{userSelect:"none",pointerEvents:"none",fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em"}}>
                 {p.n.slice(0,4)}
               </text>
               <text y="5.5" textAnchor="middle" fontSize="1.8"
-                fill={hasName?"rgba(255,255,255,0.93)":"rgba(255,255,255,0.38)"}
+                fill={hasName?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.32)"}
                 onClick={function(e){
                   e.stopPropagation();
                   if (!user) { notify("Sign in to name your players"); return; }
+                  if(window.gtag) window.gtag("event","player_name_tapped",{formation:formation,gameFmt:gameFmt});
                   var svg = svgRef.current; if (!svg) return;
                   var rect = svg.getBoundingClientRect();
                   setInlineName({id:p.id, name:p.name||"", screenX:rect.left+p.x*(rect.width/65), screenY:rect.top+p.y*(rect.height/100)});
                 }}
                 style={{userSelect:"none",pointerEvents:"all",cursor:user?"text":"default",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.04em"}}>
-                {hasName?p.name.slice(0,12):"STARTER"}
+                {hasName?p.name.slice(0,12):"TAP TO NAME"}
               </text>
 
             </g>
@@ -2044,12 +2062,20 @@ export default function FCRoster() {
             onKeyDown={function(e){
               if(e.key==="Enter"){
                 setPlayers(function(prev){return prev.map(function(x){return x.id===inlineName.id?Object.assign({},x,{name:inlineName.name}):x;});});
+                if(inlineName.name&&inlineName.name.trim()){
+                  if(window.gtag) window.gtag("event","player_name_saved",{formation:formation,gameFmt:gameFmt});
+                  setHasNamedAny(true);
+                }
                 setInlineName(null);
               }
               if(e.key==="Escape"){setInlineName(null);}
             }}
             onBlur={function(){
               setPlayers(function(prev){return prev.map(function(x){return x.id===inlineName.id?Object.assign({},x,{name:inlineName.name}):x;});});
+              if(inlineName.name&&inlineName.name.trim()){
+                if(window.gtag) window.gtag("event","player_name_saved",{formation:formation,gameFmt:gameFmt});
+                setHasNamedAny(true);
+              }
               setInlineName(null);
             }}
             style={{width:"100%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:5,color:"rgba(255,255,255,0.92)",padding:"6px 9px",fontSize:13,fontFamily:"'Poppins',sans-serif",outline:"none",marginBottom:8}}
