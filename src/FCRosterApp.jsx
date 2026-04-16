@@ -354,6 +354,13 @@ export default function FCRoster() {
   var [authBusy,  setAuthBusy]  = useState(false);
   var [savedFormations, setSavedFormations] = useState([]);
   var [savedId,   setSavedId]   = useState(null);
+  var [squad,     setSquad]     = useState(null);   // persistent squad from DB
+  var [teamName,  setTeamName]  = useState("My Team");
+  // Result modal state
+  var [resultModal,setResultModal] = useState(null); // {id} — shown after save
+  var [pendingResult,setPendingResult] = useState({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
+  // Expandable player row on mobile
+  var [expandedPlayer,setExpandedPlayer] = useState(null);
 
 
   // Real Supabase auth listener -- event-aware to prevent OAuth loop
@@ -368,6 +375,7 @@ export default function FCRoster() {
           setBallPos(null);
           setTitle("My FCRoster");
           loadFormations().then(setSavedFormations).catch(function(){});
+          setTimeout(loadSquad, 200); // pre-fill pitch from saved squad
         }
       } else if (event === "TOKEN_REFRESHED") {
         // Silent token refresh on window focus — only update user, never touch pitch
@@ -387,6 +395,68 @@ export default function FCRoster() {
     });
     return function() { subscription.unsubscribe(); };
   }, []);
+  // Squad helpers
+  async function loadSquad() {
+    try {
+      var { data } = await supabase.from("squads").select("*").single();
+      if (data) {
+        setSquad(data);
+        setTeamName(data.team_name || "My Team");
+        // Pre-fill pitch names from squad if current pitch is blank
+        if (data.players && data.players.length > 0) {
+          setPlayers(function(prev) {
+            return prev.map(function(p) {
+              if (p.name && p.name.trim()) return p; // don't overwrite existing names
+              var match = data.players.find(function(sp) { return sp.n === p.n; });
+              return match ? Object.assign({}, p, {
+                name: match.name||"", number: match.number||"",
+                foot: match.foot||"R", skill: match.skill||3,
+                age: match.age||"", notes: match.notes||""
+              }) : p;
+            });
+          });
+        }
+      }
+    } catch(e) {}
+  }
+
+  async function saveSquad(newPlayers, newTeamName) {
+    try {
+      var record = { team_name: newTeamName||teamName, players: newPlayers||players,
+                     updated_at: new Date().toISOString() };
+      var { data: existing } = await supabase.from("squads").select("id").single();
+      if (existing) {
+        await supabase.from("squads").update(record).eq("id", existing.id);
+      } else {
+        await supabase.from("squads").insert([Object.assign({ user_id: (await supabase.auth.getUser()).data.user.id }, record)]);
+      }
+      setSquad(Object.assign({}, record));
+      notify("Squad saved!");
+    } catch(e) { notify("Error saving squad: "+e.message); }
+  }
+
+  async function saveResult(formationId, resultData) {
+    try {
+      await supabase.from("formations").update({
+        result: resultData.result,
+        score_for: resultData.scoreFor ? parseInt(resultData.scoreFor) : null,
+        score_against: resultData.scoreAgainst ? parseInt(resultData.scoreAgainst) : null,
+        opponent: resultData.opponent||null,
+        game_date: resultData.date||null,
+        team_name: teamName,
+      }).eq("id", formationId);
+      setSavedFormations(function(prev) {
+        return prev.map(function(f) {
+          return f.id===formationId ? Object.assign({},f,{
+            result:resultData.result, score_for:resultData.scoreFor,
+            score_against:resultData.scoreAgainst, opponent:resultData.opponent,
+            game_date:resultData.date, team_name:teamName
+          }) : f;
+        });
+      });
+    } catch(e) { notify("Error saving result."); }
+  }
+
   // Mount: clean default pitch for all users
   useEffect(function() {
     setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
@@ -1631,21 +1701,67 @@ export default function FCRoster() {
                     <SL c="Player Names"/>
                     {players.map(function(p){
                       var col=tFill(p.n);
+                      var isExpanded = expandedPlayer===p.id;
                       return (
-                        <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"3px 0",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
-                          <div style={{width:24,height:24,borderRadius:"50%",background:col,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                            <span style={{fontSize:9,fontWeight:900,color:txtOnFill(col),fontFamily:"'Rajdhani',sans-serif"}}>{p.n.slice(0,3)}</span>
+                        <div key={p.id} style={{borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+                          {/* Name row — always visible */}
+                          <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0"}}>
+                            <div style={{width:24,height:24,borderRadius:"50%",background:col,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              <span style={{fontSize:9,fontWeight:900,color:txtOnFill(col),fontFamily:"'Rajdhani',sans-serif"}}>{p.n.slice(0,3)}</span>
+                            </div>
+                            <input
+                              value={p.name||""}
+                              placeholder={"TAP TO NAME"}
+                              maxLength={14}
+                              onChange={function(e){
+                                var v=e.target.value;
+                                setPlayers(function(prev){return prev.map(function(x){return x.id===p.id?Object.assign({},x,{name:v}):x;});});
+                                if(v.trim()) setHasNamedAny(true);
+                              }}
+                              style={{flex:1,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:5,color:T.text,fontSize:13,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",padding:"6px 8px",outline:"none",textTransform:"uppercase"}}
+                            />
+                            {/* Expand chevron */}
+                            <button onClick={function(){setExpandedPlayer(isExpanded?null:p.id);}}
+                              style={{background:"none",border:"none",color:"rgba(255,255,255,0.3)",cursor:"pointer",
+                                padding:"4px 6px",fontSize:14,fontFamily:"'Rajdhani',sans-serif",
+                                transform:isExpanded?"rotate(90deg)":"rotate(0deg)",transition:"transform 0.15s",
+                                WebkitTapHighlightColor:"transparent"}}>
+                              &#x203A;
+                            </button>
                           </div>
-                          <input
-                            value={p.name||""}
-                            placeholder={p.n}
-                            maxLength={14}
-                            onChange={function(e){
-                              var v=e.target.value;
-                              setPlayers(function(prev){return prev.map(function(x){return x.id===p.id?Object.assign({},x,{name:v}):x;});});
-                            }}
-                            style={{flex:1,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:5,color:T.text,fontSize:13,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",padding:"6px 8px",outline:"none",textTransform:"uppercase"}}
-                          />
+                          {/* Expanded detail row */}
+                          {isExpanded&&(
+                            <div style={{padding:"6px 0 10px 32px",display:"flex",flexDirection:"column",gap:6}}>
+                              <div style={{display:"flex",gap:6}}>
+                                <div style={{flex:1}}>
+                                  <label style={{fontSize:8}}>Jersey #</label>
+                                  <input type="number" value={p.number||""} placeholder="1" min="1" max="99"
+                                    onChange={function(e){var v=e.target.value;setPlayers(function(prev){return prev.map(function(x){return x.id===p.id?Object.assign({},x,{number:v}):x;});});}}
+                                    style={{padding:"4px 7px",fontSize:12,fontFamily:"'Rajdhani',sans-serif",fontWeight:700}}/>
+                                </div>
+                                <div style={{flex:1}}>
+                                  <label style={{fontSize:8}}>Foot</label>
+                                  <div style={{display:"flex",gap:4,marginTop:4}}>
+                                    {["L","R","B"].map(function(f){
+                                      var active=(p.foot||"R")===f;
+                                      return <button key={f} onClick={function(){setPlayers(function(prev){return prev.map(function(x){return x.id===p.id?Object.assign({},x,{foot:f}):x;});});}}
+                                        style={{flex:1,padding:"4px 0",borderRadius:4,border:"1px solid "+(active?T.volt:T.b),background:active?"rgba(200,255,0,0.1)":"transparent",color:active?T.volt:T.ghost,fontSize:10,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",cursor:"pointer"}}>{f}</button>;
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                              <div>
+                                <label style={{fontSize:8}}>Availability</label>
+                                <div style={{display:"flex",gap:5,marginTop:4}}>
+                                  {[["available","#22CC44","✓"],["doubtful","#F5BE00","?"],["unavailable","#F02040","✕"]].map(function(item){
+                                    var active=(p.availability||"available")===item[0];
+                                    return <button key={item[0]} onClick={function(){setPlayers(function(prev){return prev.map(function(x){return x.id===p.id?Object.assign({},x,{availability:item[0]}):x;});});}}
+                                      style={{flex:1,padding:"4px 0",borderRadius:4,border:"1px solid "+(active?item[1]:T.b),background:active?"rgba(255,255,255,0.06)":"transparent",color:active?item[1]:T.ghost,fontSize:11,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",cursor:"pointer"}}>{item[2]}</button>;
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -1751,15 +1867,37 @@ export default function FCRoster() {
                     </div>
                   )}
 
+                  {/* Team name + Save Squad */}
+                  <div style={{border:"1px solid "+T.b,borderRadius:6,padding:"12px 14px",background:T.raised,display:"flex",flexDirection:"column",gap:8}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <span style={{fontSize:9,fontWeight:700,letterSpacing:"0.16em",color:T.ghost,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",flexShrink:0}}>Team</span>
+                      <input value={teamName} onChange={function(e){setTeamName(e.target.value);}}
+                        placeholder="e.g. Sunday FC"
+                        style={{flex:1,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:5,
+                          color:T.text,fontSize:13,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",padding:"5px 8px",outline:"none"}}/>
+                    </div>
+                    <button className="btn btn-secondary btn-sm" style={{gap:5}}
+                      onClick={function(){saveSquad(players, teamName);}}>
+                      <span>&#x1F465;</span> Save Squad to Profile
+                    </button>
+                    {squad&&squad.updated_at&&(
+                      <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>
+                        Last saved {new Date(squad.updated_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Save buttons */}
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                     <button className="btn btn-primary btn-md" style={{gap:5}}
                       onClick={function(){
                         var state={title,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
-                        var fn = savedId ? updateFormation(savedId, state) : saveFormation(state);
+                        var state2 = Object.assign({}, state, {team_name: teamName});
+                        var fn = savedId ? updateFormation(savedId, state2) : saveFormation(state2);
                         fn.then(function(row){
                           setSavedId(row.id);
-                          notify(savedId ? "Roster updated!" : "Roster saved!");
+                          setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
+                          setResultModal({id: row.id});
                           return loadFormations().then(setSavedFormations);
                         }).catch(function(e){notify("Error: "+e.message);});
                       }}>
@@ -1796,8 +1934,23 @@ export default function FCRoster() {
                               {items.map(function(f){return(
                                 <div key={f.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderBottom:"1px solid "+T.b}}>
                                   <div style={{flex:1,minWidth:0}}>
-                                    <div style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</div>
-                                    <div style={{fontSize:9,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:1}}>{f.game_fmt} &bull; {f.formation}</div>
+                                    <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                                      <span style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</span>
+                                      {f.result&&(
+                                        <span style={{fontSize:9,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",
+                                          padding:"1px 6px",borderRadius:3,flexShrink:0,
+                                          background:f.result==="W"?"rgba(34,204,68,0.15)":f.result==="L"?"rgba(240,32,64,0.15)":"rgba(245,190,0,0.15)",
+                                          color:f.result==="W"?"#22CC44":f.result==="L"?"#F02040":"#F5BE00",
+                                          border:"1px solid "+(f.result==="W"?"rgba(34,204,68,0.4)":f.result==="L"?"rgba(240,32,64,0.4)":"rgba(245,190,0,0.4)")}}>
+                                          {f.result}{f.score_for!=null?" "+f.score_for+"-"+f.score_against:""}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div style={{fontSize:9,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:1}}>
+                                      {f.game_fmt} &bull; {f.formation}
+                                      {f.opponent&&<span> &bull; vs {f.opponent}</span>}
+                                      {f.game_date&&<span> &bull; {new Date(f.game_date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}</span>}
+                                    </div>
                                   </div>
                                   <button className="btn btn-volt-outline btn-sm" onClick={function(){
                                     setTitle(f.title); setGameFmt(f.game_fmt); setFormation(f.formation);
@@ -1806,6 +1959,7 @@ export default function FCRoster() {
                                     setPhases(f.phases||[null,null,null,null,null]); setBallPos(f.ball_pos||null);
                                     setShowOpp(f.show_opp||false); setOppFmt(f.opp_fmt||"4-4-2");
                                     setOppList(f.opp_list||[]); setOppColor(f.opp_color||"#EE2244");
+                                    if(f.team_name) setTeamName(f.team_name);
                                     setSavedId(f.id); setTab("pitch");
                                     notify("Loaded: "+f.title);
                                   }}>Load</button>
@@ -2091,6 +2245,61 @@ export default function FCRoster() {
             style={{width:"100%",background:"transparent",border:"none",color:"rgba(200,255,0,0.7)",fontSize:11,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.1em",cursor:"pointer",textAlign:"right",padding:0}}>
             FULL PROFILE →
           </button>
+        </div>
+      )}
+
+      {/* Result modal — shown after saving a lineup */}
+      {resultModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(12px)"}}
+          onClick={function(e){if(e.target===e.currentTarget){setResultModal(null);notify("Lineup saved!");}}}>
+          <div style={{background:"#1A1A1A",border:"1px solid "+T.bhi,borderTop:"2px solid "+T.volt,borderRadius:10,padding:22,width:"100%",maxWidth:300}} className="fu">
+            <h3 style={{fontWeight:700,fontSize:15,letterSpacing:"0.08em",marginBottom:16,textAlign:"center"}}>HOW DID IT GO?</h3>
+            {/* W / D / L buttons */}
+            <div style={{display:"flex",gap:8,marginBottom:14}}>
+              {[["W","#22CC44","Win"],["D","#F5BE00","Draw"],["L","#F02040","Loss"]].map(function(item){
+                var active=pendingResult.result===item[0];
+                return (
+                  <button key={item[0]} onClick={function(){setPendingResult(function(p){return Object.assign({},p,{result:item[0]});});}}
+                    style={{flex:1,height:48,borderRadius:6,border:"2px solid "+(active?item[1]:T.b),
+                      background:active?"rgba(255,255,255,0.06)":"transparent",
+                      color:active?item[1]:"rgba(255,255,255,0.35)",
+                      fontFamily:"'Rajdhani',sans-serif",fontWeight:900,fontSize:18,cursor:"pointer",
+                      transition:"all 0.12s",WebkitTapHighlightColor:"transparent"}}>
+                    {item[0]}
+                    <div style={{fontSize:8,fontWeight:600,letterSpacing:"0.1em",marginTop:2,opacity:0.7}}>{item[2]}</div>
+                  </button>
+                );
+              })}
+            </div>
+            {/* Score */}
+            <div style={{display:"flex",gap:8,marginBottom:12,alignItems:"center"}}>
+              <input type="number" min="0" max="99" placeholder="0" value={pendingResult.scoreFor}
+                onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{scoreFor:e.target.value});});}}
+                style={{flex:1,textAlign:"center",fontSize:22,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"8px 0"}}/>
+              <span style={{color:T.ghost,fontWeight:700,fontSize:16}}>–</span>
+              <input type="number" min="0" max="99" placeholder="0" value={pendingResult.scoreAgainst}
+                onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{scoreAgainst:e.target.value});});}}
+                style={{flex:1,textAlign:"center",fontSize:22,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"8px 0"}}/>
+            </div>
+            {/* Opponent */}
+            <input value={pendingResult.opponent} placeholder="Opponent (optional)"
+              onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{opponent:e.target.value});});}}
+              style={{marginBottom:8}}/>
+            {/* Date */}
+            <input type="date" value={pendingResult.date}
+              onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{date:e.target.value});});}}
+              style={{marginBottom:16,color:pendingResult.date?T.text:"rgba(255,255,255,0.3)"}}/>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <button className="btn btn-primary btn-sm"
+                onClick={function(){
+                  if(pendingResult.result) saveResult(resultModal.id, pendingResult);
+                  setResultModal(null);
+                  notify("Lineup saved!");
+                }}>Save Result</button>
+              <button className="btn btn-secondary btn-sm"
+                onClick={function(){setResultModal(null);notify("Lineup saved!");}}>Skip</button>
+            </div>
+          </div>
         </div>
       )}
 
