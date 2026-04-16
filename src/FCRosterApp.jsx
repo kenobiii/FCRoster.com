@@ -142,7 +142,7 @@ var CSS = [
   "  .d-hdr,.d-bar{display:none!important;}",
   "  .mob-ctrl{display:flex;flex-direction:column;flex-shrink:0;background:#1E1E1E;border-top:1px solid rgba(255,255,255,0.08);}",
   "  .mob-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.08);background:#111111;}",
-  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:90px;overflow-y:auto;-webkit-overflow-scrolling:touch;transition:max-height 0.3s ease;overscroll-behavior:contain;scrollbar-width:none;}",
+  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:90px;overflow-y:auto;-webkit-overflow-scrolling:touch;transition:max-height 0.3s ease;overscroll-behavior:contain;scrollbar-width:none;padding-bottom:env(safe-area-inset-bottom,16px);}",
   "}",
   "@media(max-width:639px){.nav-sec{display:none!important}.nav-more{display:flex!important}}",
   "@media(min-width:768px) and (max-width:1099px){.ps{grid-template-columns:172px 1fr 168px}}",
@@ -592,10 +592,10 @@ export default function FCRoster() {
             var plr2 = playersRef.current.find(function(x){return x.id===pid2;});
             if (plr2) {
               var rect2 = svgRef.current.getBoundingClientRect();
-              var sx2 = rect2.left + plr2.x*(rect2.width/65);
-              var sy2 = rect2.top + plr2.y*(rect2.height/100);
-              var tooltipY2 = Math.max(sy2 - 78, rect2.top + 8);
-              setInlineName({id:plr2.id, name:plr2.name||"", screenX:sx2, screenY:tooltipY2 + 78});
+              var scaleX2 = rect2.width/65; var scaleY2 = rect2.height/100;
+              var sx2 = rect2.left + plr2.x*scaleX2;
+              var nameY2 = rect2.top + (plr2.y + 5.5)*scaleY2;
+              setInlineName({id:plr2.id, name:plr2.name||"", pos:plr2.n, screenX:sx2, screenY:nameY2, nameY:nameY2});
             }
           }
           return;
@@ -1335,14 +1335,13 @@ export default function FCRoster() {
                   e.stopPropagation();
                   if (!user) { notify("Sign in to name your players"); return; }
                   if(window.gtag) window.gtag("event","player_name_tapped",{formation:formation,gameFmt:gameFmt});
-                  // All devices: show inline name tooltip directly on pitch
+                  // All devices: in-place input at name label position
                   var svg = svgRef.current; if (!svg) return;
                   var rect = svg.getBoundingClientRect();
-                  var sx = rect.left + p.x*(rect.width/65);
-                  var sy = rect.top + p.y*(rect.height/100);
-                  // On mobile position above player but not too close to top
-                  var tooltipY = Math.max(sy - 78, rect.top + 8);
-                  setInlineName({id:p.id, name:p.name||"", screenX:sx, screenY:tooltipY + 78});
+                  var scaleX = rect.width/65; var scaleY = rect.height/100;
+                  var sx = rect.left + p.x*scaleX;
+                  var nameY = rect.top + (p.y + 5.5)*scaleY; // where name label sits
+                  setInlineName({id:p.id, name:p.name||"", pos:p.n, screenX:sx, screenY:nameY, nameY:nameY});
                 }}
                 style={{userSelect:"none",pointerEvents:"all",cursor:user?"text":"default",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.04em"}}>
                 {hasName?p.name.slice(0,12):"TAP TO NAME"}
@@ -1831,7 +1830,18 @@ export default function FCRoster() {
                 <div className="mob-panel" style={{maxHeight:"min(44dvh, 44vh)"}}>
                   <div style={{display:"flex",flexDirection:"column",gap:6,padding:"10px 14px 12px",width:"100%"}}>
                     {MobPhaseBar()}
-                    <SL c="Player Names"/>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                      <SL c="Player Names"/>
+                      {user&&savedFormations.length>0&&(
+                        <button
+                          onClick={function(){setSheetTab("pitch");}}
+                          style={{fontSize:9,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",
+                            color:T.volt,background:"rgba(200,255,0,0.08)",border:"1px solid rgba(200,255,0,0.3)",
+                            borderRadius:4,padding:"3px 8px",cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+                          LOAD ↑
+                        </button>
+                      )}
+                    </div>
                     {players.map(function(p){
                       var col=tFill(p.n);
                       var isExpanded = expandedPlayer===p.id;
@@ -1874,6 +1884,41 @@ export default function FCRoster() {
                                 border:"1px solid "+(focusPlayerId===p.id?"rgba(200,255,0,0.45)":"rgba(255,255,255,0.1)"),
                                 borderRadius:5,color:T.text,fontSize:13,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",padding:"6px 8px",outline:"none",textTransform:"uppercase"}}
                             />
+                            {/* Goal counter +/- */}
+                            <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
+                              {(function(){
+                                var g = scorerGoals(editingScorers, p.id);
+                                if(g > 0) return (
+                                  <span style={{fontSize:9,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",
+                                    color:"#C8FF00",background:"rgba(200,255,0,0.12)",
+                                    border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,
+                                    padding:"1px 5px",minWidth:18,textAlign:"center"}}>
+                                    ⚽{g}
+                                  </span>
+                                );
+                                return null;
+                              })()}
+                              <button
+                                onClick={function(){setEditingScorers(function(s){return toggleGoal(s,p,true);});if(navigator.vibrate)navigator.vibrate(6);}}
+                                style={{width:22,height:22,borderRadius:"50%",background:"rgba(200,255,0,0.1)",
+                                  border:"1px solid rgba(200,255,0,0.25)",color:"rgba(200,255,0,0.7)",
+                                  fontSize:14,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",
+                                  justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,
+                                  WebkitTapHighlightColor:"transparent",flexShrink:0}}>
+                                +
+                              </button>
+                              {scorerGoals(editingScorers, p.id)>0&&(
+                                <button
+                                  onClick={function(){setEditingScorers(function(s){return toggleGoal(s,p,false);});}}
+                                  style={{width:22,height:22,borderRadius:"50%",background:"rgba(255,255,255,0.05)",
+                                    border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.4)",
+                                    fontSize:14,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",
+                                    justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,
+                                    WebkitTapHighlightColor:"transparent",flexShrink:0}}>
+                                  −
+                                </button>
+                              )}
+                            </div>
                             {/* Expand chevron */}
                             <button onClick={function(){setExpandedPlayer(isExpanded?null:p.id);}}
                               style={{background:"none",border:"none",color:"rgba(255,255,255,0.3)",cursor:"pointer",
@@ -1919,6 +1964,20 @@ export default function FCRoster() {
                         </div>
                       );
                     })}
+                    <HR/>
+                    {/* Save goals button — appears when any goals entered */}
+                    {editingScorers.length>0&&savedId&&(
+                      <button className="btn btn-volt-outline btn-sm" style={{width:"100%",gap:5}}
+                        onClick={function(){
+                          saveResult(savedId, {
+                            result: savedFormations.find(function(f){return f.id===savedId;})||{result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""},
+                            scoreFor: "", scoreAgainst: "", opponent: "", date: ""
+                          }, editingScorers);
+                          notify("Goals saved!");
+                        }}>
+                        ⚽ Save Goals to Lineup
+                      </button>
+                    )}
                     <HR/>
                     {SubPlanner()}
                     <HR/>
@@ -2663,29 +2722,24 @@ export default function FCRoster() {
 
       {inlineName&&(
         <div
+          onMouseDown={function(e){e.stopPropagation();}}
+          onTouchStart={function(e){e.stopPropagation();}}
           style={{
             position:"fixed",
-            left:Math.min(Math.max(inlineName.screenX-84, 8), window.innerWidth-180),
-            top:Math.max(inlineName.screenY-78, 60),
-            width:168,
-            background:"#1A1A1A",
-            border:"1px solid rgba(200,255,0,0.35)",
-            borderRadius:8,
-            padding:"10px 12px",
+            left:Math.min(Math.max(inlineName.screenX-70, 6), window.innerWidth-148),
+            top:(inlineName.nameY||inlineName.screenY) - 12,
             zIndex:250,
-            boxShadow:"0 8px 32px rgba(0,0,0,0.7)",
-          }}
-          onMouseDown={function(e){e.stopPropagation();}}
-          onTouchStart={function(e){e.stopPropagation();}}>
-          <div style={{position:"absolute",bottom:-7,left:"50%",transform:"translateX(-50%)",width:14,height:8,overflow:"hidden"}}>
-            <div style={{width:10,height:10,background:"#1A1A1A",border:"1px solid rgba(200,255,0,0.35)",transform:"rotate(45deg)",margin:"1px 0 0 2px"}}/>
-          </div>
-          <label style={{fontSize:9,fontWeight:700,letterSpacing:"0.16em",color:"rgba(255,255,255,0.3)",fontFamily:"'Rajdhani',sans-serif",marginBottom:5,display:"block"}}>PLAYER NAME</label>
+            display:"flex",
+            flexDirection:"column",
+            alignItems:"center",
+            gap:4,
+            pointerEvents:"all",
+          }}>
           <input
             autoFocus
             value={inlineName.name}
-            maxLength={16}
-            placeholder="e.g. De Gea"
+            maxLength={14}
+            placeholder={inlineName.pos||"Name..."}
             onChange={function(e){setInlineName(function(s){return Object.assign({},s,{name:e.target.value});});}}
             onKeyDown={function(e){
               if(e.key==="Enter"){
@@ -2706,7 +2760,22 @@ export default function FCRoster() {
               }
               setInlineName(null);
             }}
-            style={{width:"100%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:5,color:"rgba(255,255,255,0.92)",padding:"6px 9px",fontSize:13,fontFamily:"'Poppins',sans-serif",outline:"none",marginBottom:8}}
+            style={{
+              width:140,
+              background:"rgba(10,10,10,0.92)",
+              border:"1.5px solid rgba(200,255,0,0.6)",
+              borderRadius:4,
+              color:"#C8FF00",
+              padding:"5px 8px",
+              fontSize:13,
+              fontFamily:"'Rajdhani',sans-serif",
+              fontWeight:700,
+              letterSpacing:"0.08em",
+              textTransform:"uppercase",
+              textAlign:"center",
+              outline:"none",
+              boxShadow:"0 2px 16px rgba(0,0,0,0.8)",
+            }}
           />
           <button
             onMouseDown={function(e){
@@ -2716,12 +2785,11 @@ export default function FCRoster() {
               if(p) setEditP(Object.assign({},p,{name:inlineName.name}));
               setInlineName(null);
             }}
-            style={{width:"100%",background:"transparent",border:"none",color:"rgba(200,255,0,0.7)",fontSize:11,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.1em",cursor:"pointer",textAlign:"right",padding:0}}>
+            style={{background:"transparent",border:"none",color:"rgba(255,255,255,0.3)",fontSize:9,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.1em",cursor:"pointer",padding:"0 4px",WebkitTapHighlightColor:"transparent"}}>
             FULL PROFILE →
           </button>
         </div>
       )}
-
       {/* Result modal — shown after saving a lineup */}
       {resultModal&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)"}}
