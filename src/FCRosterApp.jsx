@@ -142,7 +142,7 @@ var CSS = [
   "  .d-hdr,.d-bar{display:none!important;}",
   "  .mob-ctrl{display:flex;flex-direction:column;flex-shrink:0;background:#1E1E1E;border-top:1px solid rgba(255,255,255,0.08);}",
   "  .mob-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.08);background:#111111;}",
-  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:90px;overflow-y:auto;-webkit-overflow-scrolling:touch;transition:max-height 0.3s ease;overscroll-behavior:contain;scrollbar-width:none;padding-bottom:env(safe-area-inset-bottom,16px);}",
+  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:64px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scrollbar-width:none;padding-bottom:max(env(safe-area-inset-bottom,0px),20px);width:100%;}",
   "}",
   "@media(max-width:639px){.nav-sec{display:none!important}.nav-more{display:flex!important}}",
   "@media(min-width:768px) and (max-width:1099px){.ps{grid-template-columns:172px 1fr 168px}}",
@@ -1089,6 +1089,24 @@ export default function FCRoster() {
   function ActionBar({ compact }) {
     var canUndo = historyLen > 0;
     var sz = "btn-md";
+
+    function doSaveRoster() {
+      if(!user){ setShowAuth(true); return; }
+      var saveTitle = titleEdited ? title : autoTitle();
+      var saveDate  = todayISO();
+      var state = {title:saveTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
+      var state2 = Object.assign({}, state, {team_name: teamName, game_date: saveDate});
+      var fn = savedId ? updateFormation(savedId, state2) : saveFormation(state2);
+      fn.then(function(row){
+        setSavedId(row.id);
+        setTitle(saveTitle);
+        setTitleEdited(false);
+        setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:saveDate});
+        setResultModal({id: row.id});
+        return loadFormations().then(setSavedFormations);
+      }).catch(function(e){notify("Error: "+e.message);});
+    }
+
     return (
       <div style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:compact?"5px 0":"0"}}>
         <button onClick={doUndo} className={"btn btn-secondary "+sz}
@@ -1101,7 +1119,17 @@ export default function FCRoster() {
           <span style={{fontSize:14}}>&#x21BA;</span>
           <span>Reset</span>
         </button>
-        <button onClick={doExport} className={"btn btn-primary "+sz}
+        {/* Save Roster — primary CTA, always visible */}
+        <button onClick={doSaveRoster} className={"btn btn-primary "+sz}
+          style={{flex:2,gap:5,fontWeight:900,
+            boxShadow:user?"0 0 16px rgba(200,255,0,0.3)":"none",
+            background:user?"#C8FF00":"rgba(200,255,0,0.3)",
+            color:user?"#111":"rgba(0,0,0,0.5)",
+          }} title={user?"Save roster to profile":"Sign in to save"}>
+          <span style={{fontSize:13}}>&#x2193;</span>
+          <span>{savedId?"Update Roster":"Save Roster"}</span>
+        </button>
+        <button onClick={doExport} className={"btn btn-secondary "+sz}
           style={{flex:2,gap:5,fontWeight:800}} title="Export as PNG">
           <span style={{fontSize:12}}>&#x2913;</span>
           <span>Export PNG</span>
@@ -1368,32 +1396,59 @@ export default function FCRoster() {
           <SL c={"Lineup - "+players.length}/>
           {players.map(function(p){
             var col=tFill(p.n);
+            var g = scorerGoals(editingScorers, p.id);
+            // Find planned sub for this player
+            var plannedSub = subs.find(function(s){return s.playerId===p.id && s.subName && s.subName.trim();});
+            // Find if this sub scored
+            var subGoals = plannedSub ? editingScorers.filter(function(s){return !s.playerId && s.name && s.name.trim().toLowerCase()===plannedSub.subName.trim().toLowerCase();}).reduce(function(acc,s){return acc+s.goals;},0) : 0;
             return (
-              <div key={p.id} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
-                <div style={{width:22,height:22,borderRadius:"50%",background:col,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  <span style={{fontSize:9,fontWeight:900,color:txtOnFill(col),fontFamily:"'Rajdhani',sans-serif",lineHeight:1}}>{p.n.slice(0,3)}</span>
+              <div key={p.id} style={{borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                {/* Starter row */}
+                <div style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",
+                  borderLeft:plannedSub?"2px solid rgba(255,255,255,0.1)":"2px solid transparent",
+                  paddingLeft:plannedSub?6:0}}>
+                  <div style={{width:22,height:22,borderRadius:"50%",background:col,flexShrink:0,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    border:g>0?"1.5px solid #C8FF00":"none",
+                    boxShadow:g>0?"0 0 6px rgba(200,255,0,0.3)":"none"}}>
+                    <span style={{fontSize:9,fontWeight:900,color:txtOnFill(col),fontFamily:"'Rajdhani',sans-serif",lineHeight:1,pointerEvents:"none"}}>{p.n.slice(0,3)}</span>
+                  </div>
+                  <input
+                    value={p.name||""}
+                    placeholder={p.n}
+                    maxLength={14}
+                    onChange={function(e){
+                      var v=e.target.value;
+                      setPlayers(function(prev){return prev.map(function(x){return x.id===p.id?Object.assign({},x,{name:v}):x;});});
+                    }}
+                    style={{flex:1,background:"transparent",border:"none",
+                      borderBottom:"1px solid rgba(255,255,255,0.08)",
+                      color:T.text,fontSize:12,fontWeight:600,
+                      fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",
+                      padding:"2px 0",outline:"none",textTransform:"uppercase"}}
+                  />
+                  {/* Goal counter */}
+                  <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
+                    {g>0&&<span style={{fontSize:8,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif"}}>⚽{g}</span>}
+                    {g>0&&<button onClick={function(){setEditingScorers(function(s){return toggleGoal(s,p,false);});}} style={{width:18,height:18,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.4)",fontSize:12,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,WebkitTapHighlightColor:"transparent"}}>−</button>}
+                    <button onClick={function(){setEditingScorers(function(s){return toggleGoal(s,p,true);});if(navigator.vibrate)navigator.vibrate(5);}} style={{width:18,height:18,borderRadius:"50%",background:"rgba(200,255,0,0.1)",border:"1px solid rgba(200,255,0,0.25)",color:"rgba(200,255,0,0.7)",fontSize:14,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,WebkitTapHighlightColor:"transparent"}}>+</button>
+                  </div>
                 </div>
-                <input
-                  value={p.name||""}
-                  placeholder={p.n}
-                  maxLength={14}
-                  onChange={function(e){
-                    var v=e.target.value;
-                    setPlayers(function(prev){return prev.map(function(x){return x.id===p.id?Object.assign({},x,{name:v}):x;});});
-                  }}
-                  style={{
-                    flex:1,background:"transparent",border:"none",
-                    borderBottom:"1px solid rgba(255,255,255,0.08)",
-                    color:T.text,fontSize:12,fontWeight:600,
-                    fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",
-                    padding:"2px 0",outline:"none",
-                    textTransform:"uppercase",
-                  }}
-                />
+                {/* Inline sub row */}
+                {plannedSub&&(
+                  <div style={{display:"flex",alignItems:"center",gap:5,padding:"2px 0 3px 8px",
+                    borderLeft:"2px solid rgba(255,255,255,0.1)",marginLeft:0,
+                    opacity:0.75}}>
+                    <span style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>↪</span>
+                    <span style={{fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",textTransform:"uppercase",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{plannedSub.subName}</span>
+                    {plannedSub.minute&&<span style={{fontSize:8,fontWeight:700,color:"#F5BE00",fontFamily:"'Rajdhani',sans-serif",flexShrink:0,background:"rgba(245,190,0,0.12)",borderRadius:3,padding:"1px 4px"}}>{plannedSub.minute}&prime;</span>}
+                    {subGoals>0&&<span style={{fontSize:8,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>⚽{subGoals}</span>}
+                  </div>
+                )}
               </div>
             );
           })}
-          <p style={{marginTop:8,fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>Tap a name to edit. Double-click token for position.</p>
+          <p style={{marginTop:8,fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>Tap a name to edit. Click token for profile.</p>
         </div>
         <HR/>
         {SubPlanner()}
@@ -1593,7 +1648,7 @@ export default function FCRoster() {
               var playTitle=title||"My Play";
               var state={title:playTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"play"};
               saveFormation(state).then(function(){notify("Play saved to profile!");return loadFormations().then(setSavedFormations);}).catch(function(e){notify("Error: "+e.message);});
-            }} className="btn btn-secondary btn-sm" style={{flex:1}}>Save to Profile</button>
+            }} className="btn btn-primary btn-sm" style={{flex:1,fontWeight:900}}>&#x2193; Save Roster</button>
           </div>
         </div>
         <HR/>
@@ -1720,22 +1775,31 @@ export default function FCRoster() {
                 padding:"8px 12px",background:"#131313",flexShrink:0,
                 borderTop:"1px solid rgba(255,255,255,0.06)",gap:8,
               }}>
-                {/* Formation context badge */}
+                {/* Formation context badge — brighter when collapsed to show status */}
                 <span style={{fontSize:9,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",
-                  letterSpacing:"0.1em",color:"rgba(255,255,255,0.28)",flexShrink:0,whiteSpace:"nowrap"}}>
+                  letterSpacing:"0.1em",
+                  color:sheetTab==="collapsed"?"rgba(255,255,255,0.45)":"rgba(255,255,255,0.28)",
+                  flexShrink:0,whiteSpace:"nowrap",
+                  transition:"color 0.15s"}}>
                   {gameFmt} · {formation}
                 </span>
-                {/* Three pill nav buttons */}
-                <div style={{display:"flex",gap:6,flex:1,justifyContent:"flex-end"}}>
+                {/* Three pill nav buttons — always visible, always tappable */}
+                <div style={{display:"flex",gap:6,flex:1,justifyContent:"flex-end",alignItems:"center"}}>
+                  {/* Collapsed hint — upward chevron nudge */}
+                  {sheetTab==="collapsed"&&(
+                    <span style={{fontSize:9,color:"rgba(255,255,255,0.2)",fontFamily:"'Rajdhani',sans-serif",
+                      letterSpacing:"0.08em",marginRight:2,animation:"fadeHint 2s ease-in-out infinite alternate"}}>
+                      &#x2303; tap to edit
+                    </span>
+                  )}
                   {[["pitch","PITCH"],["lineup","LINEUP"],["draw","DRAW"]].map(function(item){
-                    var active = sheetTab===item[0] || (item[0]==="pitch" && sheetTab==="collapsed");
+                    var isCollapsed = sheetTab==="collapsed";
+                    var active = !isCollapsed && sheetTab===item[0];
                     return (
                       <button key={item[0]}
                         onClick={function(){
-                          // PITCH pill: if already on pitch (panel showing), collapse to full pitch
-                          // If on another tab, go to pitch section
-                          // LINEUP/DRAW: open that section
-                          if(item[0]==="pitch" && active){
+                          if(item[0]==="pitch" && sheetTab==="pitch"){
+                            // Tap active PITCH pill → collapse to full pitch
                             setSheetTab("collapsed");
                           } else {
                             setSheetTab(item[0]);
@@ -1748,8 +1812,8 @@ export default function FCRoster() {
                           display:"flex",alignItems:"center",justifyContent:"center",
                           padding:"0 14px",height:40,borderRadius:20,
                           background:active?"#C8FF00":"transparent",
-                          border:active?"1px solid #C8FF00":"1px solid rgba(255,255,255,0.18)",
-                          color:active?"#111":"rgba(255,255,255,0.5)",
+                          border:active?"1px solid #C8FF00":isCollapsed?"1px solid rgba(255,255,255,0.28)":"1px solid rgba(255,255,255,0.18)",
+                          color:active?"#111":isCollapsed?"rgba(255,255,255,0.65)":"rgba(255,255,255,0.5)",
                           cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",
                           fontWeight:700,fontSize:12,letterSpacing:"0.12em",
                           WebkitTapHighlightColor:"transparent",
@@ -1765,7 +1829,8 @@ export default function FCRoster() {
 
               {/* Section content — always rendered when not pitch */}
               {sheetTab==="pitch"&&(
-                <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:6}}>
+                <div className="mob-panel" style={{maxHeight:"min(52dvh,52vh)"}}>
+                <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:6,width:"100%"}}>
                   {/* Compact surface / kit / opposition row */}
                   <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                     <div style={{flex:1,minWidth:100}}><DD value={surface} options={surfOpts} onChange={setSurface} bg="#1A1A1A" up={true}/></div>
@@ -1822,12 +1887,13 @@ export default function FCRoster() {
                       </div>
                     </div>
                   )}
-                  <div style={{paddingTop:2}}>{ActionBar({compact:true})}</div>
+                  <div style={{paddingTop:2,paddingBottom:8}}>{ActionBar({compact:true})}</div>
+                </div>
                 </div>
               )}
 
               {sheetTab==="lineup"&&(
-                <div className="mob-panel" style={{maxHeight:"min(44dvh, 44vh)"}}>
+                <div className="mob-panel" style={{maxHeight:"min(52dvh,52vh)"}}>
                   <div style={{display:"flex",flexDirection:"column",gap:6,padding:"10px 14px 12px",width:"100%"}}>
                     {MobPhaseBar()}
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -1961,6 +2027,25 @@ export default function FCRoster() {
                               </div>
                             </div>
                           )}
+                          {/* Inline sub row — part of the team */}
+                          {(function(){
+                            var plannedSub = subs.find(function(s){return s.playerId===p.id && s.subName && s.subName.trim();});
+                            if(!plannedSub) return null;
+                            var subGoals = editingScorers.filter(function(s){return !s.playerId && s.name && s.name.trim().toLowerCase()===plannedSub.subName.trim().toLowerCase();}).reduce(function(acc,s){return acc+s.goals;},0);
+                            return (
+                              <div style={{display:"flex",alignItems:"center",gap:8,padding:"3px 0 4px 14px",
+                                borderLeft:"2px solid rgba(255,255,255,0.1)",marginLeft:4,
+                                background:"rgba(255,255,255,0.015)"}}>
+                                <span style={{fontSize:10,color:"rgba(255,255,255,0.25)",flexShrink:0}}>↪</span>
+                                <div style={{width:18,height:18,borderRadius:"50%",background:"rgba(255,255,255,0.1)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                  <span style={{fontSize:7,fontWeight:900,color:"rgba(255,255,255,0.5)",fontFamily:"'Rajdhani',sans-serif"}}>{(plannedSub.pos||p.n).slice(0,3)}</span>
+                                </div>
+                                <span style={{flex:1,fontSize:12,fontWeight:600,color:T.sub,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",textTransform:"uppercase",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{plannedSub.subName}</span>
+                                {plannedSub.minute&&<span style={{fontSize:8,fontWeight:700,color:"#F5BE00",fontFamily:"'Rajdhani',sans-serif",background:"rgba(245,190,0,0.12)",borderRadius:3,padding:"1px 5px",flexShrink:0}}>{plannedSub.minute}&prime;</span>}
+                                {subGoals>0&&<span style={{fontSize:8,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>⚽{subGoals}</span>}
+                              </div>
+                            );
+                          })()}
                         </div>
                       );
                     })}
@@ -1987,10 +2072,12 @@ export default function FCRoster() {
               )}
 
               {sheetTab==="draw"&&(
+                <div className="mob-panel" style={{maxHeight:"min(52dvh,52vh)"}}>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"stretch",gap:10,padding:"10px 14px 12px",width:"100%"}}>
                   {MobPhaseBar()}
                   {ToolRow()}
-                  <div style={{paddingTop:4}}>{ActionBar({compact:true})}</div>
+                  <div style={{paddingTop:4,paddingBottom:8}}>{ActionBar({compact:true})}</div>
+                </div>
                 </div>
               )}
             </div>
@@ -1998,8 +2085,8 @@ export default function FCRoster() {
         )}
 
         {tab==="profile"&&(
-          <div style={{flex:1,overflow:"auto",padding:"36px 24px"}} className="fu">
-            <div style={{maxWidth:440,margin:"0 auto",display:"flex",flexDirection:"column",gap:16,alignItems:"center",minHeight:"60vh",justifyContent:"center",textAlign:"center"}}>
+          <div style={{flex:1,overflow:"auto",padding:"24px 32px"}} className="fu">
+            <div style={{maxWidth:1100,margin:"0 auto",width:"100%"}}>
               {!user ? (
                 <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:14}}>
                   <div style={{fontSize:48,opacity:0.16}}>&#x1F464;</div>
@@ -2008,540 +2095,464 @@ export default function FCRoster() {
                   <button onClick={function(){setShowAuth(true);}} className="btn btn-primary btn-md" style={{marginTop:8}}>Sign In</button>
                 </div>
               ) : (
-                <div style={{display:"flex",flexDirection:"column",gap:14,width:"100%",textAlign:"left"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:14}}>
-                    <div style={{width:48,height:48,borderRadius:"50%",border:"1px solid "+T.voltBd,display:"flex",alignItems:"center",justifyContent:"center",fontSize:21,fontWeight:700,color:T.volt,flexShrink:0,background:T.voltBg}}>{user.name[0].toUpperCase()}</div>
-                    <div>
-                      <div style={{fontWeight:700,fontSize:19}}>{user.name}</div>
-                      <div style={{color:T.ghost,fontSize:12,marginTop:2,fontFamily:"'Poppins',sans-serif"}}>{user.email}</div>
-                    </div>
-                  </div>
+                <div style={{width:"100%",textAlign:"left"}}>
+                  {/* ── Desktop 3-column grid / Mobile single column ── */}
+                  <div style={{
+                    display:"grid",
+                    gridTemplateColumns:"repeat(auto-fit, minmax(260px, 1fr))",
+                    gap:20,
+                    alignItems:"start",
+                  }}>
 
-                  {/* Squad Roster */}
-                  <div style={{border:"1px solid "+T.b,borderRadius:6,overflow:"hidden"}}>
-                    <div style={{padding:"10px 14px",borderBottom:"1px solid "+T.b,background:T.raised}}>
-                      <div style={{fontWeight:700,fontSize:13,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.volt}}>{title}</div>
-                      <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:2}}>{gameFmt} &bull; {formation} &bull; {players.length} players</div>
-                    </div>
-                    {players.map(function(p){
-                      var avail=p.availability||"available";
-                      var availColor=avail==="available"?"#22CC44":avail==="doubtful"?"#F5BE00":"#F02040";
-                      var footLabel={L:"Left",R:"Right",B:"Both"}[p.foot||"R"];
-                      var skillLabel=["","Grassroots","Amateur","Semi-Pro","Club Pro","Elite"][p.skill||3];
-                      return (
-                        <div key={p.id} style={{padding:"10px 14px",borderBottom:"1px solid "+T.b,cursor:"pointer",transition:"background 0.1s"}}
-                          onClick={function(){setEditP(Object.assign({},p));}}
-                          onMouseEnter={function(e){e.currentTarget.style.background="rgba(255,255,255,0.03)";}}
-                          onMouseLeave={function(e){e.currentTarget.style.background="transparent";}}>
-                          <div style={{display:"flex",alignItems:"center",gap:10}}>
-                            {/* Availability dot */}
-                            <div style={{width:8,height:8,borderRadius:"50%",background:availColor,flexShrink:0,boxShadow:"0 0 6px "+availColor+"88"}}/>
-                            {/* Token */}
-                            <div style={{width:28,height:28,borderRadius:"50%",background:tFill(p.n),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                              <span style={{fontSize:8,fontWeight:900,color:tTxt(p.n),fontFamily:"'Rajdhani',sans-serif"}}>{p.number||p.n.slice(0,4)}</span>
-                            </div>
-                            <div style={{flex:1,minWidth:0}}>
-                              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                                <span style={{fontSize:13,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em"}}>{p.name||p.n}</span>
-                                <span style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase"}}>{p.n}</span>
-                              </div>
-                              <div style={{display:"flex",gap:8,marginTop:2,flexWrap:"wrap"}}>
-                                {p.age&&<span style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>Age {p.age}</span>}
-                                <span style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>{footLabel} foot</span>
-                                <span style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>{skillLabel}</span>
-                              </div>
-                              {p.notes&&<div style={{fontSize:9,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:240}}>{p.notes}</div>}
-                            </div>
-                            <span style={{fontSize:11,opacity:0.25,flexShrink:0}}>&#x270E;</span>
-                          </div>
+                    {/* ════════════════════════════════
+                        LEFT — Identity & Actions
+                        ════════════════════════════════ */}
+                    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+
+                      {/* User identity */}
+                      <div style={{display:"flex",alignItems:"center",gap:14,padding:"12px 14px",
+                        background:T.raised,border:"1px solid "+T.b,borderRadius:8}}>
+                        <div style={{width:52,height:52,borderRadius:"50%",border:"2px solid "+T.voltBd,
+                          display:"flex",alignItems:"center",justifyContent:"center",
+                          fontSize:22,fontWeight:700,color:T.volt,flexShrink:0,background:T.voltBg}}>
+                          {user.name[0].toUpperCase()}
                         </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Substitution Planner in Profile */}
-                  {subs.length>0&&(
-                    <div style={{border:"1px solid "+T.b,borderRadius:6,overflow:"hidden"}}>
-                      <div style={{padding:"8px 14px",borderBottom:"1px solid "+T.b,background:T.raised}}>
-                        <div style={{fontWeight:700,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.ghost}}>Substitutions ({subs.length})</div>
+                        <div style={{minWidth:0}}>
+                          <div style={{fontWeight:700,fontSize:17,letterSpacing:"0.02em",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user.name}</div>
+                          <div style={{color:T.ghost,fontSize:11,marginTop:2,fontFamily:"'Poppins',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user.email}</div>
+                        </div>
                       </div>
-                      {subs.map(function(s,i){
-                        var outP=players.find(function(p){return p.id===s.playerId;});
-                        return(
-                          <div key={s.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",borderBottom:"1px solid "+T.b}}>
-                            <span style={{fontSize:10,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,width:20}}>#{i+1}</span>
-                            <div style={{flex:1,minWidth:0}}>
-                              <div style={{fontSize:12,color:T.text,fontFamily:"'Rajdhani',sans-serif",fontWeight:700}}>{outP?outP.name||outP.n:"?"} <span style={{color:T.ghost,fontWeight:400}}>&#x2192; {s.subName||"Sub"}</span></div>
-                              {s.minute&&<div style={{fontSize:9,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:1}}>Min {s.minute}</div>}
+
+                      {/* Team name + Save Squad */}
+                      <div style={{border:"1px solid "+T.b,borderRadius:8,padding:"12px 14px",background:T.raised,display:"flex",flexDirection:"column",gap:8}}>
+                        <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.2em",color:T.volt,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",marginBottom:2}}>Team</div>
+                        <input value={teamName} onChange={function(e){setTeamName(e.target.value);}}
+                          placeholder="e.g. Sunday FC"
+                          style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:5,
+                            color:T.text,fontSize:14,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",padding:"7px 10px",outline:"none"}}/>
+                        <button className="btn btn-secondary btn-sm" style={{gap:5}}
+                          onClick={function(){saveSquad(players, teamName);}}>
+                          &#x1F465; Save Squad to Profile
+                        </button>
+                        {squad&&squad.updated_at&&(
+                          <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>
+                            Last saved {new Date(squad.updated_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Save Roster + Save Play */}
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                        <button className="btn btn-primary btn-md" style={{gap:5}}
+                          onClick={function(){
+                            var saveTitle = titleEdited ? title : autoTitle();
+                            var saveDate  = todayISO();
+                            var state={title:saveTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
+                            var state2 = Object.assign({}, state, {team_name: teamName, game_date: saveDate});
+                            var fn = savedId ? updateFormation(savedId, state2) : saveFormation(state2);
+                            fn.then(function(row){
+                              setSavedId(row.id);
+                              setTitle(saveTitle);
+                              setTitleEdited(false);
+                              setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:saveDate});
+                              setResultModal({id: row.id});
+                              return loadFormations().then(setSavedFormations);
+                            }).catch(function(e){notify("Error: "+e.message);});
+                          }}>
+                          <span>&#x2193;</span> {savedId?"Update":"Save Roster"}
+                        </button>
+                        <button className="btn btn-volt-outline btn-md" style={{gap:5}}
+                          onClick={function(){
+                            var playTitle=title+" (Play)";
+                            var state={title:playTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"play"};
+                            saveFormation(state).then(function(){
+                              notify("Play saved!");
+                              return loadFormations().then(setSavedFormations);
+                            }).catch(function(e){notify("Error: "+e.message);});
+                          }}>
+                          <span>&#x2606;</span> Save Play
+                        </button>
+                      </div>
+
+                      {/* Current Squad Roster */}
+                      <div style={{border:"1px solid "+T.b,borderRadius:8,overflow:"hidden"}}>
+                        <div style={{padding:"10px 14px",borderBottom:"1px solid "+T.b,background:T.raised}}>
+                          <div style={{fontWeight:700,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.volt}}>{title}</div>
+                          <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:2}}>{gameFmt} &bull; {formation} &bull; {players.length} players</div>
+                        </div>
+                        {players.map(function(p){
+                          var avail=p.availability||"available";
+                          var availColor=avail==="available"?"#22CC44":avail==="doubtful"?"#F5BE00":"#F02040";
+                          var footLabel={L:"Left",R:"Right",B:"Both"}[p.foot||"R"];
+                          var skillLabel=["","Grassroots","Amateur","Semi-Pro","Club Pro","Elite"][p.skill||3];
+                          return (
+                            <div key={p.id} style={{padding:"8px 14px",borderBottom:"1px solid "+T.b,cursor:"pointer",transition:"background 0.1s"}}
+                              onClick={function(){setEditP(Object.assign({},p));}}
+                              onMouseEnter={function(e){e.currentTarget.style.background="rgba(255,255,255,0.03)";}}
+                              onMouseLeave={function(e){e.currentTarget.style.background="transparent";}}>
+                              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                <div style={{width:8,height:8,borderRadius:"50%",background:availColor,flexShrink:0}}/>
+                                <div style={{width:26,height:26,borderRadius:"50%",background:tFill(p.n),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                  <span style={{fontSize:8,fontWeight:900,color:tTxt(p.n),fontFamily:"'Rajdhani',sans-serif"}}>{p.number||p.n.slice(0,4)}</span>
+                                </div>
+                                <div style={{flex:1,minWidth:0}}>
+                                  <div style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif"}}>{p.name||p.n} <span style={{color:T.ghost,fontWeight:400,fontSize:10}}>{p.n}</span></div>
+                                  <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>{footLabel} &bull; {skillLabel}{p.age?" &bull; Age "+p.age:""}</div>
+                                </div>
+                                {/* Goal counter on profile */}
+                                {(function(){
+                                  var g = scorerGoals(editingScorers, p.id);
+                                  return (
+                                    <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
+                                      {g>0&&<span style={{fontSize:8,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif"}}>⚽{g}</span>}
+                                      {g>0&&<button onClick={function(e){e.stopPropagation();setEditingScorers(function(s){return toggleGoal(s,p,false);});}} style={{width:18,height:18,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.4)",fontSize:12,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,WebkitTapHighlightColor:"transparent"}}>−</button>}
+                                      <button onClick={function(e){e.stopPropagation();setEditingScorers(function(s){return toggleGoal(s,p,true);});if(navigator.vibrate)navigator.vibrate(5);}} style={{width:18,height:18,borderRadius:"50%",background:"rgba(200,255,0,0.1)",border:"1px solid rgba(200,255,0,0.25)",color:"rgba(200,255,0,0.7)",fontSize:14,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,WebkitTapHighlightColor:"transparent"}}>+</button>
+                                    </div>
+                                  );
+                                })()}
+                                <span style={{fontSize:10,opacity:0.2}}>&#x270E;</span>
+                              </div>
                             </div>
+                            {/* Inline sub row on profile */}
+                            {(function(){
+                              var plannedSub = subs.find(function(s){return s.playerId===p.id && s.subName && s.subName.trim();});
+                              if(!plannedSub) return null;
+                              var subGoals = editingScorers.filter(function(s){return !s.playerId && s.name && s.name.trim().toLowerCase()===plannedSub.subName.trim().toLowerCase();}).reduce(function(acc,s){return acc+s.goals;},0);
+                              return (
+                                <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 14px 5px 28px",
+                                  borderLeft:"2px solid rgba(255,255,255,0.08)",marginLeft:12,
+                                  background:"rgba(255,255,255,0.015)"}}>
+                                  <span style={{fontSize:11,color:"rgba(255,255,255,0.2)",flexShrink:0}}>↪</span>
+                                  <span style={{flex:1,fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"}}>{plannedSub.subName}</span>
+                                  {plannedSub.minute&&<span style={{fontSize:9,fontWeight:700,color:"#F5BE00",background:"rgba(245,190,0,0.1)",borderRadius:3,padding:"1px 6px",flexShrink:0}}>{plannedSub.minute}&prime;</span>}
+                                  {subGoals>0&&<span style={{fontSize:9,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 5px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>⚽{subGoals}</span>}
+                                  {/* Goal +/- for sub scorer */}
+                                  <div style={{display:"flex",gap:2}}>
+                                    <button onClick={function(e){e.stopPropagation();var n=plannedSub.subName.trim();setEditingScorers(function(s){var list=s.slice();var idx=list.findIndex(function(x){return !x.playerId&&x.name&&x.name.toLowerCase()===n.toLowerCase();});if(idx>-1)list[idx]=Object.assign({},list[idx],{goals:list[idx].goals+1});else list.push({name:n,playerId:null,goals:1});return list;});if(navigator.vibrate)navigator.vibrate(5);}} style={{width:18,height:18,borderRadius:"50%",background:"rgba(200,255,0,0.1)",border:"1px solid rgba(200,255,0,0.25)",color:"rgba(200,255,0,0.7)",fontSize:14,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,WebkitTapHighlightColor:"transparent"}}>+</button>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         );
                       })}
                     </div>
-                  )}
 
-                  {/* Start New Season */}
-                  <div style={{border:"1px solid rgba(200,255,0,0.15)",borderRadius:6,padding:"12px 14px",background:"rgba(200,255,0,0.03)"}}>
-                    <div style={{fontWeight:700,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.volt,marginBottom:6}}>
-                      Season Management
-                    </div>
-                    <p style={{fontSize:11,color:T.ghost,fontFamily:"'Poppins',sans-serif",lineHeight:1.6,marginBottom:10}}>
-                      Archive your current squad and saved games, then start fresh for a new season. Your history is always kept.
-                    </p>
-                    <button className="btn btn-volt-outline btn-sm" style={{gap:5,width:"100%"}}
-                      onClick={function(){
-                        if(!window.confirm("Start a new season? Your current saves will be kept in history. Your squad will be cleared for a fresh start.")) return;
-                        // Tag existing saves with current team name + date
-                        var seasonTag = teamName+" — "+new Date().toLocaleDateString("en-GB",{month:"short",year:"numeric"});
-                        Promise.all(savedFormations.map(function(f){
-                          return supabase.from("formations").update({team_name: seasonTag}).eq("id",f.id);
-                        })).then(function(){
-                          // Clear squad names on pitch
-                          setPlayers(function(prev){return prev.map(function(p){return Object.assign({},p,{name:"",number:"",age:"",notes:"",foot:"R",skill:3,availability:"available"});});});
-                          setLines([]);setSubs([]);
-                          setPhases([null,null,null,null,null]);setBallPos(null);
-                          setSavedId(null);
-                          // Update team name
-                          setTeamName(teamName+" (New Season)");
-                          return loadFormations().then(setSavedFormations);
-                        }).then(function(){
-                          notify("New season started! History archived under: "+seasonTag);
-                        }).catch(function(e){notify("Error: "+e.message);});
-                      }}>
-                      &#x2728; Start New Season
-                    </button>
-                  </div>
+                    {/* Subs shown inline under their starters above */}
 
-                  {/* Team name + Save Squad */}
-                  <div style={{border:"1px solid "+T.b,borderRadius:6,padding:"12px 14px",background:T.raised,display:"flex",flexDirection:"column",gap:8}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <span style={{fontSize:9,fontWeight:700,letterSpacing:"0.16em",color:T.ghost,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",flexShrink:0}}>Team</span>
-                      <input value={teamName} onChange={function(e){setTeamName(e.target.value);}}
-                        placeholder="e.g. Sunday FC"
-                        style={{flex:1,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:5,
-                          color:T.text,fontSize:13,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",padding:"5px 8px",outline:"none"}}/>
-                    </div>
-                    <div style={{display:"flex",gap:6}}>
-                      <button className="btn btn-secondary btn-sm" style={{gap:5,flex:1}}
-                        onClick={function(){saveSquad(players, teamName);}}>
-                        <span>&#x1F465;</span> Save Squad
-                      </button>
-                      <button className="btn btn-danger btn-sm" style={{gap:4,flexShrink:0}}
-                        title="Archive this team's saves and start fresh"
-                        onClick={function(){
-                          if(!window.confirm("Archive "+teamName+" and start a new team? Your saves will still be accessible below.")) return;
-                          // Tag all current saves with this team name for grouping
-                          Promise.all(savedFormations.map(function(f){
-                            return supabase.from("formations").update({team_name:teamName}).eq("id",f.id);
-                          })).then(function(){
-                            setTeamName("My New Team");
-                            setSavedId(null);
-                            setPlayers(FORMATIONS[gameFmt][formation].map(function(p){return Object.assign({},p);}));
-                            setLines([]);setSubs([]);setPhases([null,null,null,null,null]);setBallPos(null);
-                            setTitle("My FCRoster");
-                            notify("Archived — starting fresh!");
-                          });
-                        }}>
-                        Archive &#x2192; New
-                      </button>
-                    </div>
-                    {squad&&squad.updated_at&&(
-                      <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>
-                        Squad last saved {new Date(squad.updated_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
-                      </div>
-                    )}
-                  </div>
+                    </div>{/* end LEFT column */}
 
-                  {/* Save buttons */}
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                    <button className="btn btn-primary btn-md" style={{gap:5}}
-                      onClick={function(){
-                        // Auto-title: use team+date unless user manually edited title
-                        var saveTitle = titleEdited ? title : autoTitle();
-                        var saveDate  = todayISO();
-                        var state={title:saveTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
-                        var state2 = Object.assign({}, state, {team_name: teamName, game_date: saveDate});
-                        var fn = savedId ? updateFormation(savedId, state2) : saveFormation(state2);
-                        fn.then(function(row){
-                          setSavedId(row.id);
-                          setTitle(saveTitle);
-                          setTitleEdited(false);
-                          setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:saveDate});
-                          setResultModal({id: row.id});
-                          return loadFormations().then(setSavedFormations);
-                        }).catch(function(e){notify("Error: "+e.message);});
-                      }}>
-                      <span>&#x2193;</span> {savedId?"Update":"Save Roster"}
-                    </button>
-                    <button className="btn btn-volt-outline btn-md" style={{gap:5}}
-                      onClick={function(){
-                        var playTitle=title+" (Play)";
-                        var state={title:playTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"play"};
-                        saveFormation(state).then(function(){
-                          notify("Play saved!");
-                          return loadFormations().then(setSavedFormations);
-                        }).catch(function(e){notify("Error: "+e.message);});
-                      }}>
-                      <span>&#x2606;</span> Save Play
-                    </button>
-                  </div>
 
-                  {/* Saved list -- grouped by team */}
-                  {(function(){
-                    var rosters=savedFormations.filter(function(f){return !f.type||f.type==="roster";});
-                    var plays=savedFormations.filter(function(f){return f.type==="play";});
-                    // Group rosters by team_name
-                    var teamGroups={};
-                    rosters.forEach(function(f){
-                      var tn=f.team_name||"Uncategorised";
-                      if(!teamGroups[tn]) teamGroups[tn]=[];
-                      teamGroups[tn].push(f);
-                    });
-                    function SavedList(items, label) {
-                      return (
-                        <div style={{border:"1px solid "+T.b,borderRadius:6,overflow:"hidden"}}>
-                          <div style={{padding:"8px 14px",borderBottom:"1px solid "+T.b,display:"flex",alignItems:"center",justifyContent:"space-between",background:T.raised}}>
-                            <SL c={label+(items.length>0?" ("+items.length+")":"")}/>
-                            <button className="btn btn-secondary btn-sm" onClick={function(){loadFormations().then(setSavedFormations).catch(function(e){notify(e.message);});}}>&#x21BA;</button>
-                          </div>
-                          {items.length===0?(
-                            <div style={{padding:"12px 14px"}}><p style={{color:T.ghost,fontSize:12,fontFamily:"'Poppins',sans-serif"}}>Nothing saved yet.</p></div>
-                          ):(
-                            <div style={{maxHeight:220,overflowY:"auto"}}>
-                              {items.map(function(f){return(
-                                <div key={f.id} style={{borderBottom:"1px solid "+T.b}}>
-                                  {/* Main card row */}
-                                  <div style={{display:"flex",alignItems:"flex-start",gap:8,padding:"10px 14px"}}>
-                                    <div style={{flex:1,minWidth:0}}>
-                                      {/* Date — prominent top line */}
-                                      <div style={{fontSize:10,fontWeight:700,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",marginBottom:2}}>
-                                        {f.game_date ? new Date(f.game_date+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"}) : "No date"}
-                                        {f.opponent&&<span style={{color:T.sub}}> · vs {f.opponent}</span>}
-                                      </div>
-                                      {/* Title + result badge */}
-                                      <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:4}}>
-                                        <span style={{fontSize:13,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</span>
-                                        {/* Result badge — tap to edit */}
-                                        {f.result ? (
-                                          <span
-                                            onClick={function(){
-                                              setExpandedResult(expandedResult===f.id?null:f.id);
-                                              setEditingResult({result:f.result||"",scoreFor:f.score_for!=null?String(f.score_for):"",scoreAgainst:f.score_against!=null?String(f.score_against):"",opponent:f.opponent||"",date:f.game_date||""});
-                                              setEditingScorers((f.scorers||[]).map(function(s){return Object.assign({},s);}));
-                                              setSubScorerInput("");
-                                            }}
-                                            style={{fontSize:9,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",
-                                              padding:"2px 7px",borderRadius:3,flexShrink:0,cursor:"pointer",
-                                              background:f.result==="W"?"rgba(34,204,68,0.15)":f.result==="L"?"rgba(240,32,64,0.15)":"rgba(245,190,0,0.15)",
-                                              color:f.result==="W"?"#22CC44":f.result==="L"?"#F02040":"#F5BE00",
-                                              border:"1px solid "+(f.result==="W"?"rgba(34,204,68,0.4)":f.result==="L"?"rgba(240,32,64,0.4)":"rgba(245,190,0,0.4)")}}>
-                                            {f.result}{f.score_for!=null?" "+f.score_for+"-"+f.score_against:""} ✎
-                                          </span>
-                                        ) : (
-                                          <span
-                                            onClick={function(){
-                                              setExpandedResult(expandedResult===f.id?null:f.id);
-                                              setEditingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
-                                              setEditingScorers([]);
-                                              setSubScorerInput("");
-                                            }}
-                                            style={{fontSize:9,fontWeight:600,fontFamily:"'Poppins',sans-serif",
-                                              color:"rgba(255,255,255,0.22)",cursor:"pointer",
-                                              padding:"2px 6px",borderRadius:3,border:"1px dashed rgba(255,255,255,0.15)"}}>
-                                            + result
-                                          </span>
-                                        )}
-                                      </div>
-                                      {/* Player circle fingerprint row with goal badges */}
-                                      <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:3}}>
-                                        {(f.players||[]).slice(0,11).map(function(p,pi){
-                                          var c=tFill(p.n);
-                                          var g=scorerGoals(f.scorers||[],p.id);
-                                          return (
-                                            <div key={pi} title={(p.name||p.n)+(g>0?" ⚽"+g:"")}
-                                              style={{position:"relative",width:16,height:16,flexShrink:0}}>
-                                              <div style={{width:16,height:16,borderRadius:"50%",background:c,
-                                                border:g>0?"1px solid #C8FF00":"1px solid rgba(255,255,255,0.15)",
-                                                boxShadow:g>0?"0 0 4px rgba(200,255,0,0.5)":p.name?"0 0 3px "+c+"66":"none"}}>
-                                              </div>
-                                              {g>0&&(
-                                                <div style={{position:"absolute",top:-4,right:-4,
-                                                  width:10,height:10,borderRadius:"50%",
-                                                  background:"#C8FF00",color:"#111",
-                                                  display:"flex",alignItems:"center",justifyContent:"center",
-                                                  fontSize:7,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",
-                                                  lineHeight:1}}>
-                                                  {g}
-                                                </div>
-                                              )}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                      {/* Scorer summary line */}
-                                      {f.scorers&&f.scorers.length>0&&(
-                                        <div style={{fontSize:9,color:"rgba(200,255,0,0.7)",fontFamily:"'Poppins',sans-serif",marginBottom:2}}>
-                                          ⚽ {f.scorers.map(function(s){return s.name+(s.goals>1?" ×"+s.goals:"");}).join(", ")}
-                                        </div>
-                                      )}
-                                      <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>
-                                        {f.game_fmt} &bull; {f.formation}
-                                        {f.team_name&&f.team_name!==teamName&&<span style={{color:T.volt,opacity:0.5}}> &bull; {f.team_name}</span>}
-                                      </div>
-                                    </div>
-                                    <button className="btn btn-volt-outline btn-sm" style={{flexShrink:0}} onClick={function(){
-                                      setTitle(f.title); setGameFmt(f.game_fmt); setFormation(f.formation);
-                                      setSurface(f.surface); setPaletteId(f.palette_id);
-                                      setPlayers(f.players); setLines(f.lines||[]); setSubs(f.subs||[]);
-                                      setPhases(f.phases||[null,null,null,null,null]); setBallPos(f.ball_pos||null);
-                                      setShowOpp(f.show_opp||false); setOppFmt(f.opp_fmt||"4-4-2");
-                                      setOppList(f.opp_list||[]); setOppColor(f.opp_color||"#EE2244");
-                                      if(f.team_name) setTeamName(f.team_name);
-                                      setSavedId(f.id); setTab("pitch");
-                                      notify("Loaded: "+f.title);
-                                    }}>Load</button>
-                                    <button className="btn btn-danger btn-sm" style={{flexShrink:0}} onClick={function(){
-                                      deleteFormation(f.id).then(function(){
-                                        setSavedFormations(function(prev){return prev.filter(function(x){return x.id!==f.id;});});
-                                        if(savedId===f.id) setSavedId(null);
-                                        notify("Deleted.");
-                                      }).catch(function(e){notify(e.message);});
-                                    }}>&#x2715;</button>
-                                  </div>
-                                  {/* Inline result editor */}
-                                  {expandedResult===f.id&&(
-                                    <div style={{padding:"10px 14px 14px",borderTop:"1px solid rgba(255,255,255,0.06)",background:"rgba(255,255,255,0.02)"}}>
-                                      {/* W / D / L */}
-                                      <div style={{display:"flex",gap:6,marginBottom:10}}>
-                                        {[["W","#22CC44","Win"],["D","#F5BE00","Draw"],["L","#F02040","Loss"]].map(function(item){
-                                          var active=editingResult.result===item[0];
-                                          return (
-                                            <button key={item[0]}
-                                              onClick={function(){setEditingResult(function(r){return Object.assign({},r,{result:item[0]});});}}
-                                              style={{flex:1,height:44,borderRadius:6,
-                                                border:"2px solid "+(active?item[1]:T.b),
-                                                background:active?"rgba(255,255,255,0.05)":"transparent",
-                                                color:active?item[1]:"rgba(255,255,255,0.3)",
-                                                fontFamily:"'Rajdhani',sans-serif",fontWeight:900,fontSize:16,
-                                                cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
-                                              {item[0]}
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
-                                      {/* Score */}
-                                      <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:8}}>
-                                        <input type="number" min="0" max="99" placeholder="0"
-                                          value={editingResult.scoreFor}
-                                          onChange={function(e){setEditingResult(function(r){return Object.assign({},r,{scoreFor:e.target.value});});}}
-                                          style={{flex:1,textAlign:"center",fontSize:20,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"6px 0"}}/>
-                                        <span style={{color:T.ghost,fontWeight:700}}>–</span>
-                                        <input type="number" min="0" max="99" placeholder="0"
-                                          value={editingResult.scoreAgainst}
-                                          onChange={function(e){setEditingResult(function(r){return Object.assign({},r,{scoreAgainst:e.target.value});});}}
-                                          style={{flex:1,textAlign:"center",fontSize:20,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"6px 0"}}/>
-                                      </div>
-                                      {/* Opponent + Date inline */}
-                                      <div style={{display:"flex",gap:6,marginBottom:10}}>
-                                        <input value={editingResult.opponent} placeholder="vs Opponent"
-                                          onChange={function(e){setEditingResult(function(r){return Object.assign({},r,{opponent:e.target.value});});}}
-                                          style={{flex:2,fontSize:12,padding:"5px 8px"}}/>
-                                        <input type="date" value={editingResult.date}
-                                          onChange={function(e){setEditingResult(function(r){return Object.assign({},r,{date:e.target.value});});}}
-                                          style={{flex:1,fontSize:11,padding:"5px 6px",color:editingResult.date?T.text:"rgba(255,255,255,0.3)"}}/>
-                                      </div>
-                                      {/* Goal scorers — shown when score > 0 */}
-                                      {(parseInt(editingResult.scoreFor)||0) > 0 && (
-                                        <div style={{marginBottom:10}}>
-                                          <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.16em",color:T.ghost,fontFamily:"'Rajdhani',sans-serif",marginBottom:8}}>WHO SCORED?</div>
-                                          {/* Player circles — tap to add goal, tap again to add another, long-press to remove */}
-                                          <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:8}}>
-                                            {(f.players||[]).slice(0,11).map(function(p){
-                                              var goals = scorerGoals(editingScorers, p.id);
-                                              var c = tFill(p.n);
+                    {/* ════════════════════════════════
+                        CENTRE — Match History
+                        ════════════════════════════════ */}
+                    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+
+                      {(function(){
+                        var rosters=savedFormations.filter(function(f){return !f.type||f.type==="roster";});
+                        var plays=savedFormations.filter(function(f){return f.type==="play";});
+                        var teamGroups={};
+                        rosters.forEach(function(f){
+                          var tn=f.team_name||"Uncategorised";
+                          if(!teamGroups[tn]) teamGroups[tn]=[];
+                          teamGroups[tn].push(f);
+                        });
+
+                        function SavedList(items, label) {
+                          return (
+                            <div style={{border:"1px solid "+T.b,borderRadius:8,overflow:"hidden"}}>
+                              <div style={{padding:"8px 14px",borderBottom:"1px solid "+T.b,display:"flex",alignItems:"center",justifyContent:"space-between",background:T.raised}}>
+                                <SL c={label+(items.length>0?" ("+items.length+")":"")}/>
+                                <button className="btn btn-secondary btn-sm" onClick={function(){loadFormations().then(setSavedFormations).catch(function(e){notify(e.message);});}}>&#x21BA;</button>
+                              </div>
+                              {items.length===0?(
+                                <div style={{padding:"12px 14px"}}><p style={{color:T.ghost,fontSize:12,fontFamily:"'Poppins',sans-serif"}}>Nothing saved yet.</p></div>
+                              ):(
+                                <div>
+                                  {items.map(function(f){return(
+                                    <div key={f.id} style={{borderBottom:"1px solid "+T.b}}>
+                                      <div style={{display:"flex",alignItems:"flex-start",gap:8,padding:"10px 14px"}}>
+                                        <div style={{flex:1,minWidth:0}}>
+                                          <div style={{fontSize:10,fontWeight:700,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",marginBottom:2}}>
+                                            {f.game_date ? new Date(f.game_date+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"}) : "No date"}
+                                            {f.opponent&&<span style={{color:T.sub}}> &bull; vs {f.opponent}</span>}
+                                          </div>
+                                          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:4}}>
+                                            <span style={{fontSize:13,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</span>
+                                            {f.result ? (
+                                              <span onClick={function(){setExpandedResult(expandedResult===f.id?null:f.id);setEditingResult({result:f.result||"",scoreFor:f.score_for!=null?String(f.score_for):"",scoreAgainst:f.score_against!=null?String(f.score_against):"",opponent:f.opponent||"",date:f.game_date||""});setEditingScorers((f.scorers||[]).map(function(s){return Object.assign({},s);}));setSubScorerInput("");}}
+                                                style={{fontSize:9,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",padding:"2px 7px",borderRadius:3,flexShrink:0,cursor:"pointer",background:f.result==="W"?"rgba(34,204,68,0.15)":f.result==="L"?"rgba(240,32,64,0.15)":"rgba(245,190,0,0.15)",color:f.result==="W"?"#22CC44":f.result==="L"?"#F02040":"#F5BE00",border:"1px solid "+(f.result==="W"?"rgba(34,204,68,0.4)":f.result==="L"?"rgba(240,32,64,0.4)":"rgba(245,190,0,0.4)")}}>
+                                                {f.result}{f.score_for!=null?" "+f.score_for+"-"+f.score_against:""} &#x270E;
+                                              </span>
+                                            ) : (
+                                              <span onClick={function(){setExpandedResult(expandedResult===f.id?null:f.id);setEditingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});setEditingScorers([]);setSubScorerInput("");}}
+                                                style={{fontSize:9,fontWeight:600,fontFamily:"'Poppins',sans-serif",color:"rgba(255,255,255,0.22)",cursor:"pointer",padding:"2px 6px",borderRadius:3,border:"1px dashed rgba(255,255,255,0.15)"}}>
+                                                + result
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:3}}>
+                                            {(f.players||[]).slice(0,11).map(function(p,pi){
+                                              var c=tFill(p.n);
+                                              var g=scorerGoals(f.scorers||[],p.id);
                                               return (
-                                                <div key={p.id} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,cursor:"pointer"}}
-                                                  onClick={function(){
-                                                    if(navigator.vibrate) navigator.vibrate(6);
-                                                    setEditingScorers(function(s){return toggleGoal(s,p,true);});
-                                                  }}
-                                                  onContextMenu={function(e){
-                                                    e.preventDefault();
-                                                    setEditingScorers(function(s){return toggleGoal(s,p,false);});
-                                                  }}>
-                                                  <div style={{position:"relative",width:32,height:32}}>
-                                                    <div style={{width:32,height:32,borderRadius:"50%",background:c,
-                                                      display:"flex",alignItems:"center",justifyContent:"center",
-                                                      border:goals>0?"2px solid #C8FF00":"2px solid transparent",
-                                                      boxShadow:goals>0?"0 0 8px rgba(200,255,0,0.4)":"none",
-                                                      transition:"all 0.12s"}}>
-                                                      <span style={{fontSize:8,fontWeight:900,color:tTxt(p.n),fontFamily:"'Rajdhani',sans-serif",pointerEvents:"none"}}>
-                                                        {p.n.slice(0,3)}
-                                                      </span>
-                                                    </div>
-                                                    {goals>0&&(
-                                                      <div style={{position:"absolute",top:-4,right:-4,
-                                                        width:16,height:16,borderRadius:"50%",
-                                                        background:"#C8FF00",color:"#111",
-                                                        display:"flex",alignItems:"center",justifyContent:"center",
-                                                        fontSize:8,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",
-                                                        lineHeight:1,zIndex:1}}>
-                                                        {goals}
-                                                      </div>
-                                                    )}
-                                                  </div>
-                                                  <span style={{fontSize:8,color:goals>0?T.volt:T.faint,
-                                                    fontFamily:"'Rajdhani',sans-serif",fontWeight:700,
-                                                    maxWidth:32,overflow:"hidden",textOverflow:"ellipsis",
-                                                    whiteSpace:"nowrap",textAlign:"center"}}>
-                                                    {(p.name||p.n).slice(0,5)}
-                                                  </span>
+                                                <div key={pi} title={(p.name||p.n)+(g>0?" ⚽"+g:"")} style={{position:"relative",width:16,height:16,flexShrink:0}}>
+                                                  <div style={{width:16,height:16,borderRadius:"50%",background:c,border:g>0?"1px solid #C8FF00":"1px solid rgba(255,255,255,0.15)",boxShadow:g>0?"0 0 4px rgba(200,255,0,0.5)":p.name?"0 0 3px "+c+"66":"none"}}/>
+                                                  {g>0&&(<div style={{position:"absolute",top:-4,right:-4,width:10,height:10,borderRadius:"50%",background:"#C8FF00",color:"#111",display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",lineHeight:1}}>{g}</div>)}
                                                 </div>
                                               );
                                             })}
                                           </div>
-                                          {/* Sub scorer / OG input */}
-                                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                                            <input value={subScorerInput}
-                                              placeholder="Sub / OG scorer name..."
-                                              onChange={function(e){setSubScorerInput(e.target.value);}}
-                                              onKeyDown={function(e){
-                                                if(e.key==="Enter"&&subScorerInput.trim()){
-                                                  var name=subScorerInput.trim();
-                                                  setEditingScorers(function(s){
-                                                    var list=s.slice();
-                                                    var idx=list.findIndex(function(x){return x.playerId===null&&x.name===name;});
-                                                    if(idx>-1) list[idx]=Object.assign({},list[idx],{goals:list[idx].goals+1});
-                                                    else list.push({name:name,playerId:null,goals:1});
-                                                    return list;
-                                                  });
-                                                  setSubScorerInput("");
-                                                }
-                                              }}
-                                              style={{flex:1,fontSize:11,padding:"5px 8px"}}/>
-                                            <button className="btn btn-secondary btn-sm"
-                                              onClick={function(){
-                                                if(!subScorerInput.trim()) return;
-                                                var name=subScorerInput.trim();
-                                                setEditingScorers(function(s){
-                                                  var list=s.slice();
-                                                  var idx=list.findIndex(function(x){return x.playerId===null&&x.name===name;});
-                                                  if(idx>-1) list[idx]=Object.assign({},list[idx],{goals:list[idx].goals+1});
-                                                  else list.push({name:name,playerId:null,goals:1});
-                                                  return list;
-                                                });
-                                                setSubScorerInput("");
-                                              }}>+ Add</button>
-                                          </div>
-                                          {/* Scorer summary */}
-                                          {editingScorers.length>0&&(
-                                            <div style={{fontSize:9,color:T.volt,fontFamily:"'Poppins',sans-serif",marginTop:6}}>
-                                              {editingScorers.map(function(s){return s.name+(s.goals>1?" ×"+s.goals:"");}).join(", ")}
-                                              <span style={{color:T.ghost,marginLeft:4}}>(long-press circle to remove)</span>
+                                          {f.scorers&&f.scorers.length>0&&(
+                                            <div style={{fontSize:9,color:"rgba(200,255,0,0.7)",fontFamily:"'Poppins',sans-serif",marginBottom:2}}>
+                                              &#x26BD; {f.scorers.map(function(s){return s.name+(s.goals>1?" ×"+s.goals:"");}).join(", ")}
                                             </div>
                                           )}
+                                          <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>
+                                            {f.game_fmt} &bull; {f.formation}
+                                            {f.team_name&&f.team_name!==teamName&&<span style={{color:T.volt,opacity:0.5}}> &bull; {f.team_name}</span>}
+                                          </div>
+                                        </div>
+                                        <div style={{display:"flex",flexDirection:"column",gap:4,flexShrink:0}}>
+                                          <button className="btn btn-volt-outline btn-sm" style={{flexShrink:0}} onClick={function(){
+                                            setTitle(f.title); setGameFmt(f.game_fmt); setFormation(f.formation);
+                                            setSurface(f.surface); setPaletteId(f.palette_id);
+                                            setPlayers(f.players); setLines(f.lines||[]); setSubs(f.subs||[]);
+                                            setPhases(f.phases||[null,null,null,null,null]); setBallPos(f.ball_pos||null);
+                                            setShowOpp(f.show_opp||false); setOppFmt(f.opp_fmt||"4-4-2");
+                                            setOppList(f.opp_list||[]); setOppColor(f.opp_color||"#EE2244");
+                                            if(f.team_name) setTeamName(f.team_name);
+                                            setSavedId(f.id); setTab("pitch");
+                                            notify("Loaded: "+f.title);
+                                          }}>Load</button>
+                                          <button className="btn btn-danger btn-sm" style={{flexShrink:0}} onClick={function(){
+                                            deleteFormation(f.id).then(function(){
+                                              setSavedFormations(function(prev){return prev.filter(function(x){return x.id!==f.id;});});
+                                              if(savedId===f.id) setSavedId(null);
+                                              notify("Deleted.");
+                                            }).catch(function(e){notify(e.message);});
+                                          }}>&#x2715;</button>
+                                        </div>
+                                      </div>
+                                      {expandedResult===f.id&&(
+                                        <div style={{padding:"10px 14px 14px",borderTop:"1px solid rgba(255,255,255,0.06)",background:"rgba(255,255,255,0.02)"}}>
+                                          <div style={{display:"flex",gap:6,marginBottom:10}}>
+                                            {[["W","#22CC44","Win"],["D","#F5BE00","Draw"],["L","#F02040","Loss"]].map(function(item){
+                                              var active=editingResult.result===item[0];
+                                              return (
+                                                <button key={item[0]}
+                                                  onClick={function(){setEditingResult(function(r){return Object.assign({},r,{result:item[0]});});}}
+                                                  style={{flex:1,height:44,borderRadius:6,border:"2px solid "+(active?item[1]:T.b),background:active?"rgba(255,255,255,0.05)":"transparent",color:active?item[1]:"rgba(255,255,255,0.3)",fontFamily:"'Rajdhani',sans-serif",fontWeight:900,fontSize:16,cursor:"pointer",WebkitTapHighlightColor:"transparent"}}>
+                                                  {item[0]}
+                                                </button>
+                                              );
+                                            })}
+                                          </div>
+                                          {(parseInt(editingResult.scoreFor)||0) > 0 && (
+                                            <div style={{marginBottom:10}}>
+                                              <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.16em",color:T.ghost,fontFamily:"'Rajdhani',sans-serif",marginBottom:8}}>WHO SCORED?</div>
+                                              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:8}}>
+                                                {(f.players||[]).slice(0,11).map(function(p){
+                                                  var goals = scorerGoals(editingScorers, p.id);
+                                                  var c = tFill(p.n);
+                                                  return (
+                                                    <div key={p.id} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,cursor:"pointer"}}
+                                                      onClick={function(){if(navigator.vibrate) navigator.vibrate(6);setEditingScorers(function(s){return toggleGoal(s,p,true);});}}>
+                                                      <div style={{position:"relative",width:32,height:32}}>
+                                                        <div style={{width:32,height:32,borderRadius:"50%",background:c,display:"flex",alignItems:"center",justifyContent:"center",border:goals>0?"2px solid #C8FF00":"2px solid transparent",boxShadow:goals>0?"0 0 8px rgba(200,255,0,0.4)":"none",transition:"all 0.12s"}}>
+                                                          <span style={{fontSize:8,fontWeight:900,color:tTxt(p.n),fontFamily:"'Rajdhani',sans-serif",pointerEvents:"none"}}>{p.n.slice(0,3)}</span>
+                                                        </div>
+                                                        {goals>0&&(<div style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#C8FF00",color:"#111",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",lineHeight:1,zIndex:1}}>{goals}</div>)}
+                                                      </div>
+                                                      <span style={{fontSize:8,color:goals>0?T.volt:T.faint,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,maxWidth:32,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{(p.name||p.n).slice(0,5)}</span>
+                                                    </div>
+                                                  );
+                                                })}
+                                              </div>
+                                              <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                                                <input value={subScorerInput} placeholder="Sub / OG scorer name..."
+                                                  onChange={function(e){setSubScorerInput(e.target.value);}}
+                                                  onKeyDown={function(e){if(e.key==="Enter"&&subScorerInput.trim()){var name=subScorerInput.trim();setEditingScorers(function(s){var list=s.slice();var idx=list.findIndex(function(x){return x.playerId===null&&x.name===name;});if(idx>-1) list[idx]=Object.assign({},list[idx],{goals:list[idx].goals+1});else list.push({name:name,playerId:null,goals:1});return list;});setSubScorerInput("");}}}
+                                                  style={{flex:1,fontSize:11,padding:"5px 8px"}}/>
+                                                <button className="btn btn-secondary btn-sm"
+                                                  onClick={function(){if(!subScorerInput.trim()) return;var name=subScorerInput.trim();setEditingScorers(function(s){var list=s.slice();var idx=list.findIndex(function(x){return x.playerId===null&&x.name===name;});if(idx>-1) list[idx]=Object.assign({},list[idx],{goals:list[idx].goals+1});else list.push({name:name,playerId:null,goals:1});return list;});setSubScorerInput("");}}>+ Add</button>
+                                              </div>
+                                              {editingScorers.length>0&&(<div style={{fontSize:9,color:T.volt,fontFamily:"'Poppins',sans-serif",marginTop:6}}>{editingScorers.map(function(s){return s.name+(s.goals>1?" ×"+s.goals:"");}).join(", ")}</div>)}
+                                            </div>
+                                          )}
+                                          <div style={{display:"flex",gap:6,marginBottom:8}}>
+                                            <input type="number" min="0" max="99" placeholder="0" value={editingResult.scoreFor}
+                                              onChange={function(e){setEditingResult(function(r){return Object.assign({},r,{scoreFor:e.target.value});});}}
+                                              style={{flex:1,textAlign:"center",fontSize:20,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"6px 0"}}/>
+                                            <span style={{color:T.ghost,fontWeight:700,alignSelf:"center"}}>–</span>
+                                            <input type="number" min="0" max="99" placeholder="0" value={editingResult.scoreAgainst}
+                                              onChange={function(e){setEditingResult(function(r){return Object.assign({},r,{scoreAgainst:e.target.value});});}}
+                                              style={{flex:1,textAlign:"center",fontSize:20,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"6px 0"}}/>
+                                          </div>
+                                          <div style={{display:"flex",gap:6,marginBottom:10}}>
+                                            <input value={editingResult.opponent} placeholder="vs Opponent"
+                                              onChange={function(e){setEditingResult(function(r){return Object.assign({},r,{opponent:e.target.value});});}}
+                                              style={{flex:2,fontSize:12,padding:"5px 8px"}}/>
+                                            <input type="date" value={editingResult.date}
+                                              onChange={function(e){setEditingResult(function(r){return Object.assign({},r,{date:e.target.value});});}}
+                                              style={{flex:1,fontSize:11,padding:"5px 6px",color:editingResult.date?T.text:"rgba(255,255,255,0.3)"}}/>
+                                          </div>
+                                          <div style={{display:"flex",gap:6}}>
+                                            <button className="btn btn-primary btn-sm" style={{flex:1}}
+                                              onClick={function(){saveResult(f.id, editingResult, editingScorers);setExpandedResult(null);notify("Result saved!");}}>Save</button>
+                                            <button className="btn btn-secondary btn-sm" style={{flex:1}}
+                                              onClick={function(){setExpandedResult(null);}}>Cancel</button>
+                                          </div>
                                         </div>
                                       )}
-                                      {/* Save / Cancel */}
-                                      <div style={{display:"flex",gap:6}}>
-                                        <button className="btn btn-primary btn-sm" style={{flex:1}}
-                                          onClick={function(){
-                                            saveResult(f.id, editingResult, editingScorers);
-                                            setExpandedResult(null);
-                                            notify("Result saved!");
-                                          }}>Save</button>
-                                        <button className="btn btn-secondary btn-sm" style={{flex:1}}
-                                          onClick={function(){setExpandedResult(null);}}>Cancel</button>
-                                      </div>
                                     </div>
-                                  )}
-                                </div>
-                              );})}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-                    return (
-                      <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                        {Object.keys(teamGroups).map(function(tn){
-                          return (
-                            <div key={tn}>
-                              <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.18em",color:T.volt,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",padding:"4px 0 6px"}}>
-                                &#x1F3F9; {tn}
-                              </div>
-                              {SavedList(teamGroups[tn],"")}
+                                  );})}                                </div>
+                              )}
                             </div>
                           );
-                        })}
-                        {plays.length>0&&SavedList(plays,"Saved Plays")}
-                        {/* ── Golden Boot Table ── */}
-                        {(function(){
-                          var allScorers = {};
-                          savedFormations.forEach(function(f){
-                            (f.scorers||[]).forEach(function(s){
-                              var key = s.name;
-                              if(!allScorers[key]) allScorers[key] = {name:s.name, goals:0, games:0, playerId:s.playerId};
-                              allScorers[key].goals += s.goals;
-                              allScorers[key].games += 1;
-                            });
-                          });
-                          var leaderboard = Object.values(allScorers).sort(function(a,b){return b.goals-a.goals;});
-                          if(leaderboard.length === 0) return null;
-                          return (
-                            <div style={{border:"1px solid rgba(200,255,0,0.2)",borderRadius:6,overflow:"hidden",marginTop:4}}>
-                              <div style={{padding:"8px 14px",borderBottom:"1px solid rgba(200,255,0,0.15)",background:"rgba(200,255,0,0.04)",display:"flex",alignItems:"center",gap:8}}>
-                                <span style={{fontSize:14}}>&#x26BD;</span>
-                                <SL c="Golden Boot"/>
-                                <span style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif",marginLeft:"auto"}}>{teamName}</span>
-                              </div>
-                              {leaderboard.slice(0,10).map(function(s,i){
-                                var medal = i===0?"&#x1F947;":i===1?"&#x1F948;":i===2?"&#x1F949;":"";
+                        }
+
+                        return (
+                          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                            {Object.keys(teamGroups).map(function(tn){
+                              return (
+                                <div key={tn}>
+                                  <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.18em",color:T.volt,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",padding:"4px 0 6px"}}>
+                                    &#x1F3F9; {tn}
+                                  </div>
+                                  {SavedList(teamGroups[tn],"")}
+                                </div>
+                              );
+                            })}
+                            {plays.length>0&&SavedList(plays,"Saved Plays")}
+                          </div>
+                        );
+                      })()}
+
+                    </div>{/* end CENTRE column */}
+
+
+                    {/* ════════════════════════════════
+                        RIGHT — Intelligence & Season
+                        ════════════════════════════════ */}
+                    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+
+                      {/* Season stats summary */}
+                      {(function(){
+                        var rosters = savedFormations.filter(function(f){return (!f.type||f.type==="roster")&&f.team_name===teamName&&f.result;});
+                        if(rosters.length===0) return null;
+                        var w=0,d=0,l=0,gf=0,ga=0;
+                        rosters.forEach(function(f){
+                          if(f.result==="W") w++;
+                          else if(f.result==="D") d++;
+                          else if(f.result==="L") l++;
+                          if(f.score_for!=null) gf+=parseInt(f.score_for)||0;
+                          if(f.score_against!=null) ga+=parseInt(f.score_against)||0;
+                        });
+                        return (
+                          <div style={{border:"1px solid "+T.b,borderRadius:8,padding:"14px",background:T.raised}}>
+                            <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.2em",color:T.volt,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",marginBottom:12}}>Season Stats</div>
+                            <div style={{display:"flex",gap:6,marginBottom:12}}>
+                              {[[w,"W","#22CC44"],[d,"D","#F5BE00"],[l,"L","#F02040"]].map(function(item){
                                 return (
-                                  <div key={s.name} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",borderBottom:"1px solid "+T.b,background:i===0?"rgba(200,255,0,0.03)":"transparent"}}>
-                                    <span dangerouslySetInnerHTML={{__html:medal||String(i+1)}} style={{fontSize:i<3?14:11,width:20,textAlign:"center",flexShrink:0,color:medal?"inherit":T.faint,fontFamily:"'Rajdhani',sans-serif",fontWeight:700}}/>
-                                    <div style={{flex:1,minWidth:0}}>
-                                      <div style={{fontSize:13,fontWeight:700,color:i===0?T.volt:T.text,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em"}}>{s.name}</div>
-                                      <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>{s.games} game{s.games!==1?"s":""}</div>
-                                    </div>
-                                    <div style={{display:"flex",alignItems:"baseline",gap:3,flexShrink:0}}>
-                                      <span style={{fontSize:20,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",color:i===0?T.volt:"rgba(255,255,255,0.75)"}}>{s.goals}</span>
-                                      <span style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif"}}>goals</span>
-                                    </div>
+                                  <div key={item[1]} style={{flex:1,textAlign:"center",padding:"10px 4px",borderRadius:6,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)"}}>
+                                    <div style={{fontSize:24,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",color:item[2],lineHeight:1}}>{item[0]}</div>
+                                    <div style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.1em",marginTop:2}}>{item[1]}</div>
                                   </div>
                                 );
                               })}
                             </div>
-                          );
-                        })()}
+                            <div style={{display:"flex",justifyContent:"space-around",paddingTop:8,borderTop:"1px solid "+T.b}}>
+                              <div style={{textAlign:"center"}}>
+                                <div style={{fontSize:18,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",color:T.text}}>{gf}</div>
+                                <div style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.1em"}}>GF</div>
+                              </div>
+                              <div style={{textAlign:"center",color:T.faint,fontSize:14,alignSelf:"center"}}>:</div>
+                              <div style={{textAlign:"center"}}>
+                                <div style={{fontSize:18,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",color:T.text}}>{ga}</div>
+                                <div style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.1em"}}>GA</div>
+                              </div>
+                              <div style={{textAlign:"center"}}>
+                                <div style={{fontSize:18,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",color:gf-ga>=0?"#22CC44":"#F02040"}}>{gf-ga>=0?"+":""}{gf-ga}</div>
+                                <div style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.1em"}}>GD</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Golden Boot */}
+                      {(function(){
+                        var allScorers = {};
+                        savedFormations.forEach(function(f){
+                          (f.scorers||[]).forEach(function(s){
+                            var key = s.name;
+                            if(!allScorers[key]) allScorers[key] = {name:s.name, goals:0, games:0, playerId:s.playerId};
+                            allScorers[key].goals += s.goals;
+                            allScorers[key].games += 1;
+                          });
+                        });
+                        var leaderboard = Object.values(allScorers).sort(function(a,b){return b.goals-a.goals;});
+                        if(leaderboard.length === 0) return null;
+                        return (
+                          <div style={{border:"1px solid rgba(200,255,0,0.2)",borderRadius:8,overflow:"hidden"}}>
+                            <div style={{padding:"10px 14px",borderBottom:"1px solid rgba(200,255,0,0.15)",background:"rgba(200,255,0,0.04)",display:"flex",alignItems:"center",gap:8}}>
+                              <span style={{fontSize:14}}>&#x26BD;</span>
+                              <SL c="Golden Boot"/>
+                              <span style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif",marginLeft:"auto"}}>{teamName}</span>
+                            </div>
+                            {leaderboard.slice(0,8).map(function(s,i){
+                              var medal = i===0?"&#x1F947;":i===1?"&#x1F948;":i===2?"&#x1F949;":"";
+                              return (
+                                <div key={s.name} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",borderBottom:"1px solid "+T.b,background:i===0?"rgba(200,255,0,0.03)":"transparent"}}>
+                                  <span dangerouslySetInnerHTML={{__html:medal||String(i+1)}} style={{fontSize:i<3?14:11,width:20,textAlign:"center",flexShrink:0,color:medal?"inherit":T.faint,fontFamily:"'Rajdhani',sans-serif",fontWeight:700}}/>
+                                  <div style={{flex:1,minWidth:0}}>
+                                    <div style={{fontSize:13,fontWeight:700,color:i===0?T.volt:T.text,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.name}</div>
+                                    <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>{s.games} game{s.games!==1?"s":""}</div>
+                                  </div>
+                                  <div style={{display:"flex",alignItems:"baseline",gap:3,flexShrink:0}}>
+                                    <span style={{fontSize:20,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",color:i===0?T.volt:"rgba(255,255,255,0.75)"}}>{s.goals}</span>
+                                    <span style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif"}}>goals</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+
+                      {/* Season Management */}
+                      <div style={{border:"1px solid rgba(200,255,0,0.15)",borderRadius:8,padding:"14px",background:"rgba(200,255,0,0.03)"}}>
+                        <div style={{fontWeight:700,fontSize:11,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.volt,marginBottom:6}}>Season Management</div>
+                        <p style={{fontSize:11,color:T.ghost,fontFamily:"'Poppins',sans-serif",lineHeight:1.6,marginBottom:10}}>
+                          Archive your squad and start fresh for a new season. History is always kept.
+                        </p>
+                        <button className="btn btn-volt-outline btn-sm" style={{gap:5,width:"100%"}}
+                          onClick={function(){
+                            if(!window.confirm("Start a new season? Your current saves will be kept in history. Your squad will be cleared for a fresh start.")) return;
+                            var seasonTag = teamName+" — "+new Date().toLocaleDateString("en-GB",{month:"short",year:"numeric"});
+                            Promise.all(savedFormations.map(function(f){
+                              return supabase.from("formations").update({team_name: seasonTag}).eq("id",f.id);
+                            })).then(function(){
+                              setPlayers(function(prev){return prev.map(function(p){return Object.assign({},p,{name:"",number:"",age:"",notes:"",foot:"R",skill:3,availability:"available"});});});
+                              setLines([]);setSubs([]);
+                              setPhases([null,null,null,null,null]);setBallPos(null);
+                              setSavedId(null);
+                              setTeamName(teamName+" (New Season)");
+                              return loadFormations().then(setSavedFormations);
+                            }).then(function(){
+                              notify("New season started! History archived under: "+seasonTag);
+                            }).catch(function(e){notify("Error: "+e.message);});
+                          }}>
+                          &#x2728; Start New Season
+                        </button>
                       </div>
-                    );
-                  })()}
+
+                    </div>{/* end RIGHT column */}
+
+                  </div>{/* end grid */}
                 </div>
               )}
-            </div>
-          </div>
-        )}
-
-        {tab==="playbook"&&(
-          <div style={{flex:1,overflow:"auto",padding:"36px 24px"}} className="fu">
-            <div style={{maxWidth:780,margin:"0 auto"}}>
-              <h1 style={{fontWeight:700,fontSize:26,letterSpacing:"0.06em",marginBottom:6}}>PLAYBOOK</h1>
-              <p style={{color:T.ghost,fontSize:13,fontFamily:"'Poppins',sans-serif",marginBottom:24}}>Tactics, formations, and coaching insights.</p>
-              <div style={{border:"1px solid "+T.voltBd,borderLeft:"2px solid "+T.volt,borderRadius:6,padding:22,marginBottom:16,cursor:"pointer",background:T.voltBg}}>
-                <div style={{fontSize:9,color:"rgba(200,255,0,0.5)",fontWeight:800,letterSpacing:"0.22em",textTransform:"uppercase",marginBottom:8,fontFamily:"'Rajdhani',sans-serif"}}>{"FEATURED - "+POSTS[0].cat.toUpperCase()}</div>
-                <h2 style={{fontWeight:700,fontSize:17,marginBottom:7}}>{POSTS[0].title}</h2>
-                <p style={{color:T.sub,lineHeight:1.7,fontSize:13,fontFamily:"'Poppins',sans-serif",marginBottom:12}}>{POSTS[0].body}</p>
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))",gap:10}}>
-                {POSTS.slice(1).map(function(p){return(
-                  <div key={p.id} style={{border:"1px solid "+T.b,borderRadius:6,padding:15,cursor:"pointer"}} onMouseEnter={function(e){e.currentTarget.style.borderColor=T.bhi;e.currentTarget.style.background="rgba(255,255,255,0.02)";}} onMouseLeave={function(e){e.currentTarget.style.borderColor=T.b;e.currentTarget.style.background="transparent";}}>
-                    <div style={{fontSize:8,color:"rgba(200,255,0,0.38)",fontWeight:800,letterSpacing:"0.18em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",marginBottom:6}}>{p.cat}</div>
-                    <h3 style={{fontWeight:700,fontSize:13,marginBottom:5,lineHeight:1.3}}>{p.title}</h3>
-                    <p style={{color:T.ghost,fontSize:11,lineHeight:1.6,fontFamily:"'Poppins',sans-serif"}}>{p.body}</p>
-                  </div>
-                );})}
-              </div>
             </div>
           </div>
         )}
