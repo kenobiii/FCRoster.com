@@ -356,6 +356,17 @@ export default function FCRoster() {
   var historyRef = useRef([]);
   var [ballPos,   setBallPos]   = useState(null);
   var [title,     setTitle]     = useState("My FCRoster");
+  var [titleEdited,setTitleEdited]= useState(false); // true if user manually typed a title
+
+  // Auto-generate title from team + date
+  function autoTitle() {
+    var d = new Date();
+    var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return (teamName||"My Team") + " — " + d.getDate() + " " + months[d.getMonth()];
+  }
+  function todayISO() {
+    return new Date().toISOString().split("T")[0];
+  }
   var [editTitle, setEditTitle] = useState(false);
   var [showOpp,   setShowOpp]   = useState(false);
   var [oppFmt,    setOppFmt]    = useState("4-4-2");
@@ -381,6 +392,8 @@ export default function FCRoster() {
   var [focusPlayerId,setFocusPlayerId] = useState(null);
   var [expandedResult,setExpandedResult] = useState(null); // formation id with inline result editor open
   var [editingResult,setEditingResult]   = useState({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
+  var [editingScorers,setEditingScorers] = useState([]); // [{name,playerId,goals}]
+  var [subScorerInput,setSubScorerInput] = useState("");  // free-text for sub/OG scorers
   var [focusPlayerId,setFocusPlayerId]   = useState(null); // mobile: tap circle → focus lineup input
 
 
@@ -456,7 +469,7 @@ export default function FCRoster() {
     } catch(e) { notify("Error saving squad: "+e.message); }
   }
 
-  async function saveResult(formationId, resultData) {
+  async function saveResult(formationId, resultData, scorersData) {
     try {
       await supabase.from("formations").update({
         result: resultData.result,
@@ -465,17 +478,38 @@ export default function FCRoster() {
         opponent: resultData.opponent||null,
         game_date: resultData.date||null,
         team_name: teamName,
+        scorers: scorersData||[],
       }).eq("id", formationId);
       setSavedFormations(function(prev) {
         return prev.map(function(f) {
           return f.id===formationId ? Object.assign({},f,{
             result:resultData.result, score_for:resultData.scoreFor,
             score_against:resultData.scoreAgainst, opponent:resultData.opponent,
-            game_date:resultData.date, team_name:teamName
+            game_date:resultData.date, team_name:teamName,
+            scorers:scorersData||[],
           }) : f;
         });
       });
     } catch(e) { notify("Error saving result."); }
+  }
+
+  // Scorer helpers
+  function scorerGoals(scorers, playerId) {
+    if(!scorers) return 0;
+    var s = scorers.find(function(x){return x.playerId===playerId;});
+    return s ? s.goals : 0;
+  }
+  function toggleGoal(scorers, player, increment) {
+    var list = (scorers||[]).slice();
+    var idx = list.findIndex(function(x){return x.playerId===player.id;});
+    if(idx > -1) {
+      var newGoals = list[idx].goals + (increment ? 1 : -1);
+      if(newGoals <= 0) list.splice(idx, 1);
+      else list[idx] = Object.assign({}, list[idx], {goals: newGoals});
+    } else if(increment) {
+      list.push({name: player.name||player.n, playerId: player.id, goals: 1});
+    }
+    return list;
   }
 
   // Mount: clean default pitch for all users
@@ -1649,7 +1683,7 @@ export default function FCRoster() {
                   {editTitle ? (
                     <input
                       value={title}
-                      onChange={function(e){setTitle(e.target.value);}}
+                      onChange={function(e){setTitle(e.target.value);setTitleEdited(true);}}
                       onBlur={function(){setEditTitle(false);}}
                       onKeyDown={function(e){if(e.key==="Enter")setEditTitle(false);}}
                       autoFocus
@@ -2057,12 +2091,17 @@ export default function FCRoster() {
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                     <button className="btn btn-primary btn-md" style={{gap:5}}
                       onClick={function(){
-                        var state={title,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
-                        var state2 = Object.assign({}, state, {team_name: teamName});
+                        // Auto-title: use team+date unless user manually edited title
+                        var saveTitle = titleEdited ? title : autoTitle();
+                        var saveDate  = todayISO();
+                        var state={title:saveTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
+                        var state2 = Object.assign({}, state, {team_name: teamName, game_date: saveDate});
                         var fn = savedId ? updateFormation(savedId, state2) : saveFormation(state2);
                         fn.then(function(row){
                           setSavedId(row.id);
-                          setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
+                          setTitle(saveTitle);
+                          setTitleEdited(false);
+                          setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:saveDate});
                           setResultModal({id: row.id});
                           return loadFormations().then(setSavedFormations);
                         }).catch(function(e){notify("Error: "+e.message);});
@@ -2107,16 +2146,24 @@ export default function FCRoster() {
                               {items.map(function(f){return(
                                 <div key={f.id} style={{borderBottom:"1px solid "+T.b}}>
                                   {/* Main card row */}
-                                  <div style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px"}}>
+                                  <div style={{display:"flex",alignItems:"flex-start",gap:8,padding:"10px 14px"}}>
                                     <div style={{flex:1,minWidth:0}}>
-                                      <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-                                        <span style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</span>
+                                      {/* Date — prominent top line */}
+                                      <div style={{fontSize:10,fontWeight:700,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",marginBottom:2}}>
+                                        {f.game_date ? new Date(f.game_date+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"}) : "No date"}
+                                        {f.opponent&&<span style={{color:T.sub}}> · vs {f.opponent}</span>}
+                                      </div>
+                                      {/* Title + result badge */}
+                                      <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:4}}>
+                                        <span style={{fontSize:13,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</span>
                                         {/* Result badge — tap to edit */}
                                         {f.result ? (
                                           <span
                                             onClick={function(){
                                               setExpandedResult(expandedResult===f.id?null:f.id);
                                               setEditingResult({result:f.result||"",scoreFor:f.score_for!=null?String(f.score_for):"",scoreAgainst:f.score_against!=null?String(f.score_against):"",opponent:f.opponent||"",date:f.game_date||""});
+                                              setEditingScorers((f.scorers||[]).map(function(s){return Object.assign({},s);}));
+                                              setSubScorerInput("");
                                             }}
                                             style={{fontSize:9,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",
                                               padding:"2px 7px",borderRadius:3,flexShrink:0,cursor:"pointer",
@@ -2130,6 +2177,8 @@ export default function FCRoster() {
                                             onClick={function(){
                                               setExpandedResult(expandedResult===f.id?null:f.id);
                                               setEditingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
+                                              setEditingScorers([]);
+                                              setSubScorerInput("");
                                             }}
                                             style={{fontSize:9,fontWeight:600,fontFamily:"'Poppins',sans-serif",
                                               color:"rgba(255,255,255,0.22)",cursor:"pointer",
@@ -2138,11 +2187,41 @@ export default function FCRoster() {
                                           </span>
                                         )}
                                       </div>
-                                      <div style={{fontSize:9,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:1}}>
+                                      {/* Player circle fingerprint row with goal badges */}
+                                      <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:3}}>
+                                        {(f.players||[]).slice(0,11).map(function(p,pi){
+                                          var c=tFill(p.n);
+                                          var g=scorerGoals(f.scorers||[],p.id);
+                                          return (
+                                            <div key={pi} title={(p.name||p.n)+(g>0?" ⚽"+g:"")}
+                                              style={{position:"relative",width:16,height:16,flexShrink:0}}>
+                                              <div style={{width:16,height:16,borderRadius:"50%",background:c,
+                                                border:g>0?"1px solid #C8FF00":"1px solid rgba(255,255,255,0.15)",
+                                                boxShadow:g>0?"0 0 4px rgba(200,255,0,0.5)":p.name?"0 0 3px "+c+"66":"none"}}>
+                                              </div>
+                                              {g>0&&(
+                                                <div style={{position:"absolute",top:-4,right:-4,
+                                                  width:10,height:10,borderRadius:"50%",
+                                                  background:"#C8FF00",color:"#111",
+                                                  display:"flex",alignItems:"center",justifyContent:"center",
+                                                  fontSize:7,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",
+                                                  lineHeight:1}}>
+                                                  {g}
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                      {/* Scorer summary line */}
+                                      {f.scorers&&f.scorers.length>0&&(
+                                        <div style={{fontSize:9,color:"rgba(200,255,0,0.7)",fontFamily:"'Poppins',sans-serif",marginBottom:2}}>
+                                          ⚽ {f.scorers.map(function(s){return s.name+(s.goals>1?" ×"+s.goals:"");}).join(", ")}
+                                        </div>
+                                      )}
+                                      <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>
                                         {f.game_fmt} &bull; {f.formation}
-                                        {f.opponent&&<span> &bull; vs {f.opponent}</span>}
-                                        {f.game_date&&<span> &bull; {new Date(f.game_date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}</span>}
-                                        {f.team_name&&f.team_name!==teamName&&<span style={{color:T.volt,opacity:0.6}}> &bull; {f.team_name}</span>}
+                                        {f.team_name&&f.team_name!==teamName&&<span style={{color:T.volt,opacity:0.5}}> &bull; {f.team_name}</span>}
                                       </div>
                                     </div>
                                     <button className="btn btn-volt-outline btn-sm" style={{flexShrink:0}} onClick={function(){
@@ -2206,11 +2285,103 @@ export default function FCRoster() {
                                           onChange={function(e){setEditingResult(function(r){return Object.assign({},r,{date:e.target.value});});}}
                                           style={{flex:1,fontSize:11,padding:"5px 6px",color:editingResult.date?T.text:"rgba(255,255,255,0.3)"}}/>
                                       </div>
+                                      {/* Goal scorers — shown when score > 0 */}
+                                      {(parseInt(editingResult.scoreFor)||0) > 0 && (
+                                        <div style={{marginBottom:10}}>
+                                          <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.16em",color:T.ghost,fontFamily:"'Rajdhani',sans-serif",marginBottom:8}}>WHO SCORED?</div>
+                                          {/* Player circles — tap to add goal, tap again to add another, long-press to remove */}
+                                          <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:8}}>
+                                            {(f.players||[]).slice(0,11).map(function(p){
+                                              var goals = scorerGoals(editingScorers, p.id);
+                                              var c = tFill(p.n);
+                                              return (
+                                                <div key={p.id} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,cursor:"pointer"}}
+                                                  onClick={function(){
+                                                    if(navigator.vibrate) navigator.vibrate(6);
+                                                    setEditingScorers(function(s){return toggleGoal(s,p,true);});
+                                                  }}
+                                                  onContextMenu={function(e){
+                                                    e.preventDefault();
+                                                    setEditingScorers(function(s){return toggleGoal(s,p,false);});
+                                                  }}>
+                                                  <div style={{position:"relative",width:32,height:32}}>
+                                                    <div style={{width:32,height:32,borderRadius:"50%",background:c,
+                                                      display:"flex",alignItems:"center",justifyContent:"center",
+                                                      border:goals>0?"2px solid #C8FF00":"2px solid transparent",
+                                                      boxShadow:goals>0?"0 0 8px rgba(200,255,0,0.4)":"none",
+                                                      transition:"all 0.12s"}}>
+                                                      <span style={{fontSize:8,fontWeight:900,color:tTxt(p.n),fontFamily:"'Rajdhani',sans-serif",pointerEvents:"none"}}>
+                                                        {p.n.slice(0,3)}
+                                                      </span>
+                                                    </div>
+                                                    {goals>0&&(
+                                                      <div style={{position:"absolute",top:-4,right:-4,
+                                                        width:16,height:16,borderRadius:"50%",
+                                                        background:"#C8FF00",color:"#111",
+                                                        display:"flex",alignItems:"center",justifyContent:"center",
+                                                        fontSize:8,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",
+                                                        lineHeight:1,zIndex:1}}>
+                                                        {goals}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                  <span style={{fontSize:8,color:goals>0?T.volt:T.faint,
+                                                    fontFamily:"'Rajdhani',sans-serif",fontWeight:700,
+                                                    maxWidth:32,overflow:"hidden",textOverflow:"ellipsis",
+                                                    whiteSpace:"nowrap",textAlign:"center"}}>
+                                                    {(p.name||p.n).slice(0,5)}
+                                                  </span>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                          {/* Sub scorer / OG input */}
+                                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                                            <input value={subScorerInput}
+                                              placeholder="Sub / OG scorer name..."
+                                              onChange={function(e){setSubScorerInput(e.target.value);}}
+                                              onKeyDown={function(e){
+                                                if(e.key==="Enter"&&subScorerInput.trim()){
+                                                  var name=subScorerInput.trim();
+                                                  setEditingScorers(function(s){
+                                                    var list=s.slice();
+                                                    var idx=list.findIndex(function(x){return x.playerId===null&&x.name===name;});
+                                                    if(idx>-1) list[idx]=Object.assign({},list[idx],{goals:list[idx].goals+1});
+                                                    else list.push({name:name,playerId:null,goals:1});
+                                                    return list;
+                                                  });
+                                                  setSubScorerInput("");
+                                                }
+                                              }}
+                                              style={{flex:1,fontSize:11,padding:"5px 8px"}}/>
+                                            <button className="btn btn-secondary btn-sm"
+                                              onClick={function(){
+                                                if(!subScorerInput.trim()) return;
+                                                var name=subScorerInput.trim();
+                                                setEditingScorers(function(s){
+                                                  var list=s.slice();
+                                                  var idx=list.findIndex(function(x){return x.playerId===null&&x.name===name;});
+                                                  if(idx>-1) list[idx]=Object.assign({},list[idx],{goals:list[idx].goals+1});
+                                                  else list.push({name:name,playerId:null,goals:1});
+                                                  return list;
+                                                });
+                                                setSubScorerInput("");
+                                              }}>+ Add</button>
+                                          </div>
+                                          {/* Scorer summary */}
+                                          {editingScorers.length>0&&(
+                                            <div style={{fontSize:9,color:T.volt,fontFamily:"'Poppins',sans-serif",marginTop:6}}>
+                                              {editingScorers.map(function(s){return s.name+(s.goals>1?" ×"+s.goals:"");}).join(", ")}
+                                              <span style={{color:T.ghost,marginLeft:4}}>(long-press circle to remove)</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
                                       {/* Save / Cancel */}
                                       <div style={{display:"flex",gap:6}}>
                                         <button className="btn btn-primary btn-sm" style={{flex:1}}
                                           onClick={function(){
-                                            saveResult(f.id, editingResult);
+                                            saveResult(f.id, editingResult, editingScorers);
                                             setExpandedResult(null);
                                             notify("Result saved!");
                                           }}>Save</button>
@@ -2239,6 +2410,45 @@ export default function FCRoster() {
                           );
                         })}
                         {plays.length>0&&SavedList(plays,"Saved Plays")}
+                        {/* ── Golden Boot Table ── */}
+                        {(function(){
+                          var allScorers = {};
+                          savedFormations.forEach(function(f){
+                            (f.scorers||[]).forEach(function(s){
+                              var key = s.name;
+                              if(!allScorers[key]) allScorers[key] = {name:s.name, goals:0, games:0, playerId:s.playerId};
+                              allScorers[key].goals += s.goals;
+                              allScorers[key].games += 1;
+                            });
+                          });
+                          var leaderboard = Object.values(allScorers).sort(function(a,b){return b.goals-a.goals;});
+                          if(leaderboard.length === 0) return null;
+                          return (
+                            <div style={{border:"1px solid rgba(200,255,0,0.2)",borderRadius:6,overflow:"hidden",marginTop:4}}>
+                              <div style={{padding:"8px 14px",borderBottom:"1px solid rgba(200,255,0,0.15)",background:"rgba(200,255,0,0.04)",display:"flex",alignItems:"center",gap:8}}>
+                                <span style={{fontSize:14}}>&#x26BD;</span>
+                                <SL c="Golden Boot"/>
+                                <span style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif",marginLeft:"auto"}}>{teamName}</span>
+                              </div>
+                              {leaderboard.slice(0,10).map(function(s,i){
+                                var medal = i===0?"&#x1F947;":i===1?"&#x1F948;":i===2?"&#x1F949;":"";
+                                return (
+                                  <div key={s.name} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",borderBottom:"1px solid "+T.b,background:i===0?"rgba(200,255,0,0.03)":"transparent"}}>
+                                    <span dangerouslySetInnerHTML={{__html:medal||String(i+1)}} style={{fontSize:i<3?14:11,width:20,textAlign:"center",flexShrink:0,color:medal?"inherit":T.faint,fontFamily:"'Rajdhani',sans-serif",fontWeight:700}}/>
+                                    <div style={{flex:1,minWidth:0}}>
+                                      <div style={{fontSize:13,fontWeight:700,color:i===0?T.volt:T.text,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em"}}>{s.name}</div>
+                                      <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>{s.games} game{s.games!==1?"s":""}</div>
+                                    </div>
+                                    <div style={{display:"flex",alignItems:"baseline",gap:3,flexShrink:0}}>
+                                      <span style={{fontSize:20,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",color:i===0?T.volt:"rgba(255,255,255,0.75)"}}>{s.goals}</span>
+                                      <span style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif"}}>goals</span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })()}
@@ -2511,8 +2721,16 @@ export default function FCRoster() {
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)"}}
           onClick={function(e){if(e.target===e.currentTarget){setResultModal(null);notify("Lineup saved!");}}}>
           <div style={{background:"#1A1A1A",border:"1px solid "+T.bhi,borderTop:"2px solid "+T.volt,borderRadius:10,padding:22,width:"100%",maxWidth:300}} className="fu">
-            <h3 style={{fontWeight:700,fontSize:15,letterSpacing:"0.08em",marginBottom:16,textAlign:"center"}}>HOW DID IT GO?</h3>
-            {/* W / D / L buttons */}
+            {/* Header */}
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:"0.16em",color:T.volt,fontFamily:"'Rajdhani',sans-serif",marginBottom:6}}>
+                &#x2713; LINEUP SAVED
+              </div>
+              <div style={{fontSize:11,color:T.ghost,fontFamily:"'Poppins',sans-serif",lineHeight:1.6}}>
+                Add the result after the game.<br/>You can always find this on your profile.
+              </div>
+            </div>
+            {/* W / D / L — tap to start entering result */}
             <div style={{display:"flex",gap:8,marginBottom:14}}>
               {[["W","#22CC44","Win"],["D","#F5BE00","Draw"],["L","#F02040","Loss"]].map(function(item){
                 var active=pendingResult.result===item[0];
@@ -2520,7 +2738,7 @@ export default function FCRoster() {
                   <button key={item[0]} onClick={function(){setPendingResult(function(p){return Object.assign({},p,{result:item[0]});});}}
                     style={{flex:1,height:48,borderRadius:6,border:"2px solid "+(active?item[1]:T.b),
                       background:active?"rgba(255,255,255,0.06)":"transparent",
-                      color:active?item[1]:"rgba(255,255,255,0.35)",
+                      color:active?item[1]:"rgba(255,255,255,0.28)",
                       fontFamily:"'Rajdhani',sans-serif",fontWeight:900,fontSize:18,cursor:"pointer",
                       transition:"all 0.12s",WebkitTapHighlightColor:"transparent"}}>
                     {item[0]}
@@ -2529,34 +2747,34 @@ export default function FCRoster() {
                 );
               })}
             </div>
-            {/* Score */}
-            <div style={{display:"flex",gap:8,marginBottom:12,alignItems:"center"}}>
-              <input type="number" min="0" max="99" placeholder="0" value={pendingResult.scoreFor}
-                onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{scoreFor:e.target.value});});}}
-                style={{flex:1,textAlign:"center",fontSize:22,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"8px 0"}}/>
-              <span style={{color:T.ghost,fontWeight:700,fontSize:16}}>–</span>
-              <input type="number" min="0" max="99" placeholder="0" value={pendingResult.scoreAgainst}
-                onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{scoreAgainst:e.target.value});});}}
-                style={{flex:1,textAlign:"center",fontSize:22,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"8px 0"}}/>
-            </div>
-            {/* Opponent */}
-            <input value={pendingResult.opponent} placeholder="Opponent (optional)"
-              onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{opponent:e.target.value});});}}
-              style={{marginBottom:8}}/>
-            {/* Date */}
-            <input type="date" value={pendingResult.date}
-              onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{date:e.target.value});});}}
-              style={{marginBottom:16,color:pendingResult.date?T.text:"rgba(255,255,255,0.3)"}}/>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              <button className="btn btn-primary btn-sm"
-                onClick={function(){
-                  if(pendingResult.result) saveResult(resultModal.id, pendingResult);
-                  setResultModal(null);
-                  notify("Lineup saved!");
-                }}>Save Result</button>
-              <button className="btn btn-secondary btn-sm"
-                onClick={function(){setResultModal(null);notify("Lineup saved!");}}>Skip</button>
-            </div>
+            {/* Score + opponent — only revealed after W/D/L tapped */}
+            {pendingResult.result&&(
+              <div className="fu">
+                <div style={{display:"flex",gap:8,marginBottom:10,alignItems:"center"}}>
+                  <input type="number" min="0" max="99" placeholder="0" value={pendingResult.scoreFor}
+                    onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{scoreFor:e.target.value});});}}
+                    style={{flex:1,textAlign:"center",fontSize:22,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"6px 0"}}/>
+                  <span style={{color:T.ghost,fontWeight:700,fontSize:16}}>–</span>
+                  <input type="number" min="0" max="99" placeholder="0" value={pendingResult.scoreAgainst}
+                    onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{scoreAgainst:e.target.value});});}}
+                    style={{flex:1,textAlign:"center",fontSize:22,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"6px 0"}}/>
+                </div>
+                <input value={pendingResult.opponent} placeholder="vs Opponent (optional)"
+                  onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{opponent:e.target.value});});}}
+                  style={{marginBottom:12}}/>
+                <button className="btn btn-primary btn-sm" style={{width:"100%",marginBottom:8}}
+                  onClick={function(){
+                    saveResult(resultModal.id, pendingResult);
+                    setResultModal(null);
+                    notify("Result saved!");
+                  }}>Save Result</button>
+              </div>
+            )}
+            {/* Done / skip — most prominent action */}
+            <button className="btn btn-secondary btn-sm" style={{width:"100%"}}
+              onClick={function(){setResultModal(null);}}>
+              {pendingResult.result?"Cancel":"Done — add result after the game"}
+            </button>
           </div>
         </div>
       )}
