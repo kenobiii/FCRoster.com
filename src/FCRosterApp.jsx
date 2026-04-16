@@ -100,14 +100,14 @@ var CSS = [
   ".nav-more{display:none;}",
   ".mob-ctrl{display:none;}",
   "@media(max-width:767px){",
-  "  .ps{grid-template-columns:1fr;height:100%;display:flex;flex-direction:column;overflow:hidden;}",
+  "  .ps{grid-template-columns:1fr;height:100%;display:flex;flex-direction:column;overflow:hidden;min-height:0;flex:1;}",
   "  .lp,.rp{display:none!important}",
-  "  .pc{flex:1;min-height:0;padding:0;background:#131313;align-items:stretch;justify-content:flex-start;min-height:240px;}",
-  "  .pw{max-height:100%;width:auto;aspect-ratio:65/100;max-width:100%;margin:0 auto;}",
+  "  .pc{flex:1;min-height:0;padding:0;background:#131313;align-items:stretch;justify-content:flex-start;overflow:hidden;}",
+  "  .pw{flex:1;min-height:0;width:auto;aspect-ratio:65/100;max-width:100%;margin:0 auto;max-height:100%;}",
   "  .d-hdr,.d-bar{display:none!important;}",
   "  .mob-ctrl{display:flex;flex-direction:column;flex-shrink:0;background:#1E1E1E;border-top:1px solid rgba(255,255,255,0.08);}",
   "  .mob-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.08);background:#111111;}",
-  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:90px;overflow-y:auto;-webkit-overflow-scrolling:touch;transition:max-height 0.3s ease;}",
+  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:90px;overflow-y:auto;-webkit-overflow-scrolling:touch;transition:max-height 0.3s ease;overscroll-behavior:contain;}",
   "}",
   "@media(max-width:639px){.nav-sec{display:none!important}.nav-more{display:flex!important}}",
   "@media(min-width:768px) and (max-width:1099px){.ps{grid-template-columns:172px 1fr 168px}}",
@@ -1388,7 +1388,7 @@ export default function FCRoster() {
   }
 
   return (
-    <div style={{fontFamily:"'Rajdhani',sans-serif",background:T.bg,color:T.text,height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{fontFamily:"'Rajdhani',sans-serif",background:T.bg,color:T.text,height:"100dvh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style dangerouslySetInnerHTML={{__html:CSS}}/>
 
       <header style={{background:T.nav,borderBottom:"1px solid "+T.b,display:"flex",alignItems:"center",padding:"0 16px",height:50,flexShrink:0,zIndex:50}}>
