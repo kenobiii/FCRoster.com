@@ -405,24 +405,8 @@ export default function FCRoster() {
   var playRef = useRef(null);
   var [toast,     setToast]     = useState(null);
   var [moreOpen,  setMoreOpen]  = useState(false);
-  var [sheetTab,  setSheetTab]  = useState("lineup");
-  var [mobMenu,   setMobMenu]   = useState(function(){
-    try { return localStorage.getItem("fcr_panel") || "pitch"; } catch(e){ return "pitch"; }
-  });
-  var [showHint,  setShowHint]  = useState(true);
+  var [sheetTab,  setSheetTab]  = useState("pitch");
 
-  // Hint auto-hides after 3s on first load
-  useEffect(function() {
-    if (!showHint) return;
-    var t = setTimeout(function(){setShowHint(false);}, 3000);
-    return function(){clearTimeout(t);};
-  }, []);
-
-  // Persist panel state
-  function setPanel(v) {
-    setMobMenu(v);
-    try { localStorage.setItem("fcr_panel", v); } catch(e){}
-  }
 
   var svgRef      = useRef(null);
   var moreRef     = useRef(null);
@@ -1554,122 +1538,78 @@ export default function FCRoster() {
             </div>
 
             <div className="mob-ctrl">
-              {/* Pill button handle — 3 states */}
+              {/* ── Persistent 3-pill nav bar ── */}
               <div style={{
                 display:"flex",alignItems:"center",justifyContent:"space-between",
-                padding:"6px 12px",minHeight:52,flexShrink:0,
-                borderBottom:mobMenu!=="pitch"?"1px solid rgba(255,255,255,0.06)":"none",
-                background:"#131313",position:"relative",
+                padding:"8px 12px",background:"#131313",flexShrink:0,
+                borderTop:"1px solid rgba(255,255,255,0.06)",gap:8,
               }}>
-                {/* Formation badge — left */}
-                <span style={{fontSize:10,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",
-                  letterSpacing:"0.1em",color:"rgba(255,255,255,0.35)",flexShrink:0}}>
+                {/* Formation context badge */}
+                <span style={{fontSize:9,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",
+                  letterSpacing:"0.1em",color:"rgba(255,255,255,0.28)",flexShrink:0,whiteSpace:"nowrap"}}>
                   {gameFmt} · {formation}
                 </span>
-
-                {/* Pill buttons — centre/right */}
-                {mobMenu==="pitch"&&(
-                  <button
-                    onClick={function(){
-                      setPanel("half");setShowHint(false);
-                      if(navigator.vibrate)navigator.vibrate(8);
-                    }}
-                    style={{
-                      display:"flex",alignItems:"center",gap:6,
-                      padding:"0 18px",height:44,borderRadius:22,
-                      background:"rgba(200,255,0,0.08)",
-                      border:"1px solid rgba(200,255,0,0.4)",
-                      color:"#C8FF00",cursor:"pointer",
-                      fontFamily:"'Rajdhani',sans-serif",fontWeight:700,
-                      fontSize:13,letterSpacing:"0.12em",
-                      WebkitTapHighlightColor:"transparent",
-                      transition:"transform 0.1s,opacity 0.1s",
-                      active:{transform:"scale(0.96)"},
-                    }}
-                    onTouchStart={function(e){e.currentTarget.style.transform="scale(0.96)";e.currentTarget.style.opacity="0.8";}}
-                    onTouchEnd={function(e){e.currentTarget.style.transform="scale(1)";e.currentTarget.style.opacity="1";}}>
-                    &#x2303; LINEUP
-                  </button>
-                )}
-                {mobMenu==="half"&&(
-                  <div style={{display:"flex",gap:8}}>
-                    <button
-                      onClick={function(){setPanel("pitch");if(navigator.vibrate)navigator.vibrate(8);}}
-                      style={{
-                        display:"flex",alignItems:"center",gap:5,
-                        padding:"0 14px",height:44,borderRadius:22,
-                        background:"transparent",
-                        border:"1px solid rgba(255,255,255,0.2)",
-                        color:"rgba(255,255,255,0.55)",cursor:"pointer",
-                        fontFamily:"'Rajdhani',sans-serif",fontWeight:700,
-                        fontSize:12,letterSpacing:"0.1em",
-                        WebkitTapHighlightColor:"transparent",
-                      }}
-                      onTouchStart={function(e){e.currentTarget.style.opacity="0.6";}}
-                      onTouchEnd={function(e){e.currentTarget.style.opacity="1";}}>
-                      &#x2304; PITCH
-                    </button>
-                    <button
-                      onClick={function(){setPanel("panel");if(navigator.vibrate)navigator.vibrate(8);}}
-                      style={{
-                        display:"flex",alignItems:"center",gap:5,
-                        padding:"0 14px",height:44,borderRadius:22,
-                        background:"rgba(200,255,0,0.08)",
-                        border:"1px solid rgba(200,255,0,0.4)",
-                        color:"#C8FF00",cursor:"pointer",
-                        fontFamily:"'Rajdhani',sans-serif",fontWeight:700,
-                        fontSize:12,letterSpacing:"0.1em",
-                        WebkitTapHighlightColor:"transparent",
-                      }}
-                      onTouchStart={function(e){e.currentTarget.style.opacity="0.7";}}
-                      onTouchEnd={function(e){e.currentTarget.style.opacity="1";}}>
-                      &#x2303; MORE
-                    </button>
-                  </div>
-                )}
-                {mobMenu==="panel"&&(
-                  <button
-                    onClick={function(){setPanel("pitch");if(navigator.vibrate)navigator.vibrate(8);}}
-                    style={{
-                      display:"flex",alignItems:"center",gap:6,
-                      padding:"0 18px",height:44,borderRadius:22,
-                      background:"rgba(200,255,0,0.08)",
-                      border:"1px solid rgba(200,255,0,0.4)",
-                      color:"#C8FF00",cursor:"pointer",
-                      fontFamily:"'Rajdhani',sans-serif",fontWeight:700,
-                      fontSize:13,letterSpacing:"0.12em",
-                      WebkitTapHighlightColor:"transparent",
-                    }}
-                    onTouchStart={function(e){e.currentTarget.style.transform="scale(0.96)";e.currentTarget.style.opacity="0.8";}}
-                    onTouchEnd={function(e){e.currentTarget.style.transform="scale(1)";e.currentTarget.style.opacity="1";}}>
-                    &#x2304; PITCH
-                  </button>
-                )}
-
-                {/* First-load hint */}
-                {showHint&&mobMenu==="pitch"&&(
-                  <div style={{position:"absolute",top:-36,right:12,
-                    background:"rgba(0,0,0,0.75)",border:"1px solid rgba(200,255,0,0.25)",
-                    borderRadius:20,padding:"4px 12px",whiteSpace:"nowrap",pointerEvents:"none",
-                    animation:"fadeUp 0.3s ease"}}>
-                    <span style={{fontSize:10,color:"rgba(200,255,0,0.8)",fontFamily:"'Poppins',sans-serif"}}>
-                      tap to edit lineup &#x2303;
-                    </span>
-                  </div>
-                )}
+                {/* Three pill nav buttons */}
+                <div style={{display:"flex",gap:6,flex:1,justifyContent:"flex-end"}}>
+                  {[["pitch","PITCH"],["lineup","LINEUP"],["draw","DRAW"]].map(function(item){
+                    var active = sheetTab===item[0];
+                    return (
+                      <button key={item[0]}
+                        onClick={function(){
+                          setSheetTab(item[0]);
+                          if(navigator.vibrate) navigator.vibrate(8);
+                        }}
+                        onTouchStart={function(e){e.currentTarget.style.opacity="0.75";e.currentTarget.style.transform="scale(0.95)";}}
+                        onTouchEnd={function(e){e.currentTarget.style.opacity="1";e.currentTarget.style.transform="scale(1)";}}
+                        style={{
+                          display:"flex",alignItems:"center",justifyContent:"center",
+                          padding:"0 14px",height:40,borderRadius:20,
+                          background:active?"#C8FF00":"transparent",
+                          border:active?"1px solid #C8FF00":"1px solid rgba(255,255,255,0.18)",
+                          color:active?"#111":"rgba(255,255,255,0.5)",
+                          cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",
+                          fontWeight:700,fontSize:12,letterSpacing:"0.12em",
+                          WebkitTapHighlightColor:"transparent",
+                          transition:"background 0.15s,color 0.15s,border-color 0.15s",
+                          flexShrink:0,
+                        }}>
+                        {item[1]}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              {mobMenu!=="pitch"&&(
-                <div style={{display:"flex",flexDirection:"column",overflow:"hidden"}}>
-                  {MobPhaseBar()}
-                  <div className="mob-tabs">
-                    {[["lineup","Lineup"],["tools","Tools"],["colors","Colors"]].map(function(item){return(
-                      <button key={item[0]} onClick={function(){setSheetTab(item[0]);}} className={"mob-tab-btn"+(sheetTab===item[0]?" active":"")}>{item[1]}</button>
-                    );})}
-                  </div>
-                  <div className="mob-panel" style={{maxHeight:mobMenu==="panel"?"52dvh":"32dvh"}}>
 
-                {sheetTab==="lineup"&&(
+              {/* Section content — always rendered when not pitch */}
+              {sheetTab==="pitch"&&(
+                <div style={{padding:"10px 14px 10px",display:"flex",flexDirection:"column",gap:10}}>
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>                    <span style={{fontSize:10,fontWeight:700,color:T.ghost,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",flexShrink:0,width:70}}>Surface</span>
+                    <div style={{flex:1}}><DD value={surface} options={surfOpts} onChange={setSurface} bg="#1A1A1A" up={true}/></div>
+                  </div>
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    <span style={{fontSize:10,fontWeight:700,color:T.ghost,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",flexShrink:0,width:70}}>Kit</span>
+                    <div style={{flex:1}}><KitPicker value={paletteId} onChange={setPaletteId} bg="#1A1A1A" up={true}/></div>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",paddingTop:2}}>
+                    <span style={{fontSize:12,fontWeight:600,color:T.sub,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase"}}>Opposition</span>
+                    <Toggle on={showOpp} toggle={function(){setShowOpp(function(v){return !v;});}} ac="#F02040"/>
+                  </div>
+                  {showOpp&&(
+                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                      <div style={{display:"flex",justifyContent:"flex-start",gap:7,flexWrap:"wrap"}}>
+                        {OPP_COLORS.map(function(c){return(<div key={c} onClick={function(){setOppColor(c);}} style={{width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",outline:oppColor===c?"2px solid rgba(255,255,255,0.8)":"1px solid rgba(255,255,255,0.12)",outlineOffset:oppColor===c?2:0,transition:"outline 0.1s"}}/>);})}
+                      </div>
+                      <DD value={oppFmt} options={avF.map(function(v){return {value:v,label:v};})} onChange={function(v){loadOpp(v);}} accent="#F02040" bg="#1A1A1A" up={true}/>
+                    </div>
+                  )}
+                  <div style={{paddingTop:4}}>{ActionBar({compact:true})}</div>
+                </div>
+              )}
+
+              {sheetTab==="lineup"&&(
+                <div className="mob-panel" style={{maxHeight:"44dvh"}}>
                   <div style={{display:"flex",flexDirection:"column",gap:6,padding:"10px 14px 12px",width:"100%"}}>
+                    {MobPhaseBar()}
                     <SL c="Player Names"/>
                     {players.map(function(p){
                       var col=tFill(p.n);
@@ -1693,45 +1633,18 @@ export default function FCRoster() {
                     })}
                     <HR/>
                     {SubPlanner()}
+                    <HR/>
+                    {ActionBar({compact:true})}
                   </div>
-                )}
+                </div>
+              )}
 
-                {sheetTab==="tools"&&(
-                  <div style={{display:"flex",flexDirection:"column",alignItems:"stretch",gap:10,padding:"10px 14px 12px",width:"100%"}}>
-                    {ToolRow()}
-                  </div>
-                )}
-
-                {sheetTab==="colors"&&(
-                  <div style={{display:"flex",flexDirection:"column",gap:10,padding:"10px 14px 12px",width:"100%"}}>
-                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                      <span style={{fontSize:10,fontWeight:700,color:T.ghost,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",flexShrink:0,width:70}}>Surface</span>
-                      <div style={{flex:1}}><DD value={surface} options={surfOpts} onChange={setSurface} bg="#1A1A1A" up={true}/></div>
-                    </div>
-                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                      <span style={{fontSize:10,fontWeight:700,color:T.ghost,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",flexShrink:0,width:70}}>Kit</span>
-                      <div style={{flex:1}}><KitPicker value={paletteId} onChange={setPaletteId} bg="#1A1A1A" up={true}/></div>
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",paddingTop:2}}>
-                      <span style={{fontSize:12,fontWeight:600,color:T.sub,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase"}}>Opposition</span>
-                      <Toggle on={showOpp} toggle={function(){setShowOpp(function(v){return !v;});}} ac="#F02040"/>
-                    </div>
-                    {showOpp&&(
-                      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                        <div style={{display:"flex",justifyContent:"flex-start",gap:7,flexWrap:"wrap"}}>
-                          {OPP_COLORS.map(function(c){return(<div key={c} onClick={function(){setOppColor(c);}} style={{width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",outline:oppColor===c?"2px solid rgba(255,255,255,0.8)":"1px solid rgba(255,255,255,0.12)",outlineOffset:oppColor===c?2:0,transition:"outline 0.1s"}}/>);})}
-                        </div>
-                        <DD value={oppFmt} options={avF.map(function(v){return {value:v,label:v};})} onChange={function(v){loadOpp(v);}} accent="#F02040" bg="#1A1A1A" up={true}/>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-              </div>
-              <div style={{padding:"8px 12px",borderTop:"1px solid rgba(255,255,255,0.08)",background:"#131313",flexShrink:0}}>
-                {ActionBar({compact:true})}
-              </div>
-              </div>
+              {sheetTab==="draw"&&(
+                <div style={{display:"flex",flexDirection:"column",alignItems:"stretch",gap:10,padding:"10px 14px 12px",width:"100%"}}>
+                  {MobPhaseBar()}
+                  {ToolRow()}
+                  <div style={{paddingTop:4}}>{ActionBar({compact:true})}</div>
+                </div>
               )}
             </div>
           </div>
