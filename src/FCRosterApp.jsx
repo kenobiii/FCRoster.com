@@ -592,7 +592,10 @@ export default function FCRoster() {
             var plr2 = playersRef.current.find(function(x){return x.id===pid2;});
             if (plr2) {
               var rect2 = svgRef.current.getBoundingClientRect();
-              setInlineName({id:plr2.id, name:plr2.name||"", screenX:rect2.left+plr2.x*(rect2.width/65), screenY:rect2.top+plr2.y*(rect2.height/100)});
+              var sx2 = rect2.left + plr2.x*(rect2.width/65);
+              var sy2 = rect2.top + plr2.y*(rect2.height/100);
+              var tooltipY2 = Math.max(sy2 - 78, rect2.top + 8);
+              setInlineName({id:plr2.id, name:plr2.name||"", screenX:sx2, screenY:tooltipY2 + 78});
             }
           }
           return;
@@ -858,7 +861,7 @@ export default function FCRoster() {
     var SUBTBL=activeSubs.length>0?(20*SCALE + activeSubs.length*ROW + 14*SCALE):0;
 
     var bbox=svgEl.getBoundingClientRect();
-    var PW=Math.round(bbox.width*SCALE);
+    var PW=Math.max(Math.round(bbox.width*SCALE), 380*SCALE); // min width for sub table
     var PH=Math.round(bbox.height*SCALE);
     clone.setAttribute("width",PW);
     clone.setAttribute("height",PH);
@@ -907,12 +910,14 @@ export default function FCRoster() {
         ty+=20*SCALE;
 
         // Column widths
+        // Ensure sub table has enough width — min 380 rendered units
+        var subW = Math.max(PW, 380*SCALE);
         var C0=PAD,
-            C1=PAD+40*SCALE,
-            C2=PAD+140*SCALE,
-            C3=PAD+190*SCALE,
-            C4=PAD+290*SCALE,
-            C5=PAD+340*SCALE;
+            C1=PAD+32*SCALE,
+            C2=PAD+110*SCALE,
+            C3=PAD+220*SCALE,
+            C4=PAD+250*SCALE,
+            C5=PAD+360*SCALE;
 
         // Column headers
         ctx.fillStyle="rgba(255,255,255,0.28)";
@@ -950,17 +955,26 @@ export default function FCRoster() {
           ctx.fillStyle="rgba(255,255,255,0.75)";
           ctx.font=(9*SCALE)+"px 'Arial Narrow',Arial,sans-serif";
           ctx.textAlign="left";
+          // Clip long names
+          ctx.save();
+          ctx.rect(C2, ty, C3-C2-4*SCALE, ROW);
+          ctx.clip();
           ctx.fillText(starterName.toUpperCase(),C2,ty+16*SCALE);
+          ctx.restore();
           // Arrow
-          ctx.fillStyle="rgba(255,255,255,0.3)";
-          ctx.font=(10*SCALE)+"px Arial,sans-serif";
+          ctx.fillStyle="rgba(255,255,255,0.35)";
+          ctx.font=(11*SCALE)+"px Arial,sans-serif";
           ctx.textAlign="center";
-          ctx.fillText("\u2192",C3+10*SCALE,ty+16*SCALE);
-          // Sub name
-          ctx.fillStyle="rgba(200,255,0,0.9)";
+          ctx.fillText("\u2192",C3+8*SCALE,ty+16*SCALE);
+          // Sub name — volt, bold
+          ctx.fillStyle="rgba(200,255,0,0.95)";
           ctx.font="bold "+(9*SCALE)+"px 'Arial Narrow',Arial,sans-serif";
           ctx.textAlign="left";
-          ctx.fillText(s.subName.toUpperCase(),C4,ty+16*SCALE);
+          ctx.save();
+          ctx.rect(C4, ty, C5-C4-4*SCALE, ROW);
+          ctx.clip();
+          ctx.fillText((s.subName||"").toUpperCase(),C4,ty+16*SCALE);
+          ctx.restore();
           // Minute
           if(s.minute){
             ctx.fillStyle="rgba(255,255,255,0.4)";
@@ -1321,22 +1335,14 @@ export default function FCRoster() {
                   e.stopPropagation();
                   if (!user) { notify("Sign in to name your players"); return; }
                   if(window.gtag) window.gtag("event","player_name_tapped",{formation:formation,gameFmt:gameFmt});
-                  // Mobile: open LINEUP panel, expand that row, scroll & focus input
-                  var isMobile = window.innerWidth < 768;
-                  if (isMobile) {
-                    setSheetTab("lineup");
-                    setExpandedPlayer(p.id);
-                    setFocusPlayerId(p.id);
-                    setTimeout(function(){
-                      var el = document.getElementById("mob-player-input-"+p.id);
-                      if(el){el.scrollIntoView({block:"center",behavior:"smooth"});el.focus();}
-                    }, 150);
-                    return;
-                  }
-                  // Desktop: inline tooltip
+                  // All devices: show inline name tooltip directly on pitch
                   var svg = svgRef.current; if (!svg) return;
                   var rect = svg.getBoundingClientRect();
-                  setInlineName({id:p.id, name:p.name||"", screenX:rect.left+p.x*(rect.width/65), screenY:rect.top+p.y*(rect.height/100)});
+                  var sx = rect.left + p.x*(rect.width/65);
+                  var sy = rect.top + p.y*(rect.height/100);
+                  // On mobile position above player but not too close to top
+                  var tooltipY = Math.max(sy - 78, rect.top + 8);
+                  setInlineName({id:p.id, name:p.name||"", screenX:sx, screenY:tooltipY + 78});
                 }}
                 style={{userSelect:"none",pointerEvents:"all",cursor:user?"text":"default",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.04em"}}>
                 {hasName?p.name.slice(0,12):"TAP TO NAME"}
@@ -2659,7 +2665,7 @@ export default function FCRoster() {
         <div
           style={{
             position:"fixed",
-            left:Math.min(inlineName.screenX-80, window.innerWidth-180),
+            left:Math.min(Math.max(inlineName.screenX-84, 8), window.innerWidth-180),
             top:Math.max(inlineName.screenY-78, 60),
             width:168,
             background:"#1A1A1A",
