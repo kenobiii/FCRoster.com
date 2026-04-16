@@ -146,11 +146,9 @@ var CSS = [
   "}",
   "@media(max-width:639px){.nav-sec{display:none!important}.nav-more{display:flex!important}}",
   "@media(min-width:768px) and (max-width:1099px){.ps{grid-template-columns:172px 1fr 168px}}",
-  /* Profile page 3-col grid */
   ".profile-grid{display:grid;grid-template-columns:1fr;gap:16px;align-items:start;}",
   "@media(min-width:860px){.profile-grid{grid-template-columns:280px 1fr 260px;gap:24px;}}",
   ".profile-col{display:flex;flex-direction:column;gap:12px;}",
-  /* Button system */
   ".btn{display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.14s;border:none;outline:none;}",
   ".btn:active{transform:scale(0.96);}",
   ".btn-primary{background:#C8FF00;color:#000;border:none;box-shadow:0 2px 12px rgba(200,255,0,0.25);}",
@@ -1025,6 +1023,8 @@ export default function FCRoster() {
       var act = tool===item.t;
       var color = item.ac||VOLT;
       var lines = item.lb.split("\n");
+      // Draw tools get a colored bottom border as line-type indicator
+      var isDrawTool = item.ac && item.ac !== VOLT;
       return (
         <button key={item.t}
           onClick={function(){
@@ -1033,24 +1033,27 @@ export default function FCRoster() {
           }}
           style={{
             flex:1,display:"flex",flexDirection:"column",alignItems:"center",
-            justifyContent:"center",gap:2,padding:"9px 4px",borderRadius:6,
+            justifyContent:"center",gap:2,padding:"9px 4px",
+            borderRadius: isDrawTool ? "4px 4px 0 0" : "6px",
             position:"relative",cursor:"pointer",transition:"all 0.13s",
-            lineHeight:1.3,border:"1px solid",
+            lineHeight:1.3,
+            border: isDrawTool ? "none" : "1px solid",
+            borderBottom: isDrawTool ? "2.5px solid "+(item.locked?"rgba(255,255,255,0.12)":color) : undefined,
             fontFamily:"'Rajdhani',sans-serif",fontSize:9,fontWeight:700,
             letterSpacing:"0.08em",textTransform:"uppercase",
-            borderColor: item.locked ? "rgba(255,255,255,0.07)"
-                       : act ? color+"99" : "rgba(255,255,255,0.1)",
+            borderColor: isDrawTool ? undefined : (item.locked ? "rgba(255,255,255,0.07)"
+                       : act ? color+"99" : "rgba(255,255,255,0.1)"),
             background:  item.locked ? "rgba(255,255,255,0.03)"
                        : act ? color+"1a" : "rgba(255,255,255,0.04)",
             color:       item.locked ? "rgba(255,255,255,0.22)"
                        : act ? color : "rgba(255,255,255,0.55)",
           }}
-          onMouseEnter={function(e){if(!item.locked&&!act){e.currentTarget.style.borderColor="rgba(255,255,255,0.22)";e.currentTarget.style.color="rgba(255,255,255,0.82)";}}}
-          onMouseLeave={function(e){if(!item.locked&&!act){e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";e.currentTarget.style.color="rgba(255,255,255,0.55)";}}}
+          onMouseEnter={function(e){if(!item.locked&&!act){e.currentTarget.style.background="rgba(255,255,255,0.07)";e.currentTarget.style.color="rgba(255,255,255,0.82)";}}}
+          onMouseLeave={function(e){if(!item.locked&&!act){e.currentTarget.style.background="rgba(255,255,255,0.04)";e.currentTarget.style.color="rgba(255,255,255,0.55)";}}}
           onPointerDown={function(e){e.currentTarget.style.transform="scale(0.95)";}}
           onPointerUp={function(e){e.currentTarget.style.transform="scale(1)";}}
           onPointerLeave={function(e){e.currentTarget.style.transform="scale(1)";}}>
-          {act && <div style={{position:"absolute",top:0,left:0,right:0,height:2,borderRadius:"6px 6px 0 0",background:color}}/>}
+          {act && !isDrawTool && <div style={{position:"absolute",top:0,left:0,right:0,height:2,borderRadius:"6px 6px 0 0",background:color}}/>}
           {item.locked && (
             <div style={{position:"absolute",top:4,right:4,width:12,height:12,borderRadius:"50%",background:"rgba(200,255,0,0.15)",border:"1px solid rgba(200,255,0,0.3)",display:"flex",alignItems:"center",justifyContent:"center"}}>
               <span style={{fontSize:6,color:VOLT,lineHeight:1}}>&#9733;</span>
@@ -1585,27 +1588,7 @@ export default function FCRoster() {
         <SL c="Playmaker"/>
         {ToolRow()}
         <HR/>
-        <div style={{marginBottom:0}}>
-          <SL c="Drawing Key"/>
-          <div style={{display:"flex",gap:5}}>
-            {[["pass","#F5BE00","Pass"],["run","#22CC44","Run"],["shot","#F02040","Shot"]].map(function(item){
-              var act = tool===item[0];
-              return (
-                <button key={item[0]}
-                  onClick={function(){if(!user){setShowAuth(true);return;}setTool(act?null:item[0]);}}
-                  style={{flex:1,padding:"6px 4px 5px",borderRadius:"4px 4px 0 0",cursor:"pointer",
-                    background:act?"rgba(255,255,255,0.06)":"transparent",
-                    border:"none",borderBottom:"2.5px solid "+item[1],
-                    color:act?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.5)",
-                    fontSize:10,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",
-                    letterSpacing:"0.1em",textTransform:"uppercase",
-                    WebkitTapHighlightColor:"transparent"}}>
-                  {item[2]}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+
         <HR/>
         <div>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:showOpp?12:0}}>
@@ -1866,6 +1849,20 @@ export default function FCRoster() {
               {sheetTab==="pitch"&&(
                 <div className="mob-panel" style={{maxHeight:"min(65dvh,65vh)"}}>
                 <div style={{padding:"8px 12px 0",display:"flex",flexDirection:"column",gap:6,width:"100%"}}>
+                  {/* Save Roster CTA — top of pitch panel on mobile */}
+                  <button onClick={function(){
+                    if(!user){setShowAuth(true);return;}
+                    var saveTitle = titleEdited ? title : autoTitle();
+                    var saveDate = todayISO();
+                    var state={title:saveTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
+                    var fn = savedId ? updateFormation(savedId, Object.assign({},state,{team_name:teamName,game_date:saveDate})) : saveFormation(Object.assign({},state,{team_name:teamName,game_date:saveDate}));
+                    fn.then(function(row){setSavedId(row.id);setTitle(saveTitle);setTitleEdited(false);setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:saveDate});setResultModal({id:row.id});return loadFormations().then(setSavedFormations);}).catch(function(e){notify("Error: "+e.message);});
+                  }} className="btn btn-primary btn-md" style={{width:"100%",gap:6,fontWeight:900,
+                    boxShadow:user?"0 0 16px rgba(200,255,0,0.25)":"none",
+                    opacity:user?1:0.5}}>
+                    <span>&#x2193;</span>
+                    <span>{savedId?"Update Roster":"Save Roster to Profile"}</span>
+                  </button>
                   {/* Compact surface / kit / opposition row */}
                   <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                     <div style={{flex:1,minWidth:100}}><DD value={surface} options={surfOpts} onChange={setSurface} bg="#1A1A1A" up={true}/></div>
@@ -2135,6 +2132,7 @@ export default function FCRoster() {
               ) : (
                 <div style={{width:"100%",textAlign:"left"}}>
                   {/* ── Desktop 3-column grid / Mobile single column ── */}
+                  <style dangerouslySetInnerHTML={{__html:"@media(min-width:860px){.profile-grid{display:grid!important;grid-template-columns:280px 1fr 260px!important;gap:24px!important;}}"}}/>
                   <div className="profile-grid">
 
                     {/* ════════════════════════════════
