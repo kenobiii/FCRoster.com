@@ -380,6 +380,7 @@ export default function FCRoster() {
 
   var [dragId,    setDragId]    = useState(null);
   var [editP,     setEditP]     = useState(null);
+  var [inlineName,setInlineName]= useState(null);
   var [subs,      setSubs]      = useState([]);
   var [phases,    setPhases]    = useState([null,null,null,null,null]);
   var [activePhase, setActivePhase] = useState(null);
