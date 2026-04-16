@@ -1054,6 +1054,12 @@ export default function FCRoster() {
             <ellipse cx="30" cy="10" rx="3"  ry="1.5" fill="#a07840" opacity="0.2"/>
             <ellipse cx="34" cy="94" rx="3"  ry="1.5" fill="#a07840" opacity="0.2"/>
             <ellipse cx="30" cy="90" rx="3"  ry="1.5" fill="#a07840" opacity="0.2"/>
+            {/* Herrema wildlife — resident mosquitos */}
+            <image href="/mosquito.png" x="8"  y="22" width="4.5" height="4.5" opacity="0.82" transform="rotate(-15,10.25,24.25)" style={{pointerEvents:"none"}}/>
+            <image href="/mosquito.png" x="48" y="44" width="3.8" height="3.8" opacity="0.75" transform="rotate(25,49.9,45.9)"   style={{pointerEvents:"none"}}/>
+            <image href="/mosquito.png" x="20" y="68" width="5.2" height="5.2" opacity="0.88" transform="rotate(8,22.6,70.6)"    style={{pointerEvents:"none"}}/>
+            <image href="/mosquito.png" x="54" y="15" width="3.5" height="3.5" opacity="0.70" transform="rotate(-40,55.75,16.75)" style={{pointerEvents:"none"}}/>
+            <image href="/mosquito.png" x="35" y="82" width="4.0" height="4.0" opacity="0.80" transform="rotate(55,37,84)"        style={{pointerEvents:"none"}}/>
           </g>
         )}
 
