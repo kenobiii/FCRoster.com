@@ -394,8 +394,10 @@ export default function FCRoster() {
   var [focusPlayerId,setFocusPlayerId] = useState(null); // mobile: tap circle → focus lineup input
   var [expandedResult,setExpandedResult] = useState(null); // formation id with inline result editor open
   var [editingResult,setEditingResult]   = useState({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
-  var [editingScorers,setEditingScorers] = useState([]); // [{name,playerId,goals}]
+  var [editingScorers,setEditingScorers] = useState([]); // [{name,playerId,goals,assists}]
   var [subScorerInput,setSubScorerInput] = useState("");  // free-text for sub/OG scorers
+  var [leaderboardTab,setLeaderboardTab] = useState("goals"); // "goals" | "assists" | "ga"
+  var [scorerMode,setScorerMode] = useState("goals"); // "goals" | "assists" — match-editor tap mode
 
 
   // Real Supabase auth listener -- event-aware to prevent OAuth loop
@@ -509,22 +511,113 @@ export default function FCRoster() {
   }
 
   // Scorer helpers
+  // Each scorer row is { name, playerId, goals, assists }.
+  // Old rows pre-assists just lack the field — treat undefined as 0.
   function scorerGoals(scorers, playerId) {
     if(!scorers) return 0;
     var s = scorers.find(function(x){return x.playerId===playerId;});
-    return s ? s.goals : 0;
+    return s ? (s.goals||0) : 0;
   }
-  function toggleGoal(scorers, player, increment) {
+  function scorerAssists(scorers, playerId) {
+    if(!scorers) return 0;
+    var s = scorers.find(function(x){return x.playerId===playerId;});
+    return s ? (s.assists||0) : 0;
+  }
+  // Generic stat toggler — pass "goals" or "assists".
+  // Returns a new scorers array with the player's stat incremented/decremented.
+  // A row is removed when BOTH goals and assists reach 0.
+  function toggleStat(scorers, player, field, increment) {
     var list = (scorers||[]).slice();
     var idx = list.findIndex(function(x){return x.playerId===player.id;});
     if(idx > -1) {
-      var newGoals = list[idx].goals + (increment ? 1 : -1);
-      if(newGoals <= 0) list.splice(idx, 1);
-      else list[idx] = Object.assign({}, list[idx], {goals: newGoals});
+      var row = list[idx];
+      var cur = row[field]||0;
+      var next = cur + (increment ? 1 : -1);
+      if(next < 0) next = 0;
+      var updated = Object.assign({}, row, {[field]: next});
+      // Ensure both fields exist so math downstream doesn't choke
+      if(updated.goals===undefined) updated.goals = 0;
+      if(updated.assists===undefined) updated.assists = 0;
+      if(updated.goals<=0 && updated.assists<=0) list.splice(idx,1);
+      else list[idx] = updated;
     } else if(increment) {
-      list.push({name: player.name||player.n, playerId: player.id, goals: 1});
+      var rec = {name: player.name||player.n, playerId: player.id, goals: 0, assists: 0};
+      rec[field] = 1;
+      list.push(rec);
     }
     return list;
+  }
+  // Back-compat alias for the many existing goal +/- buttons
+  function toggleGoal(scorers, player, increment) {
+    return toggleStat(scorers, player, "goals", increment);
+  }
+
+  // ── Career-total editor (Profile page) ─────────────────────────────────────
+  // Edits the most recent saved roster for this team. If none exists, creates
+  // a lightweight "Untitled" roster stub so the stat has somewhere to live.
+  // This keeps career totals as a DERIVED sum of match totals — never a
+  // separate field that could drift.
+  async function adjustCareerStat(player, field, increment) {
+    try {
+      var { data: { user: authUser } } = await supabase.auth.getUser();
+      if(!authUser) { setShowAuth(true); return; }
+      // Find most recent roster for this team
+      var rosters = savedFormations.filter(function(f){
+        return (!f.type||f.type==="roster") && f.team_name===teamName;
+      }).sort(function(a,b){
+        var da = new Date(a.game_date||a.created_at||0).getTime();
+        var db = new Date(b.game_date||b.created_at||0).getTime();
+        return db - da;
+      });
+      var target = rosters[0];
+      if(!target) {
+        // No roster yet — quietly create one so the +/- has somewhere to land
+        var saveDate = todayISO();
+        var stub = {
+          title: teamName+" — "+saveDate,
+          gameFmt, formation, surface, paletteId,
+          players, lines:[], subs:[], phases:[null,null,null,null,null], ballPos:null,
+          showOpp:false, oppFmt, oppList:[], oppColor,
+          type:"roster", team_name: teamName, game_date: saveDate,
+        };
+        target = await saveFormation(stub);
+        target.scorers = [];
+      }
+      var nextScorers = toggleStat(target.scorers||[], player, field, increment);
+      await supabase.from("formations")
+        .update({ scorers: nextScorers })
+        .eq("id", target.id).eq("user_id", authUser.id);
+      // Refresh local state so the leaderboard updates live
+      setSavedFormations(function(prev){
+        var found = prev.find(function(f){return f.id===target.id;});
+        if(found) {
+          return prev.map(function(f){return f.id===target.id ? Object.assign({},f,{scorers:nextScorers}) : f;});
+        }
+        return prev.concat([Object.assign({},target,{scorers:nextScorers})]);
+      });
+    } catch(e) { notify("Error: "+e.message); }
+  }
+
+  // Career totals across ALL saved rosters for this team.
+  function careerGoals(playerId) {
+    var total = 0;
+    savedFormations.forEach(function(f){
+      if(f.team_name!==teamName) return;
+      (f.scorers||[]).forEach(function(s){
+        if(s.playerId===playerId) total += (s.goals||0);
+      });
+    });
+    return total;
+  }
+  function careerAssists(playerId) {
+    var total = 0;
+    savedFormations.forEach(function(f){
+      if(f.team_name!==teamName) return;
+      (f.scorers||[]).forEach(function(s){
+        if(s.playerId===playerId) total += (s.assists||0);
+      });
+    });
+    return total;
   }
 
   // Mount: clean default pitch for all users
@@ -874,6 +967,11 @@ export default function FCRoster() {
     var ROW=26*SCALE;
     var activeSubs=subs.filter(function(s){return s.subName&&s.subName.trim();});
     var SUBTBL=activeSubs.length>0?(20*SCALE + activeSubs.length*ROW + 14*SCALE):0;
+    // Scorers table (goals + assists) — only if this formation has been saved and has scorers
+    var currentScorers = (savedId ? ((savedFormations.find(function(f){return f.id===savedId;})||{}).scorers||[]) : []);
+    // Drop any with zero total contributions
+    currentScorers = currentScorers.filter(function(s){return (s.goals||0)+(s.assists||0)>0;});
+    var SCOTBL = currentScorers.length>0 ? (20*SCALE + currentScorers.length*ROW + 14*SCALE) : 0;
 
     var bbox=svgEl.getBoundingClientRect();
     var PW=Math.max(Math.round(bbox.width*SCALE), 380*SCALE); // min width for sub table
@@ -888,7 +986,7 @@ export default function FCRoster() {
     var img=new Image();
     img.onload=function(){
       var CW=PW+PAD*2;
-      var CH=HDR+PH+SUBTBL+FTR+PAD*2;
+      var CH=HDR+PH+SUBTBL+SCOTBL+FTR+PAD*2;
 
       var canvas=document.createElement("canvas");
       canvas.width=CW; canvas.height=CH;
@@ -1001,8 +1099,80 @@ export default function FCRoster() {
         });
       }
 
+      // Scorers table (⚽ Goals + 👤 Assists)
+      if(currentScorers.length>0){
+        var sy = PAD+HDR+PH+SUBTBL+14*SCALE;
+        // Section header
+        ctx.fillStyle="#1A1A1A";
+        ctx.fillRect(PAD,sy,PW,18*SCALE);
+        ctx.fillStyle="rgba(200,255,0,0.7)";
+        ctx.font="bold "+(8*SCALE)+"px 'Arial Narrow',Arial,sans-serif";
+        ctx.textAlign="left";
+        ctx.fillText("GOALS & ASSISTS",PAD+8*SCALE,sy+12*SCALE);
+        sy+=20*SCALE;
+
+        // Column widths
+        var SC0=PAD,
+            SC1=PAD+32*SCALE,
+            SC2=PAD+220*SCALE,
+            SC3=PAD+290*SCALE;
+
+        // Column headers
+        ctx.fillStyle="rgba(255,255,255,0.28)";
+        ctx.font=(7*SCALE)+"px Arial,sans-serif";
+        ctx.textAlign="left";
+        ["#","PLAYER","GOALS","ASSISTS"].forEach(function(h,i){
+          var cx=[SC0,SC1,SC2,SC3][i];
+          ctx.fillText(h,cx,sy+8*SCALE);
+        });
+        sy+=12*SCALE;
+
+        // Sort: G+A desc, then goals desc, then name
+        var sortedScorers = currentScorers.slice().sort(function(a,b){
+          var ga = (a.goals||0)+(a.assists||0);
+          var gb = (b.goals||0)+(b.assists||0);
+          if(gb!==ga) return gb-ga;
+          if((b.goals||0)!==(a.goals||0)) return (b.goals||0)-(a.goals||0);
+          return (a.name||"").localeCompare(b.name||"");
+        });
+
+        sortedScorers.forEach(function(s,idx){
+          ctx.fillStyle=idx%2===0?"rgba(255,255,255,0.03)":"transparent";
+          ctx.fillRect(PAD,sy,PW,ROW-2*SCALE);
+          // Number
+          ctx.fillStyle="rgba(255,255,255,0.28)";
+          ctx.font=(8*SCALE)+"px Arial,sans-serif";
+          ctx.textAlign="left";
+          ctx.fillText(String(idx+1),SC0+4*SCALE,sy+16*SCALE);
+          // Player name (clip)
+          ctx.fillStyle="rgba(255,255,255,0.85)";
+          ctx.font="bold "+(9*SCALE)+"px 'Arial Narrow',Arial,sans-serif";
+          ctx.textAlign="left";
+          ctx.save();
+          ctx.rect(SC1, sy, SC2-SC1-6*SCALE, ROW);
+          ctx.clip();
+          ctx.fillText((s.name||"").toUpperCase(),SC1,sy+16*SCALE);
+          ctx.restore();
+          // Goals in volt
+          if((s.goals||0)>0){
+            ctx.fillStyle="rgba(200,255,0,0.95)";
+            ctx.font="bold "+(10*SCALE)+"px Arial,sans-serif";
+            ctx.textAlign="left";
+            ctx.fillText("\u26BD "+s.goals,SC2,sy+16*SCALE);
+          }
+          // Assists in blue
+          if((s.assists||0)>0){
+            ctx.fillStyle="rgba(150,200,255,0.95)";
+            ctx.font="bold "+(10*SCALE)+"px Arial,sans-serif";
+            ctx.textAlign="left";
+            ctx.fillText("\u{1F464} "+s.assists,SC3,sy+16*SCALE);
+          }
+          sy+=ROW;
+        });
+      }
+
       // Footer
-      var footerY=PAD+HDR+PH+SUBTBL+(SUBTBL>0?4*SCALE:0)+16*SCALE;
+      var footerY=PAD+HDR+PH+SUBTBL+SCOTBL+(SUBTBL>0||SCOTBL>0?4*SCALE:0)+16*SCALE;
       ctx.fillStyle="rgba(200,255,0,0.75)";
       ctx.font="bold "+(9*SCALE)+"px Arial,sans-serif";
       ctx.textAlign="center";
@@ -1424,10 +1594,12 @@ export default function FCRoster() {
           {players.map(function(p){
             var col=tFill(p.n);
             var g = scorerGoals(editingScorers, p.id);
+            var a = scorerAssists(editingScorers, p.id);
             // Find planned sub for this player
             var plannedSub = subs.find(function(s){return s.playerId===p.id && s.subName && s.subName.trim();});
-            // Find if this sub scored
-            var subGoals = plannedSub ? editingScorers.filter(function(s){return !s.playerId && s.name && s.name.trim().toLowerCase()===plannedSub.subName.trim().toLowerCase();}).reduce(function(acc,s){return acc+s.goals;},0) : 0;
+            // Find if this sub contributed
+            var subGoals = plannedSub ? editingScorers.filter(function(s){return !s.playerId && s.name && s.name.trim().toLowerCase()===plannedSub.subName.trim().toLowerCase();}).reduce(function(acc,s){return acc+(s.goals||0);},0) : 0;
+            var subAssists = plannedSub ? editingScorers.filter(function(s){return !s.playerId && s.name && s.name.trim().toLowerCase()===plannedSub.subName.trim().toLowerCase();}).reduce(function(acc,s){return acc+(s.assists||0);},0) : 0;
             return (
               <div key={p.id} style={{borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
                 {/* Starter row */}
@@ -1454,11 +1626,12 @@ export default function FCRoster() {
                       fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",
                       padding:"2px 0",outline:"none",textTransform:"uppercase"}}
                   />
-                  {/* Goal counter */}
+                  {/* Goal + Assist counter */}
                   <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
-                    {g>0&&<span style={{fontSize:8,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif"}}>⚽{g}</span>}
+                    {a>0&&<span style={{fontSize:8,fontWeight:900,color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif"}}>&#x1F464;{a}</span>}
+                    {g>0&&<span style={{fontSize:8,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif"}}>&#x26BD;{g}</span>}
                     {g>0&&<button onClick={function(){setEditingScorers(function(s){return toggleGoal(s,p,false);});}} style={{width:18,height:18,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.4)",fontSize:12,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,WebkitTapHighlightColor:"transparent"}}>−</button>}
-                    <button onClick={function(){setEditingScorers(function(s){return toggleGoal(s,p,true);});if(navigator.vibrate)navigator.vibrate(5);}} style={{width:18,height:18,borderRadius:"50%",background:"rgba(200,255,0,0.1)",border:"1px solid rgba(200,255,0,0.25)",color:"rgba(200,255,0,0.7)",fontSize:14,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,WebkitTapHighlightColor:"transparent"}}>+</button>
+                    <button onClick={function(){setEditingScorers(function(s){return toggleGoal(s,p,true);});if(navigator.vibrate)navigator.vibrate(5);}} style={{width:18,height:18,borderRadius:"50%",background:"rgba(200,255,0,0.1)",border:"1px solid rgba(200,255,0,0.25)",color:"rgba(200,255,0,0.7)",fontSize:14,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,WebkitTapHighlightColor:"transparent"}} title="Log goal">+</button>
                   </div>
                 </div>
                 {/* Inline sub row */}
@@ -1469,7 +1642,8 @@ export default function FCRoster() {
                     <span style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>↪</span>
                     <span style={{fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",textTransform:"uppercase",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{plannedSub.subName}</span>
                     {plannedSub.minute&&<span style={{fontSize:8,fontWeight:700,color:"#F5BE00",fontFamily:"'Rajdhani',sans-serif",flexShrink:0,background:"rgba(245,190,0,0.12)",borderRadius:3,padding:"1px 4px"}}>{plannedSub.minute}&prime;</span>}
-                    {subGoals>0&&<span style={{fontSize:8,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>⚽{subGoals}</span>}
+                    {subAssists>0&&<span style={{fontSize:8,fontWeight:900,color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>&#x1F464;{subAssists}</span>}
+                    {subGoals>0&&<span style={{fontSize:8,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>&#x26BD;{subGoals}</span>}
                   </div>
                 )}
               </div>
@@ -2084,7 +2258,9 @@ export default function FCRoster() {
                           {(function(){
                             var plannedSub = subs.find(function(s){return s.playerId===p.id && s.subName && s.subName.trim();});
                             if(!plannedSub) return null;
-                            var subGoals = editingScorers.filter(function(s){return !s.playerId && s.name && s.name.trim().toLowerCase()===plannedSub.subName.trim().toLowerCase();}).reduce(function(acc,s){return acc+s.goals;},0);
+                            var subRows = editingScorers.filter(function(s){return !s.playerId && s.name && s.name.trim().toLowerCase()===plannedSub.subName.trim().toLowerCase();});
+                            var subGoals = subRows.reduce(function(acc,s){return acc+(s.goals||0);},0);
+                            var subAssists = subRows.reduce(function(acc,s){return acc+(s.assists||0);},0);
                             return (
                               <div style={{display:"flex",alignItems:"center",gap:8,padding:"3px 0 4px 14px",
                                 borderLeft:"2px solid rgba(255,255,255,0.1)",marginLeft:4,
@@ -2095,7 +2271,8 @@ export default function FCRoster() {
                                 </div>
                                 <span style={{flex:1,fontSize:12,fontWeight:600,color:T.sub,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",textTransform:"uppercase",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{plannedSub.subName}</span>
                                 {plannedSub.minute&&<span style={{fontSize:8,fontWeight:700,color:"#F5BE00",fontFamily:"'Rajdhani',sans-serif",background:"rgba(245,190,0,0.12)",borderRadius:3,padding:"1px 5px",flexShrink:0}}>{plannedSub.minute}&prime;</span>}
-                                {subGoals>0&&<span style={{fontSize:8,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>⚽{subGoals}</span>}
+                                {subAssists>0&&<span style={{fontSize:8,fontWeight:900,color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>&#x1F464;{subAssists}</span>}
+                                {subGoals>0&&<span style={{fontSize:8,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>&#x26BD;{subGoals}</span>}
                               </div>
                             );
                           })()}
@@ -2250,14 +2427,49 @@ export default function FCRoster() {
                                   <div style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif"}}>{p.name||p.n} <span style={{color:T.ghost,fontWeight:400,fontSize:10}}>{p.n}</span></div>
                                   <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>{footLabel} &bull; {skillLabel}{p.age?" &bull; Age "+p.age:""}</div>
                                 </div>
-                                {/* Goal counter on profile */}
+                                {/* Career totals — Goals & Assists — writes to most recent saved match */}
                                 {(function(){
-                                  var g = scorerGoals(editingScorers, p.id);
+                                  var cg = careerGoals(p.id);
+                                  var ca = careerAssists(p.id);
+                                  var btnStyle = {
+                                    width:18,height:18,borderRadius:"50%",fontSize:14,lineHeight:1,
+                                    cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
+                                    fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,
+                                    WebkitTapHighlightColor:"transparent"
+                                  };
+                                  var minusBtn = Object.assign({}, btnStyle, {
+                                    fontSize:12, background:"rgba(255,255,255,0.06)",
+                                    border:"1px solid rgba(255,255,255,0.1)",
+                                    color:"rgba(255,255,255,0.4)"
+                                  });
+                                  var goalPlus = Object.assign({}, btnStyle, {
+                                    background:"rgba(200,255,0,0.1)",
+                                    border:"1px solid rgba(200,255,0,0.25)",
+                                    color:"rgba(200,255,0,0.7)"
+                                  });
+                                  var assistPlus = Object.assign({}, btnStyle, {
+                                    background:"rgba(90,180,255,0.1)",
+                                    border:"1px solid rgba(90,180,255,0.25)",
+                                    color:"rgba(150,200,255,0.8)"
+                                  });
+                                  var assistMinus = Object.assign({}, minusBtn, {
+                                    background:"rgba(255,255,255,0.04)"
+                                  });
                                   return (
-                                    <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
-                                      {g>0&&<span style={{fontSize:8,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif"}}>⚽{g}</span>}
-                                      {g>0&&<button onClick={function(e){e.stopPropagation();setEditingScorers(function(s){return toggleGoal(s,p,false);});}} style={{width:18,height:18,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.4)",fontSize:12,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,WebkitTapHighlightColor:"transparent"}}>−</button>}
-                                      <button onClick={function(e){e.stopPropagation();setEditingScorers(function(s){return toggleGoal(s,p,true);});if(navigator.vibrate)navigator.vibrate(5);}} style={{width:18,height:18,borderRadius:"50%",background:"rgba(200,255,0,0.1)",border:"1px solid rgba(200,255,0,0.25)",color:"rgba(200,255,0,0.7)",fontSize:14,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,WebkitTapHighlightColor:"transparent"}}>+</button>
+                                    <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}
+                                      title="Adjusts most recent match's stats">
+                                      {/* Goals cluster */}
+                                      <div style={{display:"flex",alignItems:"center",gap:2}}>
+                                        {cg>0&&<span style={{fontSize:8,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif"}}>&#x26BD;{cg}</span>}
+                                        {cg>0&&<button onClick={function(e){e.stopPropagation();adjustCareerStat(p,"goals",false);}} style={minusBtn}>−</button>}
+                                        <button onClick={function(e){e.stopPropagation();adjustCareerStat(p,"goals",true);if(navigator.vibrate)navigator.vibrate(5);}} style={goalPlus}>+</button>
+                                      </div>
+                                      {/* Assists cluster */}
+                                      <div style={{display:"flex",alignItems:"center",gap:2}}>
+                                        {ca>0&&<span style={{fontSize:8,fontWeight:900,color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif"}}>&#x1F464;{ca}</span>}
+                                        {ca>0&&<button onClick={function(e){e.stopPropagation();adjustCareerStat(p,"assists",false);}} style={assistMinus}>−</button>}
+                                        <button onClick={function(e){e.stopPropagation();adjustCareerStat(p,"assists",true);if(navigator.vibrate)navigator.vibrate(5);}} style={assistPlus}>+</button>
+                                      </div>
                                     </div>
                                   );
                                 })()}
@@ -2268,7 +2480,18 @@ export default function FCRoster() {
                             {(function(){
                               var plannedSub = subs.find(function(s){return s.playerId===p.id && s.subName && s.subName.trim();});
                               if(!plannedSub) return null;
-                              var subGoals = editingScorers.filter(function(s){return !s.playerId && s.name && s.name.trim().toLowerCase()===plannedSub.subName.trim().toLowerCase();}).reduce(function(acc,s){return acc+s.goals;},0);
+                              // Career totals for this sub (across all saved matches for this team, matched by name)
+                              var subName = plannedSub.subName.trim().toLowerCase();
+                              var sg = 0, sa = 0;
+                              savedFormations.forEach(function(f){
+                                if(f.team_name!==teamName) return;
+                                (f.scorers||[]).forEach(function(s){
+                                  if(!s.playerId && s.name && s.name.trim().toLowerCase()===subName) {
+                                    sg += (s.goals||0);
+                                    sa += (s.assists||0);
+                                  }
+                                });
+                              });
                               return (
                                 <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 14px 5px 28px",
                                   borderLeft:"2px solid rgba(255,255,255,0.08)",marginLeft:12,
@@ -2276,11 +2499,8 @@ export default function FCRoster() {
                                   <span style={{fontSize:11,color:"rgba(255,255,255,0.2)",flexShrink:0}}>↪</span>
                                   <span style={{flex:1,fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"}}>{plannedSub.subName}</span>
                                   {plannedSub.minute&&<span style={{fontSize:9,fontWeight:700,color:"#F5BE00",background:"rgba(245,190,0,0.1)",borderRadius:3,padding:"1px 6px",flexShrink:0}}>{plannedSub.minute}&prime;</span>}
-                                  {subGoals>0&&<span style={{fontSize:9,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 5px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>⚽{subGoals}</span>}
-                                  {/* Goal +/- for sub scorer */}
-                                  <div style={{display:"flex",gap:2}}>
-                                    <button onClick={function(e){e.stopPropagation();var n=plannedSub.subName.trim();setEditingScorers(function(s){var list=s.slice();var idx=list.findIndex(function(x){return !x.playerId&&x.name&&x.name.toLowerCase()===n.toLowerCase();});if(idx>-1)list[idx]=Object.assign({},list[idx],{goals:list[idx].goals+1});else list.push({name:n,playerId:null,goals:1});return list;});if(navigator.vibrate)navigator.vibrate(5);}} style={{width:18,height:18,borderRadius:"50%",background:"rgba(200,255,0,0.1)",border:"1px solid rgba(200,255,0,0.25)",color:"rgba(200,255,0,0.7)",fontSize:14,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,WebkitTapHighlightColor:"transparent"}}>+</button>
-                                  </div>
+                                  {sa>0&&<span style={{fontSize:9,fontWeight:900,color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)",borderRadius:3,padding:"1px 5px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>&#x1F464;{sa}</span>}
+                                  {sg>0&&<span style={{fontSize:9,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 5px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>&#x26BD;{sg}</span>}
                                 </div>
                               );
                             })()}
@@ -2354,11 +2574,24 @@ export default function FCRoster() {
                                               );
                                             })}
                                           </div>
-                                          {f.scorers&&f.scorers.length>0&&(
-                                            <div style={{fontSize:9,color:"rgba(200,255,0,0.7)",fontFamily:"'Poppins',sans-serif",marginBottom:2}}>
-                                              &#x26BD; {f.scorers.map(function(s){return s.name+(s.goals>1?" ×"+s.goals:"");}).join(", ")}
-                                            </div>
-                                          )}
+                                          {f.scorers&&f.scorers.length>0&&(function(){
+                                            var scored = f.scorers.filter(function(s){return (s.goals||0)>0;});
+                                            var assisted = f.scorers.filter(function(s){return (s.assists||0)>0;});
+                                            return (
+                                              <div style={{fontSize:9,fontFamily:"'Poppins',sans-serif",marginBottom:2,display:"flex",flexDirection:"column",gap:1}}>
+                                                {scored.length>0 && (
+                                                  <div style={{color:"rgba(200,255,0,0.7)"}}>
+                                                    &#x26BD; {scored.map(function(s){return s.name+((s.goals||0)>1?" ×"+s.goals:"");}).join(", ")}
+                                                  </div>
+                                                )}
+                                                {assisted.length>0 && (
+                                                  <div style={{color:"rgba(150,200,255,0.75)"}}>
+                                                    &#x1F464; {assisted.map(function(s){return s.name+((s.assists||0)>1?" ×"+s.assists:"");}).join(", ")}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            );
+                                          })()}
                                           <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>
                                             {f.game_fmt} &bull; {f.formation}
                                             {f.team_name&&f.team_name!==teamName&&<span style={{color:T.volt,opacity:0.5}}> &bull; {f.team_name}</span>}
@@ -2401,34 +2634,66 @@ export default function FCRoster() {
                                           </div>
                                           {(parseInt(editingResult.scoreFor)||0) > 0 && (
                                             <div style={{marginBottom:10}}>
-                                              <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.16em",color:T.ghost,fontFamily:"'Rajdhani',sans-serif",marginBottom:8}}>WHO SCORED?</div>
+                                              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                                                <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.16em",color:T.ghost,fontFamily:"'Rajdhani',sans-serif"}}>TAP TO LOG</div>
+                                                <div style={{display:"flex",gap:4,padding:2,border:"1px solid "+T.b,borderRadius:6,background:"rgba(255,255,255,0.02)"}}>
+                                                  {[["goals","⚽ Goal","#C8FF00"],["assists","👤 Assist","rgba(150,200,255,0.95)"]].map(function(m){
+                                                    var active = scorerMode===m[0];
+                                                    return (
+                                                      <button key={m[0]} onClick={function(){setScorerMode(m[0]);}}
+                                                        style={{
+                                                          padding:"3px 10px",borderRadius:4,border:"none",cursor:"pointer",
+                                                          background: active ? "rgba(255,255,255,0.08)" : "transparent",
+                                                          color: active ? m[2] : T.ghost,
+                                                          fontFamily:"'Rajdhani',sans-serif",fontSize:10,fontWeight:700,
+                                                          letterSpacing:"0.08em",textTransform:"uppercase",
+                                                          WebkitTapHighlightColor:"transparent"
+                                                        }}>{m[1]}</button>
+                                                    );
+                                                  })}
+                                                </div>
+                                              </div>
                                               <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:8}}>
                                                 {(f.players||[]).slice(0,11).map(function(p){
-                                                  var goals = scorerGoals(editingScorers, p.id);
+                                                  var goals   = scorerGoals(editingScorers, p.id);
+                                                  var assists = scorerAssists(editingScorers, p.id);
+                                                  var current = scorerMode==="assists" ? assists : goals;
+                                                  var accent  = scorerMode==="assists" ? "rgba(150,200,255,0.95)" : "#C8FF00";
                                                   var c = tFill(p.n);
                                                   return (
                                                     <div key={p.id} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,cursor:"pointer"}}
-                                                      onClick={function(){if(navigator.vibrate) navigator.vibrate(6);setEditingScorers(function(s){return toggleGoal(s,p,true);});}}>
+                                                      onClick={function(){if(navigator.vibrate) navigator.vibrate(6);setEditingScorers(function(s){return toggleStat(s,p,scorerMode,true);});}}
+                                                      onContextMenu={function(e){e.preventDefault();if(current>0)setEditingScorers(function(s){return toggleStat(s,p,scorerMode,false);});}}>
                                                       <div style={{position:"relative",width:32,height:32}}>
-                                                        <div style={{width:32,height:32,borderRadius:"50%",background:c,display:"flex",alignItems:"center",justifyContent:"center",border:goals>0?"2px solid #C8FF00":"2px solid transparent",boxShadow:goals>0?"0 0 8px rgba(200,255,0,0.4)":"none",transition:"all 0.12s"}}>
+                                                        <div style={{width:32,height:32,borderRadius:"50%",background:c,display:"flex",alignItems:"center",justifyContent:"center",border:current>0?"2px solid "+accent:"2px solid transparent",boxShadow:current>0?"0 0 8px "+(scorerMode==="assists"?"rgba(90,180,255,0.45)":"rgba(200,255,0,0.4)"):"none",transition:"all 0.12s"}}>
                                                           <span style={{fontSize:8,fontWeight:900,color:tTxt(p.n),fontFamily:"'Rajdhani',sans-serif",pointerEvents:"none"}}>{p.n.slice(0,3)}</span>
                                                         </div>
-                                                        {goals>0&&(<div style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#C8FF00",color:"#111",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",lineHeight:1,zIndex:1}}>{goals}</div>)}
+                                                        {goals>0&&(<div style={{position:"absolute",top:-4,right:-4,width:14,height:14,borderRadius:"50%",background:"#C8FF00",color:"#111",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",lineHeight:1,zIndex:1}}>{goals}</div>)}
+                                                        {assists>0&&(<div style={{position:"absolute",bottom:-4,right:-4,width:14,height:14,borderRadius:"50%",background:"rgba(90,180,255,0.9)",color:"#06182b",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",lineHeight:1,zIndex:1}}>{assists}</div>)}
                                                       </div>
-                                                      <span style={{fontSize:8,color:goals>0?T.volt:T.faint,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,maxWidth:32,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{(p.name||p.n).slice(0,5)}</span>
+                                                      <span style={{fontSize:8,color:current>0?accent:T.faint,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,maxWidth:32,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{(p.name||p.n).slice(0,5)}</span>
                                                     </div>
                                                   );
                                                 })}
                                               </div>
                                               <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                                                <input value={subScorerInput} placeholder="Sub / OG scorer name..."
+                                                <input value={subScorerInput} placeholder={scorerMode==="assists"?"Sub / OG assist name...":"Sub / OG scorer name..."}
                                                   onChange={function(e){setSubScorerInput(e.target.value);}}
-                                                  onKeyDown={function(e){if(e.key==="Enter"&&subScorerInput.trim()){var name=subScorerInput.trim();setEditingScorers(function(s){var list=s.slice();var idx=list.findIndex(function(x){return x.playerId===null&&x.name===name;});if(idx>-1) list[idx]=Object.assign({},list[idx],{goals:list[idx].goals+1});else list.push({name:name,playerId:null,goals:1});return list;});setSubScorerInput("");}}}
+                                                  onKeyDown={function(e){if(e.key==="Enter"&&subScorerInput.trim()){var name=subScorerInput.trim();setEditingScorers(function(s){var list=s.slice();var idx=list.findIndex(function(x){return x.playerId===null&&x.name===name;});if(idx>-1){var row=list[idx];list[idx]=Object.assign({},row,{[scorerMode]:(row[scorerMode]||0)+1});}else{var rec={name:name,playerId:null,goals:0,assists:0};rec[scorerMode]=1;list.push(rec);}return list;});setSubScorerInput("");}}}
                                                   style={{flex:1,fontSize:11,padding:"5px 8px"}}/>
                                                 <button className="btn btn-secondary btn-sm"
-                                                  onClick={function(){if(!subScorerInput.trim()) return;var name=subScorerInput.trim();setEditingScorers(function(s){var list=s.slice();var idx=list.findIndex(function(x){return x.playerId===null&&x.name===name;});if(idx>-1) list[idx]=Object.assign({},list[idx],{goals:list[idx].goals+1});else list.push({name:name,playerId:null,goals:1});return list;});setSubScorerInput("");}}>+ Add</button>
+                                                  onClick={function(){if(!subScorerInput.trim()) return;var name=subScorerInput.trim();setEditingScorers(function(s){var list=s.slice();var idx=list.findIndex(function(x){return x.playerId===null&&x.name===name;});if(idx>-1){var row=list[idx];list[idx]=Object.assign({},row,{[scorerMode]:(row[scorerMode]||0)+1});}else{var rec={name:name,playerId:null,goals:0,assists:0};rec[scorerMode]=1;list.push(rec);}return list;});setSubScorerInput("");}}>+ Add</button>
                                               </div>
-                                              {editingScorers.length>0&&(<div style={{fontSize:9,color:T.volt,fontFamily:"'Poppins',sans-serif",marginTop:6}}>{editingScorers.map(function(s){return s.name+(s.goals>1?" ×"+s.goals:"");}).join(", ")}</div>)}
+                                              {editingScorers.length>0&&(
+                                                <div style={{fontSize:9,color:T.volt,fontFamily:"'Poppins',sans-serif",marginTop:6}}>
+                                                  {editingScorers.map(function(s){
+                                                    var parts = [];
+                                                    if(s.goals)   parts.push("⚽"+(s.goals>1?"×"+s.goals:""));
+                                                    if(s.assists) parts.push("👤"+(s.assists>1?"×"+s.assists:""));
+                                                    return s.name+" "+parts.join(" ");
+                                                  }).join(", ")}
+                                                </div>
+                                              )}
                                             </div>
                                           )}
                                           <div style={{display:"flex",gap:6,marginBottom:8}}>
@@ -2532,38 +2797,116 @@ export default function FCRoster() {
                         );
                       })()}
 
-                      {/* Golden Boot */}
+                      {/* Leaderboard — three tabs (Goals / Assists / G+A) + team GF headline */}
                       {(function(){
                         var allScorers = {};
+                        var teamGF = 0, teamGA = 0;
                         savedFormations.forEach(function(f){
+                          if(f.team_name!==teamName) return;
+                          if(f.score_for!=null)     teamGF += parseInt(f.score_for)||0;
+                          if(f.score_against!=null) teamGA += parseInt(f.score_against)||0;
                           (f.scorers||[]).forEach(function(s){
                             var key = s.name;
-                            if(!allScorers[key]) allScorers[key] = {name:s.name, goals:0, games:0, playerId:s.playerId};
-                            allScorers[key].goals += s.goals;
-                            allScorers[key].games += 1;
+                            if(!allScorers[key]) allScorers[key] = {name:s.name, goals:0, assists:0, games:0, playerId:s.playerId};
+                            allScorers[key].goals   += (s.goals||0);
+                            allScorers[key].assists += (s.assists||0);
+                            allScorers[key].games   += 1;
                           });
                         });
-                        var leaderboard = Object.values(allScorers).sort(function(a,b){return b.goals-a.goals;});
-                        if(leaderboard.length === 0) return null;
+                        // Nothing to show at all if no contributions and no results
+                        var rows = Object.values(allScorers);
+                        if(rows.length===0 && teamGF===0 && teamGA===0) return null;
+
+                        // Sort by active tab
+                        var sortKey = leaderboardTab==="assists" ? "assists"
+                                    : leaderboardTab==="ga"      ? "ga"
+                                    : "goals";
+                        rows.forEach(function(r){ r.ga = r.goals + r.assists; });
+                        rows.sort(function(a,b){
+                          var d = (b[sortKey]||0) - (a[sortKey]||0);
+                          if(d!==0) return d;
+                          // Tiebreaker: other stat, then name
+                          if(sortKey!=="goals") d = b.goals - a.goals;
+                          if(d!==0) return d;
+                          return a.name.localeCompare(b.name);
+                        });
+
+                        var panelTitle = leaderboardTab==="goals"   ? "Golden Boot"
+                                       : leaderboardTab==="assists" ? "Top Assists"
+                                                                    : "Leaderboard";
+                        var statLabel = leaderboardTab==="goals"   ? "goals"
+                                      : leaderboardTab==="assists" ? "assists"
+                                                                   : "G+A";
+
+                        function Tab(id, label){
+                          var active = leaderboardTab===id;
+                          return (
+                            <button key={id}
+                              onClick={function(){setLeaderboardTab(id);}}
+                              style={{
+                                flex:1, padding:"6px 4px", cursor:"pointer",
+                                border:"none", borderBottom:"2px solid "+(active?T.volt:"transparent"),
+                                background:"transparent",
+                                color: active ? T.volt : T.ghost,
+                                fontFamily:"'Rajdhani',sans-serif",
+                                fontWeight:700, fontSize:10, letterSpacing:"0.12em",
+                                textTransform:"uppercase",
+                                transition:"color 0.15s, border-color 0.15s",
+                                WebkitTapHighlightColor:"transparent"
+                              }}>{label}</button>
+                          );
+                        }
+
                         return (
                           <div style={{border:"1px solid rgba(200,255,0,0.2)",borderRadius:8,overflow:"hidden"}}>
-                            <div style={{padding:"10px 14px",borderBottom:"1px solid rgba(200,255,0,0.15)",background:"rgba(200,255,0,0.04)",display:"flex",alignItems:"center",gap:8}}>
-                              <span style={{fontSize:14}}>&#x26BD;</span>
-                              <SL c="Golden Boot"/>
-                              <span style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif",marginLeft:"auto"}}>{teamName}</span>
+                            {/* Header: team GF headline */}
+                            <div style={{padding:"12px 14px 10px",borderBottom:"1px solid rgba(200,255,0,0.15)",background:"rgba(200,255,0,0.04)"}}>
+                              <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",gap:8}}>
+                                <div>
+                                  <div style={{fontSize:9,fontWeight:700,color:T.ghost,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",marginBottom:2}}>Team goals · {teamName}</div>
+                                  <div style={{display:"flex",alignItems:"baseline",gap:6}}>
+                                    <span style={{fontSize:32,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",color:T.volt,lineHeight:1}}>{teamGF}</span>
+                                    <span style={{fontSize:11,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.1em"}}>GF</span>
+                                    <span style={{fontSize:11,color:T.faint,fontFamily:"'Rajdhani',sans-serif",marginLeft:8}}>{teamGA} GA</span>
+                                  </div>
+                                </div>
+                                <span style={{fontSize:18,opacity:0.8}}>&#x26BD;</span>
+                              </div>
                             </div>
-                            {leaderboard.slice(0,8).map(function(s,i){
+
+                            {/* Tabs */}
+                            <div style={{display:"flex",borderBottom:"1px solid "+T.b,background:"rgba(255,255,255,0.02)"}}>
+                              {Tab("goals","Goals")}
+                              {Tab("assists","Assists")}
+                              {Tab("ga","G+A")}
+                            </div>
+
+                            {/* Panel subtitle */}
+                            <div style={{padding:"8px 14px 6px",display:"flex",alignItems:"center",gap:8}}>
+                              <SL c={panelTitle}/>
+                            </div>
+
+                            {rows.length===0 ? (
+                              <div style={{padding:"14px",textAlign:"center"}}>
+                                <p style={{fontSize:11,color:T.ghost,fontFamily:"'Poppins',sans-serif"}}>No {statLabel} logged yet.</p>
+                              </div>
+                            ) : rows.slice(0,8).map(function(s,i){
+                              var displayStat = sortKey==="ga" ? s.ga : s[sortKey];
+                              if(!displayStat) return null; // hide zero rows on current tab
                               var medal = i===0?"&#x1F947;":i===1?"&#x1F948;":i===2?"&#x1F949;":"";
                               return (
-                                <div key={s.name} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",borderBottom:"1px solid "+T.b,background:i===0?"rgba(200,255,0,0.03)":"transparent"}}>
+                                <div key={s.name+"-"+sortKey} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",borderBottom:"1px solid "+T.b,background:i===0?"rgba(200,255,0,0.03)":"transparent"}}>
                                   <span dangerouslySetInnerHTML={{__html:medal||String(i+1)}} style={{fontSize:i<3?14:11,width:20,textAlign:"center",flexShrink:0,color:medal?"inherit":T.faint,fontFamily:"'Rajdhani',sans-serif",fontWeight:700}}/>
                                   <div style={{flex:1,minWidth:0}}>
                                     <div style={{fontSize:13,fontWeight:700,color:i===0?T.volt:T.text,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.name}</div>
-                                    <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>{s.games} game{s.games!==1?"s":""}</div>
+                                    <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>
+                                      {s.games} game{s.games!==1?"s":""}
+                                      {sortKey==="ga" && <span style={{marginLeft:6,color:T.ghost}}>&#x26BD;{s.goals} &#x1F464;{s.assists}</span>}
+                                    </div>
                                   </div>
                                   <div style={{display:"flex",alignItems:"baseline",gap:3,flexShrink:0}}>
-                                    <span style={{fontSize:20,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",color:i===0?T.volt:"rgba(255,255,255,0.75)"}}>{s.goals}</span>
-                                    <span style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif"}}>goals</span>
+                                    <span style={{fontSize:20,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",color:i===0?T.volt:"rgba(255,255,255,0.75)"}}>{displayStat}</span>
+                                    <span style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif"}}>{statLabel}</span>
                                   </div>
                                 </div>
                               );
