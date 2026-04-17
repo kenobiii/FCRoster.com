@@ -391,12 +391,11 @@ export default function FCRoster() {
   var [pendingResult,setPendingResult] = useState({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
   // Expandable player row on mobile
   var [expandedPlayer,setExpandedPlayer] = useState(null);
-  var [focusPlayerId,setFocusPlayerId] = useState(null);
+  var [focusPlayerId,setFocusPlayerId] = useState(null); // mobile: tap circle → focus lineup input
   var [expandedResult,setExpandedResult] = useState(null); // formation id with inline result editor open
   var [editingResult,setEditingResult]   = useState({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
   var [editingScorers,setEditingScorers] = useState([]); // [{name,playerId,goals}]
   var [subScorerInput,setSubScorerInput] = useState("");  // free-text for sub/OG scorers
-  var [focusPlayerId,setFocusPlayerId]   = useState(null); // mobile: tap circle → focus lineup input
 
 
   // Real Supabase auth listener -- event-aware to prevent OAuth loop
@@ -434,7 +433,13 @@ export default function FCRoster() {
   // Squad helpers
   async function loadSquad() {
     try {
-      var { data } = await supabase.from("squads").select("*").single();
+      // Defense in depth: filter by user_id explicitly, don't rely on RLS alone.
+      var { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return;
+      var { data } = await supabase.from("squads")
+        .select("*")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
       if (data) {
         setSquad(data);
         setTeamName(data.team_name || "My Team");
@@ -458,14 +463,19 @@ export default function FCRoster() {
 
   async function saveSquad(newPlayers, newTeamName) {
     try {
-      var record = { team_name: newTeamName||teamName, players: newPlayers||players,
-                     updated_at: new Date().toISOString() };
-      var { data: existing } = await supabase.from("squads").select("id").single();
-      if (existing) {
-        await supabase.from("squads").update(record).eq("id", existing.id);
-      } else {
-        await supabase.from("squads").insert([Object.assign({ user_id: (await supabase.auth.getUser()).data.user.id }, record)]);
-      }
+      // Upsert pattern: single roundtrip, no race condition between select-then-insert.
+      // REQUIRES a unique constraint on squads.user_id in Supabase — see migration note in handoff.
+      var { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) { notify("Sign in to save your squad."); return; }
+      var record = {
+        user_id: authUser.id,
+        team_name: newTeamName||teamName,
+        players: newPlayers||players,
+        updated_at: new Date().toISOString()
+      };
+      var { error } = await supabase.from("squads")
+        .upsert(record, { onConflict: "user_id" });
+      if (error) throw error;
       setSquad(Object.assign({}, record));
       notify("Squad saved!");
     } catch(e) { notify("Error saving squad: "+e.message); }
@@ -473,6 +483,9 @@ export default function FCRoster() {
 
   async function saveResult(formationId, resultData, scorersData) {
     try {
+      // Defense in depth: scope update to this user's formations only.
+      var { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return;
       await supabase.from("formations").update({
         result: resultData.result,
         score_for: resultData.scoreFor ? parseInt(resultData.scoreFor) : null,
@@ -481,7 +494,7 @@ export default function FCRoster() {
         game_date: resultData.date||null,
         team_name: teamName,
         scorers: scorersData||[],
-      }).eq("id", formationId);
+      }).eq("id", formationId).eq("user_id", authUser.id);
       setSavedFormations(function(prev) {
         return prev.map(function(f) {
           return f.id===formationId ? Object.assign({},f,{
@@ -1207,8 +1220,15 @@ export default function FCRoster() {
 
   function PitchSVG() {
     return (
-      <svg ref={svgRef} width="100%" height="100%" viewBox="0 0 65 100" style={{shapeRendering:"geometricPrecision",textRendering:"optimizeLegibility"}}
-        style={{display:"block",borderRadius:8,touchAction:"none",cursor:dragId!==null?"grabbing":tool==="drag"?"grab":tool?"crosshair":"default"}}
+      <svg ref={svgRef} width="100%" height="100%" viewBox="0 0 65 100"
+        style={{
+          display:"block",
+          borderRadius:8,
+          touchAction:"none",
+          shapeRendering:"geometricPrecision",
+          textRendering:"optimizeLegibility",
+          cursor: dragId!==null ? "grabbing" : tool==="drag" ? "grab" : tool ? "crosshair" : "default"
+        }}
         onMouseDown={function(e){if(inlineName)setInlineName(null);svgDown(e);}} onMouseMove={svgMove} onMouseUp={svgUp} onMouseLeave={svgUp}
         onTouchEnd={svgUp}>
         <defs>
@@ -1585,7 +1605,7 @@ export default function FCRoster() {
           </div>
         </div>
         <HR/>
-        <SL c="Playmaker"/>
+        <SL c="Play Designer"/>
         {ToolRow()}
         <HR/>
 
@@ -2559,11 +2579,13 @@ export default function FCRoster() {
                           Archive your squad and start fresh for a new season. History is always kept.
                         </p>
                         <button className="btn btn-volt-outline btn-sm" style={{gap:5,width:"100%"}}
-                          onClick={function(){
+                          onClick={async function(){
                             if(!window.confirm("Start a new season? Your current saves will be kept in history. Your squad will be cleared for a fresh start.")) return;
+                            var { data: { user: authUser } } = await supabase.auth.getUser();
+                            if (!authUser) return;
                             var seasonTag = teamName+" — "+new Date().toLocaleDateString("en-GB",{month:"short",year:"numeric"});
                             Promise.all(savedFormations.map(function(f){
-                              return supabase.from("formations").update({team_name: seasonTag}).eq("id",f.id);
+                              return supabase.from("formations").update({team_name: seasonTag}).eq("id",f.id).eq("user_id",authUser.id);
                             })).then(function(){
                               setPlayers(function(prev){return prev.map(function(p){return Object.assign({},p,{name:"",number:"",age:"",notes:"",foot:"R",skill:3,availability:"available"});});});
                               setLines([]);setSubs([]);
