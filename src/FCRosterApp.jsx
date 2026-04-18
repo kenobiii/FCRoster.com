@@ -1506,12 +1506,18 @@ export default function FCRoster() {
           <circle cx="32" cy="50" r="0.6" fill={sf.line} stroke="none"/>
           <rect x="14" y="3" width="37" height="16"/>
           <rect x="22" y="3" width="21" height="7"/>
-          <rect x="26" y="1" width="13" height="2.5" strokeWidth="0.28" opacity="0.6"/>
+          <path d="M 26.3,19 A 6,6 0 0,0 37.7,19"/>
+          <rect x="26" y="1" width="13" height="2.5" strokeWidth="0.28" opacity="0.6" fill={sf.line} fillOpacity="0.08"/>
           <circle cx="32" cy="13" r="0.6" fill={sf.line} stroke="none"/>
           <rect x="14" y="81" width="37" height="16"/>
           <rect x="22" y="90" width="21" height="7"/>
-          <rect x="26" y="96.5" width="13" height="2.5" strokeWidth="0.28" opacity="0.6"/>
+          <path d="M 26.3,81 A 6,6 0 0,1 37.7,81"/>
+          <rect x="26" y="96.5" width="13" height="2.5" strokeWidth="0.28" opacity="0.6" fill={sf.line} fillOpacity="0.08"/>
           <circle cx="32" cy="87" r="0.6" fill={sf.line} stroke="none"/>
+          <path d="M 3,4.5 A 1.5,1.5 0 0,1 4.5,3"/>
+          <path d="M 62,4.5 A 1.5,1.5 0 0,0 60.5,3"/>
+          <path d="M 3,95.5 A 1.5,1.5 0 0,0 4.5,97"/>
+          <path d="M 62,95.5 A 1.5,1.5 0 0,1 60.5,97"/>
         </g>
 
         {lines.map(function(ln,i){return(
