@@ -551,8 +551,47 @@ export default function FCRoster() {
       });
     } catch(e) {
       console.error("[persistScorers] failed:",e);
-      notify("Couldn't save goal — check connection.");
+      notify("Couldn't save goal -- check connection.");
     }
+  }
+
+  // Live-persist subs to the currently-loaded match. Mirrors persistScorers -- used
+  // by the quick "+ Sub" toggle on Profile so the entry doesn't get lost if the user
+  // navigates away before hitting Update Match.
+  async function persistSubs(formationId, nextSubs) {
+    try {
+      var { data: { user: authUser } } = await supabase.auth.getUser();
+      if(!authUser) return;
+      await supabase.from("formations")
+        .update({ subs: nextSubs })
+        .eq("id", formationId).eq("user_id", authUser.id);
+      setSavedFormations(function(prev){
+        return prev.map(function(f){
+          return f.id===formationId ? Object.assign({},f,{subs:nextSubs}) : f;
+        });
+      });
+    } catch(e) {
+      console.error("[persistSubs] failed:",e);
+      notify("Couldn't save sub -- check connection.");
+    }
+  }
+
+  // Quick-response toggle: flip a nameless sub on/off for a given starter.
+  // First sub entry with matching playerId is considered "the sub slot" for that starter.
+  // Auto-persists to the current match when one is loaded.
+  function toggleQuickSub(starter) {
+    if(!user){ setShowAuth(true); return; }
+    var existingIdx = subs.findIndex(function(s){return s.playerId===starter.id;});
+    var nextSubs;
+    if(existingIdx >= 0) {
+      // Already has a sub slot -- remove it (toggle off)
+      nextSubs = subs.filter(function(s,i){return i!==existingIdx;});
+    } else {
+      // Add a nameless sub entry tied to this starter. User can fill in name via Sub Planner later.
+      nextSubs = subs.concat([{playerId: starter.id, subName: "", minute: ""}]);
+    }
+    setSubs(nextSubs);
+    if(savedId) persistSubs(savedId, nextSubs);
   }
 
   // Wrapper for the pitch-tab goal +/− buttons. Updates editingScorers locally
@@ -2752,11 +2791,26 @@ export default function FCRoster() {
                         </button>
                       </div>
 
-                      {/* Current Squad Roster */}
+                      {/* Full Roster -- starters + named subs flat view. Data is tied to the pitch state,
+                          so "when a team loads (match card click), both starters and subs load together." */}
+                      {(function(){
+                        var allSubs = subs.filter(function(s){ return s && s.playerId; });
+                        var namedSubs = allSubs.filter(function(s){ return s.subName && String(s.subName).trim(); });
+                        var totalCount = players.length + allSubs.length;
+                        return (
                       <div style={{border:"1px solid "+T.b,borderRadius:8,overflow:"hidden"}}>
                         <div style={{padding:"10px 14px",borderBottom:"1px solid "+T.b,background:T.raised}}>
-                          <div style={{fontWeight:700,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.volt}}>{title}</div>
-                          <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:2}}>{gameFmt} &bull; {formation} &bull; {players.length} players</div>
+                          <div style={{fontWeight:700,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.volt}}>
+                            Full Roster{teamName?" \u00b7 "+teamName:""}
+                          </div>
+                          <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:2}}>
+                            {gameFmt} &bull; {formation} &bull; {players.length} starter{players.length!==1?"s":""}{allSubs.length>0?" + "+allSubs.length+" sub"+(allSubs.length!==1?"s":"")+" ("+totalCount+" total)":""}
+                          </div>
+                        </div>
+
+                        {/* Starters subheader */}
+                        <div style={{padding:"6px 14px",fontSize:8,fontWeight:700,letterSpacing:"0.18em",color:T.faint,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",background:"rgba(255,255,255,0.02)",borderBottom:"1px solid "+T.b}}>
+                          Starters ({players.length})
                         </div>
                         {players.map(function(p){
                           var avail=p.availability||"available";
@@ -2776,11 +2830,30 @@ export default function FCRoster() {
                                 </div>
                                 <div style={{flex:1,minWidth:0}}>
                                   <div style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name||p.n} <span style={{color:T.ghost,fontWeight:400,fontSize:10}}>{p.n}</span></div>
-                                  <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{footLabel} &bull; {skillLabel}{p.age?" &bull; Age "+p.age:""}</div>
+                                  <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{footLabel} &bull; {skillLabel}{p.age?" \u00b7 Age "+p.age:""}</div>
                                 </div>
+                                {/* Quick sub toggle -- tap to mark a planned sub (nameless for fast logging).
+                                    Name can be filled later via the pitch Sub Planner. */}
+                                {(function(){
+                                  var hasSub = subs.some(function(s){return s.playerId===p.id;});
+                                  return (
+                                    <button onClick={function(e){e.stopPropagation();toggleQuickSub(p);}}
+                                      title={hasSub?"Remove planned sub for this starter":"Mark a sub for this starter (name later)"}
+                                      style={{
+                                        fontSize:9,fontWeight:800,letterSpacing:"0.08em",fontFamily:"'Rajdhani',sans-serif",
+                                        padding:"4px 8px",borderRadius:4,cursor:"pointer",flexShrink:0,
+                                        border:"1px solid "+(hasSub?T.volt:"rgba(200,255,0,0.35)"),
+                                        background:hasSub?"rgba(200,255,0,0.15)":"transparent",
+                                        color:hasSub?T.volt:"rgba(200,255,0,0.75)",
+                                        transition:"all 0.12s",WebkitTapHighlightColor:"transparent",
+                                      }}>
+                                      {hasSub?"\u2713 SUB":"+ SUB"}
+                                    </button>
+                                  );
+                                })()}
                                 <span style={{fontSize:10,opacity:0.25,flexShrink:0}}>&#x270E;</span>
                               </div>
-                              {/* Stats row — READ-ONLY season totals. To edit, open the specific match record. */}
+                              {/* Stats row -- READ-ONLY season totals. To edit, open the specific match record. */}
                               {(function(){
                                 var cg = careerGoals(p.id);
                                 var ca = careerAssists(p.id);
@@ -2802,40 +2875,65 @@ export default function FCRoster() {
                                   </div>
                                 );
                               })()}
-                              {/* Inline sub row on profile */}
-                              {(function(){
-                                var plannedSub = subs.find(function(s){return s.playerId===p.id && s.subName && s.subName.trim();});
-                                if(!plannedSub) return null;
-                                // Career totals for this sub (across all saved matches for this team, matched by name)
-                                var subName = plannedSub.subName.trim().toLowerCase();
-                                var sg = 0, sa = 0;
+                            </div>
+                          );
+                        })}
+
+                        {/* Substitutes subheader + flat sub list */}
+                        {allSubs.length>0 && (
+                          <>
+                            <div style={{padding:"6px 14px",fontSize:8,fontWeight:700,letterSpacing:"0.18em",color:T.faint,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",background:"rgba(255,255,255,0.02)",borderTop:"1px solid "+T.b,borderBottom:"1px solid "+T.b}}>
+                              Substitutes ({allSubs.length})
+                            </div>
+                            {allSubs.map(function(sub, subIdx){
+                              var starterReplaced = players.find(function(p){return p.id===sub.playerId;});
+                              var hasName = sub.subName && String(sub.subName).trim();
+                              // Career stats only aggregate for named subs (match by name across team's matches)
+                              var sg = 0, sa = 0;
+                              if(hasName) {
+                                var subNameLower = sub.subName.trim().toLowerCase();
                                 savedFormations.forEach(function(f){
                                   if(f.team_name!==teamName) return;
                                   (f.scorers||[]).forEach(function(s){
-                                    if(!s.playerId && s.name && s.name.trim().toLowerCase()===subName) {
+                                    if(!s.playerId && s.name && s.name.trim().toLowerCase()===subNameLower) {
                                       sg += (s.goals||0);
                                       sa += (s.assists||0);
                                     }
                                   });
                                 });
-                                return (
-                                  <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 14px 5px 28px",
-                                    borderLeft:"2px solid rgba(255,255,255,0.08)",marginLeft:12,
-                                    background:"rgba(255,255,255,0.015)"}}>
-                                    <span style={{fontSize:11,color:"rgba(255,255,255,0.2)",flexShrink:0}}>↪</span>
-                                    <span style={{flex:1,fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"}}>{plannedSub.subName}</span>
-                                    {plannedSub.minute&&<span style={{fontSize:9,fontWeight:700,color:"#F5BE00",background:"rgba(245,190,0,0.1)",borderRadius:3,padding:"1px 6px",flexShrink:0}}>{plannedSub.minute}&prime;</span>}
-                                    {sa>0&&<span style={{fontSize:9,fontWeight:900,color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)",borderRadius:3,padding:"1px 5px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>&#x1F464;{sa}</span>}
-                                    {sg>0&&<span style={{fontSize:9,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 5px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>&#x26BD;{sg}</span>}
+                              }
+                              return (
+                                <div key={"sub-"+subIdx+"-"+sub.playerId} style={{padding:"8px 14px",borderBottom:"1px solid "+T.b}}>
+                                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                    <div style={{width:8,height:8,borderRadius:"50%",background:"rgba(255,255,255,0.25)",flexShrink:0}}/>
+                                    <div style={{width:26,height:26,borderRadius:"50%",border:"1px dashed rgba(255,255,255,0.3)",background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                      <span style={{fontSize:8,fontWeight:700,color:T.faint,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em"}}>SUB</span>
+                                    </div>
+                                    <div style={{flex:1,minWidth:0}}>
+                                      <div style={{fontSize:12,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textTransform:"uppercase",letterSpacing:"0.04em",color:hasName?T.text:T.faint,fontStyle:hasName?"normal":"italic"}}>
+                                        {hasName ? sub.subName : "Unnamed Sub"}
+                                      </div>
+                                      <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                                        {starterReplaced ? "In for "+(starterReplaced.name||starterReplaced.n) : "Bench"}
+                                        {sub.minute ? " \u00b7 "+sub.minute+"\u2032" : ""}
+                                        {!hasName && <span style={{color:"rgba(200,255,0,0.5)"}}> \u00b7 name on pitch</span>}
+                                      </div>
+                                    </div>
+                                    {(sg>0||sa>0) && (
+                                      <div style={{display:"flex",gap:4,flexShrink:0}}>
+                                        {sg>0&&<span style={{fontSize:9,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"2px 6px",fontFamily:"'Rajdhani',sans-serif"}}>&#x26BD;{sg}</span>}
+                                        {sa>0&&<span style={{fontSize:9,fontWeight:900,color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)",borderRadius:3,padding:"2px 6px",fontFamily:"'Rajdhani',sans-serif"}}>&#x1F464;{sa}</span>}
+                                      </div>
+                                    )}
                                   </div>
-                                );
-                              })()}
-                            </div>
-                          );
-                        })}
-                    </div>
-
-                    {/* Subs shown inline under their starters above */}
+                                </div>
+                              );
+                            })}
+                          </>
+                        )}
+                      </div>
+                        );
+                      })()}
 
                     </div>{/* end LEFT column */}
 
@@ -3012,6 +3110,15 @@ export default function FCRoster() {
                                         if(!confirm("Delete \""+(f.title||"untitled")+"\"?")) return;
                                         var previousFormations = savedFormations;
                                         var deletedId = f.id;
+                                        // If this was the last match for the currently-selected team,
+                                        // clear the pill selection so it doesn't linger as an empty virtual pill.
+                                        if(f.team_name && f.team_name === selectedTeamName) {
+                                          var othersForTeam = previousFormations.filter(function(x){
+                                            return x.id !== deletedId && x.team_name === f.team_name;
+                                          });
+                                          if(othersForTeam.length === 0) setSelectedTeamName(null);
+                                        }
+                                        // Optimistic remove
                                         setSavedFormations(function(prev){return prev.filter(function(x){return x.id!==deletedId;});});
                                         if(savedId===deletedId) setSavedId(null);
                                         deleteFormation(deletedId).then(function(){
@@ -3019,10 +3126,16 @@ export default function FCRoster() {
                                         }).then(function(fresh){
                                           var stillThere = fresh.find(function(x){return x.id===deletedId;});
                                           if(stillThere){
-                                            console.warn("[DELETE] row still in database after delete — likely RLS mismatch for id",deletedId);
-                                            notify("Couldn't delete — this row may belong to a different account.");
+                                            // Server still returns the row -- either delete silently no-op'd
+                                            // (RLS / user_id mismatch) or read was faster than commit. Honor
+                                            // the user's intent in the UI by filtering it out either way.
+                                            // Warn them so they know it may reappear on reload.
+                                            console.warn("[DELETE] row still returned after delete for id",deletedId);
+                                            notify("Deleted locally, but server kept the row. Try signing out/in.");
+                                            setSavedFormations(fresh.filter(function(x){return x.id!==deletedId;}));
+                                          } else {
+                                            setSavedFormations(fresh);
                                           }
-                                          setSavedFormations(fresh);
                                         }).catch(function(e){
                                           console.error("[DELETE] failed for id",deletedId,":",e);
                                           setSavedFormations(previousFormations);
