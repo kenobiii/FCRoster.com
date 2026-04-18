@@ -2835,33 +2835,44 @@ export default function FCRoster() {
                               }}>
                               + New Team / Season
                             </button>
-                          ) : (
+                          ) : (function(){
+                            // Click-away commits the typed text (if any). The Cancel (x) button
+                            // preempts blur with onMouseDown so it can clear state first.
+                            function commitNewTeam(){
+                              if(newTeamInput && newTeamInput.trim()){
+                                var nm=newTeamInput.trim();
+                                setSelectedTeamName(nm);
+                                setNewTeamBannerOpen(false);
+                                setNewTeamInput("");
+                              }
+                            }
+                            function cancelNewTeam(){
+                              setNewTeamBannerOpen(false);
+                              setNewTeamInput("");
+                            }
+                            return (
                             <div style={{display:"flex",gap:4,border:"1px solid "+T.voltBd,borderRadius:6,padding:5,background:"rgba(200,255,0,0.06)"}}>
                               <input autoFocus value={newTeamInput}
                                 onChange={function(e){setNewTeamInput(e.target.value);}}
                                 onKeyDown={function(e){
-                                  if(e.key==="Enter"&&newTeamInput.trim()){
-                                    var nm=newTeamInput.trim();
-                                    setSelectedTeamName(nm);
-                                    setNewTeamBannerOpen(false);setNewTeamInput("");
-                                  }
-                                  if(e.key==="Escape"){setNewTeamBannerOpen(false);setNewTeamInput("");}
+                                  if(e.key==="Enter"){ commitNewTeam(); }
+                                  if(e.key==="Escape"){ cancelNewTeam(); }
                                 }}
+                                onBlur={commitNewTeam}
                                 placeholder="e.g. Sunday FC 2025"
                                 maxLength={32}
                                 style={{flex:1,minWidth:0,fontSize:12,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.04em",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:4,color:T.text,padding:"5px 8px",outline:"none"}}/>
-                              <button onClick={function(){
-                                if(!newTeamInput.trim())return;
-                                var nm=newTeamInput.trim();
-                                setSelectedTeamName(nm);
-                                setNewTeamBannerOpen(false);setNewTeamInput("");
-                              }} disabled={!newTeamInput.trim()} className="btn btn-primary btn-sm"
+                              <button
+                                onMouseDown={function(e){e.preventDefault();commitNewTeam();}}
+                                disabled={!newTeamInput.trim()} className="btn btn-primary btn-sm"
                                  style={{flexShrink:0,opacity:newTeamInput.trim()?1:0.4,padding:"4px 10px",fontSize:10}}>Add</button>
-                              <button onClick={function(){setNewTeamBannerOpen(false);setNewTeamInput("");}}
+                              <button
+                                onMouseDown={function(e){e.preventDefault();cancelNewTeam();}}
                                 style={{background:"transparent",border:"none",color:T.ghost,cursor:"pointer",padding:"0 4px",fontSize:16,flexShrink:0}}
                                 title="Cancel">&times;</button>
                             </div>
-                          )}
+                            );
+                          })()}
                         </div>
                       </div>
 
