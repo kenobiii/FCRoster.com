@@ -923,7 +923,9 @@ export default function FCRoster() {
 
   var loadTeam = useCallback(function(fo, gf) {
     var g=gf||gameFmt, fs=FORMATIONS[g], k=(fo&&fs[fo])?fo:Object.keys(fs)[0];
-    setPlayers(fs[k].map(function(p){return Object.assign({},p);}));
+    // Preserve existing player data (names, numbers, stats) when switching formation.
+    // Match by exact position -> position family -> broad tier. Extras drop silently.
+    setPlayers(function(prev){ return mergePlayers(prev, fs[k]); });
     setFormation(k); setLines([]); setBallPos(null);
   }, [gameFmt]);
 
@@ -935,9 +937,66 @@ export default function FCRoster() {
   function changeFmt(gf) {
     setGameFmt(gf);
     var fs=FORMATIONS[gf], k=Object.keys(fs)[0];
-    setPlayers(fs[k].map(function(p){return Object.assign({},p);}));
+    // Preserve names across game-format changes (e.g. 11v11 -> 9v9) -- merge what fits, blanks rest.
+    setPlayers(function(prev){ return mergePlayers(prev, fs[k]); });
     setFormation(k); setLines([]); setBallPos(null);
     if (showOpp) { setOppFmt(k); setOppList(fs[k].map(function(p){return Object.assign({},p,{y:100-p.y});})); }
+  }
+
+  // Position family mapping -- groups roles so a CB stays a CB across formations, LB finds a wingback, etc.
+  function positionFamily(n) {
+    var s = String(n||"").toUpperCase();
+    if (s === "GK") return "GK";
+    if (s === "SW") return "DEF-C";
+    if (s.indexOf("CB") >= 0) return "DEF-C";
+    if (s === "LB" || s === "LWB") return "DEF-L";
+    if (s === "RB" || s === "RWB") return "DEF-R";
+    if (s === "CDM" || s === "DM") return "MID-D";
+    if (s === "CAM" || s === "AM") return "MID-A";
+    if (s === "LM" || s === "LW") return "MID-L";
+    if (s === "RM" || s === "RW") return "MID-R";
+    if (s.indexOf("CM") >= 0 || s === "M") return "MID-C";
+    if (s === "ST" || s === "CF") return "FWD-C";
+    if (s === "LF" || s === "LS") return "FWD-L";
+    if (s === "RF" || s === "RS") return "FWD-R";
+    if (s.indexOf("F") >= 0 || s === "W") return "FWD-C";
+    if (s.indexOf("M") >= 0) return "MID-C";
+    if (s.indexOf("B") >= 0 || s.indexOf("D") >= 0) return "DEF-C";
+    return "UNK";
+  }
+  function positionTier(fam) {
+    if (fam === "GK") return "GK";
+    if (fam.indexOf("DEF") === 0) return "DEF";
+    if (fam.indexOf("MID") === 0) return "MID";
+    if (fam.indexOf("FWD") === 0) return "FWD";
+    return "UNK";
+  }
+
+  // Re-slot existing players into a new formation template. 3-pass greedy match:
+  // (1) exact position label, (2) same position family, (3) same tier. Leftover slots -> blank.
+  function mergePlayers(oldPlayers, newSlots) {
+    var pool = (oldPlayers||[]).slice();
+    var result = new Array(newSlots.length);
+    for (var i = 0; i < newSlots.length; i++) result[i] = null;
+    function pass(match) {
+      newSlots.forEach(function(slot, i){
+        if (result[i] !== null) return;
+        var idx = pool.findIndex(function(p){ return p && match(p, slot); });
+        if (idx >= 0) {
+          // Copy player data, snap to new slot's position coords + label
+          result[i] = Object.assign({}, pool[idx], { x: slot.x, y: slot.y, n: slot.n });
+          pool.splice(idx, 1);
+        }
+      });
+    }
+    pass(function(p, slot){ return p.n === slot.n; });
+    pass(function(p, slot){ return positionFamily(p.n) === positionFamily(slot.n); });
+    pass(function(p, slot){ return positionTier(positionFamily(p.n)) === positionTier(positionFamily(slot.n)); });
+    // Remaining slots -> fresh blank template (no preserved player)
+    for (var j = 0; j < newSlots.length; j++) {
+      if (result[j] === null) result[j] = Object.assign({}, newSlots[j]);
+    }
+    return result;
   }
 
   useEffect(function(){if(showOpp)loadOpp(oppFmt);},[showOpp]);
@@ -2191,10 +2250,15 @@ export default function FCRoster() {
         {/* Logo */}
         <div onClick={function(){setTab("pitch");}} style={{display:"flex",alignItems:"center",gap:7,flexShrink:0,cursor:"pointer",marginRight:20}}>
           <span style={{fontSize:20,lineHeight:1}}>&#x26BD;</span>
-          <span style={{fontWeight:700,fontSize:16,letterSpacing:"0.08em",lineHeight:1,fontFamily:"'Rajdhani',sans-serif"}}>
-            <span style={{color:T.volt}}>FC</span>
-            <span style={{color:T.text}}>ROSTER</span>
-          </span>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",lineHeight:1}}>
+            <span style={{fontWeight:700,fontSize:16,letterSpacing:"0.08em",lineHeight:1,fontFamily:"'Rajdhani',sans-serif"}}>
+              <span style={{color:T.volt}}>FC</span>
+              <span style={{color:T.text}}>ROSTER</span>
+            </span>
+            <span style={{fontSize:8,fontWeight:700,letterSpacing:"0.22em",color:"rgba(200,255,0,0.55)",fontFamily:"'Rajdhani',sans-serif",marginTop:2,textTransform:"uppercase"}}>
+              Prep. Play. Prevail.
+            </span>
+          </div>
         </div>
 
         {/* Nav */}
@@ -3664,7 +3728,10 @@ export default function FCRoster() {
                 <h1 style={{fontWeight:700,fontSize:28,letterSpacing:"0.08em",marginBottom:10,fontFamily:"'Rajdhani',sans-serif"}}>
                   <span style={{color:T.volt}}>FC</span>ROSTER
                 </h1>
-                <p style={{color:T.ghost,fontSize:13,fontFamily:"'Poppins',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase"}}>
+                <p style={{color:T.volt,fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.28em",textTransform:"uppercase",fontWeight:700,marginBottom:6}}>
+                  Prep. Play. Prevail.
+                </p>
+                <p style={{color:T.ghost,fontSize:12,fontFamily:"'Poppins',sans-serif",letterSpacing:"0.04em"}}>
                   For coaches at heart. Players who care. The beautiful game.
                 </p>
               </div>
@@ -3707,11 +3774,11 @@ export default function FCRoster() {
                   <h2 style={{fontWeight:700,fontSize:15,letterSpacing:"0.08em",fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"}}>Get in Touch</h2>
                   <p style={{fontSize:11,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:4}}>Feature requests, feedback, bug reports -- all welcome.</p>
                 </div>
-                <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST"
+                <form action="https://formspree.io/f/xlgoezry" method="POST"
                   onSubmit={function(e){
                     e.preventDefault();
                     var form=e.target;
-                    fetch("https://formspree.io/f/YOUR_FORM_ID",{
+                    fetch("https://formspree.io/f/xlgoezry",{
                       method:"POST",
                       headers:{"Content-Type":"application/json","Accept":"application/json"},
                       body:JSON.stringify({name:form.name.value,email:form.email.value,message:form.message.value})
