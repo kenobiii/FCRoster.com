@@ -1221,7 +1221,7 @@ export default function FCRoster() {
     var SCALE=2;
     var PAD=24*SCALE;
     var HDR=56*SCALE;
-    var FTR=28*SCALE;
+    var FTR=40*SCALE;
     var ROW=26*SCALE;
     var activeSubs=subs.filter(function(s){return s.subName&&s.subName.trim();});
     var SUBTBL=activeSubs.length>0?(20*SCALE + activeSubs.length*ROW + 14*SCALE):0;
@@ -1429,19 +1429,33 @@ export default function FCRoster() {
         });
       }
 
-      // Footer
-      var footerY=PAD+HDR+PH+SUBTBL+SCOTBL+(SUBTBL>0||SCOTBL>0?4*SCALE:0)+16*SCALE;
-      ctx.fillStyle="rgba(200,255,0,0.75)";
-      ctx.font="bold "+(9*SCALE)+"px Arial,sans-serif";
-      ctx.textAlign="center";
-      ctx.fillText("FCROSTER.COM",CW/2,footerY);
+      // Footer: FCRoster logo badge (async-loaded, falls back to text)
+      var footerTop=PAD+HDR+PH+SUBTBL+SCOTBL+(SUBTBL>0||SCOTBL>0?6*SCALE:0);
 
-      URL.revokeObjectURL(url);
-      var link=document.createElement("a");
-      link.download=(title.replace(/\s+/g,"_")||"formation")+".png";
-      link.href=canvas.toDataURL("image/png");
-      link.click();
-      notify("Saved: "+link.download);
+      var finalizeExport=function(){
+        URL.revokeObjectURL(url);
+        var link=document.createElement("a");
+        link.download=(title.replace(/\s+/g,"_")||"formation")+".png";
+        link.href=canvas.toDataURL("image/png");
+        link.click();
+        notify("Saved: "+link.download);
+      };
+
+      var logoImg=new Image();
+      logoImg.onload=function(){
+        var LH=30*SCALE;
+        var LW=LH*(logoImg.width/logoImg.height);
+        ctx.drawImage(logoImg,CW/2-LW/2,footerTop+4*SCALE,LW,LH);
+        finalizeExport();
+      };
+      logoImg.onerror=function(){
+        ctx.fillStyle="rgba(200,255,0,0.75)";
+        ctx.font="bold "+(9*SCALE)+"px Arial,sans-serif";
+        ctx.textAlign="center";
+        ctx.fillText("FCROSTER.COM",CW/2,footerTop+18*SCALE);
+        finalizeExport();
+      };
+      logoImg.src="/fcr_logo.png";
     };
     img.onerror=function(){URL.revokeObjectURL(url);notify("Export failed.");};
     img.src=url;
@@ -3754,8 +3768,8 @@ export default function FCRoster() {
 
               {/* Hero */}
               <div style={{textAlign:"center",padding:"10px 0 4px"}}>
-                <div style={{fontSize:44,marginBottom:12}}>&#x26BD;</div>
-                <h1 style={{fontWeight:700,fontSize:28,letterSpacing:"0.08em",marginBottom:10,fontFamily:"'Rajdhani',sans-serif"}}>
+                <img src="/fcr_logo.png" alt="FCRoster" style={{display:"block",margin:"0 auto 14px",width:"auto",height:132,maxWidth:"82%",filter:"drop-shadow(0 10px 28px rgba(0,0,0,0.55))"}}/>
+                <h1 style={{fontWeight:700,fontSize:22,letterSpacing:"0.08em",marginBottom:10,fontFamily:"'Rajdhani',sans-serif",color:T.sub}}>
                   <span style={{color:T.volt}}>FC</span>ROSTER
                 </h1>
                 <p style={{color:T.volt,fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.28em",textTransform:"uppercase",fontWeight:700,marginBottom:6}}>
@@ -3880,8 +3894,11 @@ export default function FCRoster() {
       {showAuth&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)"}} onClick={function(e){if(e.target===e.currentTarget){setShowAuth(false);setAuthErr("");}}}>
           <div style={{background:"#1A1A1A",border:"1px solid "+T.bhi,borderTop:"2px solid "+T.volt,borderRadius:10,padding:28,width:"100%",maxWidth:340,boxShadow:"0 36px 80px rgba(0,0,0,0.88)"}} className="fu">
-            <h2 style={{fontWeight:700,fontSize:19,letterSpacing:"0.06em",marginBottom:4}}>{authMode==="signin"?"WELCOME BACK":"JOIN FCROSTER"}</h2>
-            <p style={{color:T.ghost,fontSize:12,marginBottom:20,fontFamily:"'Poppins',sans-serif"}}>Unlock pass, run, and shot drawing tools.</p>
+            <div style={{textAlign:"center",marginBottom:14}}>
+              <img src="/fcr_logo.png" alt="FCRoster" style={{display:"inline-block",width:"auto",height:72,filter:"drop-shadow(0 6px 16px rgba(0,0,0,0.5))"}}/>
+            </div>
+            <h2 style={{fontWeight:700,fontSize:19,letterSpacing:"0.06em",marginBottom:4,textAlign:"center"}}>{authMode==="signin"?"WELCOME BACK":"JOIN FCROSTER"}</h2>
+            <p style={{color:T.ghost,fontSize:12,marginBottom:20,fontFamily:"'Poppins',sans-serif",textAlign:"center"}}>Unlock pass, run, and shot drawing tools.</p>
             <button onClick={function(){
               setAuthErr(""); setAuthBusy(true);
               signInGoogle().catch(function(err){setAuthErr(err.message);setAuthBusy(false);});
