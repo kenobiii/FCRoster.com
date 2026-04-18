@@ -1458,6 +1458,99 @@ export default function FCRoster() {
           </g>
         )}
 
+        {/* Sand — full beach treatment */}
+        {surface==="sand"&&(
+          <g style={{pointerEvents:"none"}}>
+            {/* Sun highlight — warm wash across the upper pitch */}
+            <rect x="0" y="0" width="65" height="38" fill="#E8D29A" opacity="0.18"/>
+            <rect x="0" y="0" width="65" height="20" fill="#F5E3B0" opacity="0.12"/>
+            {/* Wavy ripple lines — horizontal sand dune pattern */}
+            <g stroke="#9A7D4A" strokeWidth="0.18" fill="none" opacity="0.35">
+              <path d="M 0,14 C 12,12 22,16 32,14 S 54,12 65,15"/>
+              <path d="M 0,26 C 10,28 24,24 34,27 S 56,29 65,26"/>
+              <path d="M 0,40 C 14,38 26,42 36,39 S 52,37 65,41"/>
+              <path d="M 0,54 C 11,56 23,52 33,55 S 55,57 65,54"/>
+              <path d="M 0,68 C 13,66 25,70 35,67 S 53,65 65,69"/>
+              <path d="M 0,82 C 10,84 22,80 32,83 S 54,85 65,82"/>
+              <path d="M 0,94 C 14,92 24,96 34,93 S 52,91 65,95"/>
+            </g>
+            {/* Damp patches — darker spots suggesting wet sand */}
+            <ellipse cx="18" cy="35" rx="8" ry="4" fill="#8A6838" opacity="0.22"/>
+            <ellipse cx="46" cy="62" rx="7" ry="3.5" fill="#8A6838" opacity="0.20"/>
+            <ellipse cx="28" cy="78" rx="6" ry="3" fill="#7A5A30" opacity="0.18"/>
+            {/* Footprint pairs — scattered trails */}
+            <g fill="#8A6838" opacity="0.40">
+              <ellipse cx="10" cy="20" rx="0.9" ry="1.4"/>
+              <ellipse cx="12" cy="23" rx="0.9" ry="1.4"/>
+              <ellipse cx="24" cy="45" rx="0.9" ry="1.4"/>
+              <ellipse cx="26" cy="48" rx="0.9" ry="1.4"/>
+              <ellipse cx="50" cy="18" rx="0.9" ry="1.4"/>
+              <ellipse cx="52" cy="21" rx="0.9" ry="1.4"/>
+              <ellipse cx="42" cy="72" rx="0.9" ry="1.4"/>
+              <ellipse cx="44" cy="75" rx="0.9" ry="1.4"/>
+              <ellipse cx="8" cy="58" rx="0.9" ry="1.4"/>
+              <ellipse cx="10" cy="61" rx="0.9" ry="1.4"/>
+              <ellipse cx="38" cy="30" rx="0.9" ry="1.4"/>
+              <ellipse cx="40" cy="33" rx="0.9" ry="1.4"/>
+              <ellipse cx="55" cy="85" rx="0.9" ry="1.4"/>
+              <ellipse cx="57" cy="88" rx="0.9" ry="1.4"/>
+              <ellipse cx="15" cy="88" rx="0.9" ry="1.4"/>
+              <ellipse cx="17" cy="91" rx="0.9" ry="1.4"/>
+            </g>
+          </g>
+        )}
+
+        {/* Futsal — vertical hardwood planks */}
+        {surface==="futsal"&&(
+          <g style={{pointerEvents:"none"}}>
+            {/* Alternating plank tint — every other plank slightly darker */}
+            <g opacity="0.30">
+              <rect x="5"  y="0" width="5" height="100" fill="#9E6808"/>
+              <rect x="15" y="0" width="5" height="100" fill="#9E6808"/>
+              <rect x="25" y="0" width="5" height="100" fill="#9E6808"/>
+              <rect x="35" y="0" width="5" height="100" fill="#9E6808"/>
+              <rect x="45" y="0" width="5" height="100" fill="#9E6808"/>
+              <rect x="55" y="0" width="5" height="100" fill="#9E6808"/>
+            </g>
+            {/* Plank seam lines — thin vertical dividers */}
+            <g stroke="#6E4806" strokeWidth="0.12" opacity="0.45">
+              <line x1="5"  y1="0" x2="5"  y2="100"/>
+              <line x1="10" y1="0" x2="10" y2="100"/>
+              <line x1="15" y1="0" x2="15" y2="100"/>
+              <line x1="20" y1="0" x2="20" y2="100"/>
+              <line x1="25" y1="0" x2="25" y2="100"/>
+              <line x1="30" y1="0" x2="30" y2="100"/>
+              <line x1="35" y1="0" x2="35" y2="100"/>
+              <line x1="40" y1="0" x2="40" y2="100"/>
+              <line x1="45" y1="0" x2="45" y2="100"/>
+              <line x1="50" y1="0" x2="50" y2="100"/>
+              <line x1="55" y1="0" x2="55" y2="100"/>
+              <line x1="60" y1="0" x2="60" y2="100"/>
+            </g>
+            {/* Wood grain — very faint horizontal streaks, staggered across planks */}
+            <g stroke="#6E4806" strokeWidth="0.08" opacity="0.18">
+              <line x1="1"  y1="15" x2="9"  y2="15"/>
+              <line x1="11" y1="28" x2="19" y2="28"/>
+              <line x1="21" y1="42" x2="29" y2="42"/>
+              <line x1="31" y1="18" x2="39" y2="18"/>
+              <line x1="41" y1="35" x2="49" y2="35"/>
+              <line x1="51" y1="55" x2="59" y2="55"/>
+              <line x1="1"  y1="68" x2="9"  y2="68"/>
+              <line x1="21" y1="75" x2="29" y2="75"/>
+              <line x1="31" y1="82" x2="39" y2="82"/>
+              <line x1="51" y1="88" x2="59" y2="88"/>
+              <line x1="11" y1="60" x2="19" y2="60"/>
+              <line x1="41" y1="70" x2="49" y2="70"/>
+              <line x1="21" y1="8"  x2="29" y2="8"/>
+              <line x1="61" y1="25" x2="64" y2="25"/>
+              <line x1="61" y1="48" x2="64" y2="48"/>
+              <line x1="1"  y1="45" x2="4"  y2="45"/>
+              <line x1="1"  y1="92" x2="9"  y2="92"/>
+              <line x1="31" y1="50" x2="39" y2="50"/>
+            </g>
+          </g>
+        )}
+
         {surface==="herrema"&&(
           <g>
             {/* Top keeper zone worn patches */}
