@@ -2791,37 +2791,103 @@ export default function FCRoster() {
                         </button>
                       </div>
 
-                      {/* Full Roster -- starters + named subs flat view. Data is tied to the pitch state,
-                          so "when a team loads (match card click), both starters and subs load together." */}
+                      {/* Full Roster -- derived from the active Profile team.
+                          - If activeProfileTeam === pitch teamName OR nothing selected: use pitch state (live, editable)
+                          - Otherwise: use the most recent saved match for that team (read-only snapshot)
+                          - If a team is selected but has no saved matches: empty state */}
                       {(function(){
-                        var allSubs = subs.filter(function(s){ return s && s.playerId; });
+                        var displayPlayers = players;
+                        var displaySubs = subs;
+                        var displayFmt = gameFmt;
+                        var displayFormation = formation;
+                        var rosterSource = "pitch";        // "pitch" | "saved" | "none"
+                        var sourceMatch = null;
+                        var sourceTeam = activeProfileTeam || teamName;
+
+                        if (activeProfileTeam && activeProfileTeam !== teamName) {
+                          // Viewing a team that isn't currently on the pitch -- derive from latest saved match
+                          var teamMatches = savedFormations
+                            .filter(function(f){return (!f.type || f.type==="roster") && f.team_name===activeProfileTeam;})
+                            .sort(function(a,b){
+                              var ta = new Date(a.updated_at||a.created_at||0).getTime();
+                              var tb = new Date(b.updated_at||b.created_at||0).getTime();
+                              return tb - ta;
+                            });
+                          if (teamMatches.length > 0) {
+                            sourceMatch = teamMatches[0];
+                            displayPlayers = sourceMatch.players || [];
+                            displaySubs = sourceMatch.subs || [];
+                            displayFmt = sourceMatch.game_fmt || gameFmt;
+                            displayFormation = sourceMatch.formation || formation;
+                            rosterSource = "saved";
+                          } else {
+                            displayPlayers = [];
+                            displaySubs = [];
+                            rosterSource = "none";
+                          }
+                        }
+
+                        var readOnly = rosterSource !== "pitch";
+                        var allSubs = displaySubs.filter(function(s){ return s && s.playerId; });
                         var namedSubs = allSubs.filter(function(s){ return s.subName && String(s.subName).trim(); });
-                        var totalCount = players.length + allSubs.length;
+                        var totalCount = displayPlayers.length + allSubs.length;
+
+                        // Empty state for virtual team (created via "+ New Team/Season" with no matches yet)
+                        if (rosterSource === "none") {
+                          return (
+                            <div style={{border:"1px solid "+T.b,borderRadius:8,overflow:"hidden"}}>
+                              <div style={{padding:"10px 14px",borderBottom:"1px solid "+T.b,background:T.raised}}>
+                                <div style={{fontWeight:700,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.volt}}>
+                                  Full Roster \u00b7 {sourceTeam}
+                                </div>
+                                <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:2}}>No matches saved yet</div>
+                              </div>
+                              <div style={{padding:"30px 16px",textAlign:"center"}}>
+                                <div style={{fontSize:28,opacity:0.25,marginBottom:10}}>&#x1F465;</div>
+                                <div style={{fontSize:12,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase",color:T.text,marginBottom:6}}>
+                                  No roster for {sourceTeam} yet
+                                </div>
+                                <div style={{fontSize:11,color:T.ghost,fontFamily:"'Poppins',sans-serif",lineHeight:1.55,maxWidth:260,margin:"0 auto"}}>
+                                  Build a lineup on the Pitch under this team name and hit Save Match to populate the roster.
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
                         return (
                       <div style={{border:"1px solid "+T.b,borderRadius:8,overflow:"hidden"}}>
                         <div style={{padding:"10px 14px",borderBottom:"1px solid "+T.b,background:T.raised}}>
-                          <div style={{fontWeight:700,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.volt}}>
-                            Full Roster{teamName?" \u00b7 "+teamName:""}
+                          <div style={{fontWeight:700,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.volt,display:"flex",alignItems:"center",gap:8}}>
+                            <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>Full Roster{sourceTeam?" \u00b7 "+sourceTeam:""}</span>
+                            {rosterSource==="saved" && (
+                              <span style={{fontSize:8,fontWeight:700,letterSpacing:"0.12em",padding:"2px 6px",borderRadius:3,border:"1px solid rgba(255,255,255,0.2)",color:T.ghost,background:"rgba(255,255,255,0.03)"}}>READ-ONLY</span>
+                            )}
                           </div>
                           <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:2}}>
-                            {gameFmt} &bull; {formation} &bull; {players.length} starter{players.length!==1?"s":""}{allSubs.length>0?" + "+allSubs.length+" sub"+(allSubs.length!==1?"s":"")+" ("+totalCount+" total)":""}
+                            {displayFmt} &bull; {displayFormation} &bull; {displayPlayers.length} starter{displayPlayers.length!==1?"s":""}{allSubs.length>0?" + "+allSubs.length+" sub"+(allSubs.length!==1?"s":"")+" ("+totalCount+" total)":""}
                           </div>
+                          {rosterSource==="saved" && sourceMatch && (
+                            <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif",marginTop:4,fontStyle:"italic"}}>
+                              From match: {sourceMatch.title||"untitled"} \u00b7 load on pitch to edit
+                            </div>
+                          )}
                         </div>
 
                         {/* Starters subheader */}
                         <div style={{padding:"6px 14px",fontSize:8,fontWeight:700,letterSpacing:"0.18em",color:T.faint,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",background:"rgba(255,255,255,0.02)",borderBottom:"1px solid "+T.b}}>
-                          Starters ({players.length})
+                          Starters ({displayPlayers.length})
                         </div>
-                        {players.map(function(p){
+                        {displayPlayers.map(function(p){
                           var avail=p.availability||"available";
                           var availColor=avail==="available"?"#22CC44":avail==="doubtful"?"#F5BE00":"#F02040";
                           var footLabel={L:"Left",R:"Right",B:"Both"}[p.foot||"R"];
                           var skillLabel=["","Grassroots","Amateur","Semi-Pro","Club Pro","Elite"][p.skill||3];
                           return (
-                            <div key={p.id} style={{padding:"8px 14px",borderBottom:"1px solid "+T.b,cursor:"pointer",transition:"background 0.1s"}}
-                              onClick={function(){setEditP(Object.assign({},p));}}
-                              onMouseEnter={function(e){e.currentTarget.style.background="rgba(255,255,255,0.03)";}}
-                              onMouseLeave={function(e){e.currentTarget.style.background="transparent";}}>
+                            <div key={p.id} style={{padding:"8px 14px",borderBottom:"1px solid "+T.b,cursor:readOnly?"default":"pointer",transition:"background 0.1s"}}
+                              onClick={readOnly?undefined:function(){setEditP(Object.assign({},p));}}
+                              onMouseEnter={readOnly?undefined:function(e){e.currentTarget.style.background="rgba(255,255,255,0.03)";}}
+                              onMouseLeave={readOnly?undefined:function(e){e.currentTarget.style.background="transparent";}}>
                               {/* Identity row */}
                               <div style={{display:"flex",alignItems:"center",gap:8}}>
                                 <div style={{width:8,height:8,borderRadius:"50%",background:availColor,flexShrink:0}}/>
@@ -2832,9 +2898,8 @@ export default function FCRoster() {
                                   <div style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name||p.n} <span style={{color:T.ghost,fontWeight:400,fontSize:10}}>{p.n}</span></div>
                                   <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{footLabel} &bull; {skillLabel}{p.age?" \u00b7 Age "+p.age:""}</div>
                                 </div>
-                                {/* Quick sub toggle -- tap to mark a planned sub (nameless for fast logging).
-                                    Name can be filled later via the pitch Sub Planner. */}
-                                {(function(){
+                                {/* Quick sub toggle -- only when editing pitch state (not read-only saved snapshot) */}
+                                {!readOnly && (function(){
                                   var hasSub = subs.some(function(s){return s.playerId===p.id;});
                                   return (
                                     <button onClick={function(e){e.stopPropagation();toggleQuickSub(p);}}
@@ -2851,7 +2916,7 @@ export default function FCRoster() {
                                     </button>
                                   );
                                 })()}
-                                <span style={{fontSize:10,opacity:0.25,flexShrink:0}}>&#x270E;</span>
+                                {!readOnly && <span style={{fontSize:10,opacity:0.25,flexShrink:0}}>&#x270E;</span>}
                               </div>
                               {/* Stats row -- READ-ONLY season totals. To edit, open the specific match record. */}
                               {(function(){
@@ -2886,14 +2951,14 @@ export default function FCRoster() {
                               Substitutes ({allSubs.length})
                             </div>
                             {allSubs.map(function(sub, subIdx){
-                              var starterReplaced = players.find(function(p){return p.id===sub.playerId;});
+                              var starterReplaced = displayPlayers.find(function(p){return p.id===sub.playerId;});
                               var hasName = sub.subName && String(sub.subName).trim();
                               // Career stats only aggregate for named subs (match by name across team's matches)
                               var sg = 0, sa = 0;
                               if(hasName) {
                                 var subNameLower = sub.subName.trim().toLowerCase();
                                 savedFormations.forEach(function(f){
-                                  if(f.team_name!==teamName) return;
+                                  if(f.team_name!==sourceTeam) return;
                                   (f.scorers||[]).forEach(function(s){
                                     if(!s.playerId && s.name && s.name.trim().toLowerCase()===subNameLower) {
                                       sg += (s.goals||0);
