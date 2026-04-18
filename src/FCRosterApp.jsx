@@ -690,6 +690,33 @@ export default function FCRoster() {
     }).catch(function(e){notify("Error: "+e.message);});
   }
 
+  // First-save for a virtual team (created via "+ New Team/Season" but not yet in
+  // savedFormations). Takes the current pitch state, re-tags it with this team name,
+  // and persists as a roster row -- no result modal, since this isn't a match log.
+  // The pitch teamName is updated so subsequent Save Team clicks update this record.
+  function saveTeamInitial(nameToUse) {
+    if(!user){ setShowAuth(true); return; }
+    if(!nameToUse || !nameToUse.trim()) return;
+    var name = nameToUse.trim();
+    setTeamName(name);
+    var saveTitle = name + " — " + (function(){
+      var d=new Date(); var months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      return d.getDate()+" "+months[d.getMonth()];
+    })();
+    var saveDate = todayISO();
+    var state = {title:saveTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
+    var state2 = Object.assign({}, state, {team_name: name, game_date: saveDate});
+    saveFormation(state2).then(function(row){
+      setSavedId(row.id);
+      setTitle(saveTitle);
+      setTitleEdited(false);
+      setSelectedTeamName(name);
+      return loadFormations().then(setSavedFormations);
+    }).then(function(){
+      notify("Saved: "+name);
+    }).catch(function(e){notify("Error: "+e.message);});
+  }
+
   // Scorer helpers
   // Each scorer row is { name, playerId, goals, assists }.
   // Old rows pre-assists just lack the field — treat undefined as 0.
@@ -2819,7 +2846,7 @@ export default function FCRoster() {
                                 fontFamily:"'Rajdhani',sans-serif"}}>
                               <div style={{fontSize:12,fontWeight:800,letterSpacing:"0.04em",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{selectedTeamName}</div>
                               <div style={{fontSize:9,color:"rgba(200,255,0,0.7)",fontFamily:"'Poppins',sans-serif",marginTop:2}}>
-                                No matches yet &middot; save one on the pitch
+                                No roster yet &middot; save below
                               </div>
                             </button>
                           )}
@@ -2987,15 +3014,25 @@ export default function FCRoster() {
                                 <div style={{fontWeight:700,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.volt}}>
                                   Full Roster \u00b7 {sourceTeam}
                                 </div>
-                                <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:2}}>No matches saved yet</div>
+                                <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:2}}>No roster saved yet</div>
                               </div>
-                              <div style={{padding:"30px 16px",textAlign:"center"}}>
+                              <div style={{padding:"26px 16px 22px",textAlign:"center"}}>
                                 <div style={{fontSize:28,opacity:0.25,marginBottom:10}}>&#x1F465;</div>
                                 <div style={{fontSize:12,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase",color:T.text,marginBottom:6}}>
-                                  No roster for {sourceTeam} yet
+                                  Save {sourceTeam} to your Profile
                                 </div>
-                                <div style={{fontSize:11,color:T.ghost,fontFamily:"'Poppins',sans-serif",lineHeight:1.55,maxWidth:260,margin:"0 auto"}}>
-                                  Build a lineup on the Pitch under this team name and hit Save Match to populate the roster.
+                                <div style={{fontSize:11,color:T.ghost,fontFamily:"'Poppins',sans-serif",lineHeight:1.55,maxWidth:280,margin:"0 auto 14px"}}>
+                                  Commits the current pitch lineup under this team name. You can edit the roster on the Pitch and re-save any time.
+                                </div>
+                                <button
+                                  onClick={function(){ saveTeamInitial(sourceTeam); }}
+                                  className="btn btn-primary btn-md"
+                                  style={{fontWeight:900,gap:6,display:"inline-flex",alignItems:"center"}}>
+                                  <span>&#x2193;</span>
+                                  <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:180,display:"inline-block",verticalAlign:"middle"}}>Save {sourceTeam}</span>
+                                </button>
+                                <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif",marginTop:10,letterSpacing:"0.04em"}}>
+                                  Or build a fresh lineup on the Pitch tab first.
                                 </div>
                               </div>
                             </div>
