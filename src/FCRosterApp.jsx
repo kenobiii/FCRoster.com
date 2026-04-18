@@ -502,6 +502,45 @@ export default function FCRoster() {
     } catch(e) { notify("Error saving squad: "+e.message); }
   }
 
+  // Live-persist scorers to the currently-loaded match. Writes immediately to DB
+  // so goals logged on the pitch never get lost.
+  async function persistScorers(formationId, nextScorers) {
+    try {
+      var { data: { user: authUser } } = await supabase.auth.getUser();
+      if(!authUser) return;
+      await supabase.from("formations")
+        .update({ scorers: nextScorers })
+        .eq("id", formationId).eq("user_id", authUser.id);
+      setSavedFormations(function(prev){
+        return prev.map(function(f){
+          return f.id===formationId ? Object.assign({},f,{scorers:nextScorers}) : f;
+        });
+      });
+    } catch(e) {
+      console.error("[persistScorers] failed:",e);
+      notify("Couldn't save goal — check connection.");
+    }
+  }
+
+  // Wrapper for the pitch-tab goal +/− buttons. Updates editingScorers locally
+  // for instant feedback AND auto-persists to the current match if saved.
+  // If no savedId yet, opens the name banner (blocks until saved).
+  function logGoalOnPitch(player, increment) {
+    if(!user){ setShowAuth(true); return; }
+    if(!savedId){
+      // No match to log goals into — trigger save flow
+      notify("Save your roster first to log goals.");
+      doSaveRoster();
+      return;
+    }
+    // Compute the next scorers state and persist immediately
+    setEditingScorers(function(prev){
+      var next = toggleGoal(prev, player, increment);
+      persistScorers(savedId, next);
+      return next;
+    });
+  }
+
   async function saveResult(formationId, resultData, scorersData) {
     try {
       // Defense in depth: scope update to this user's formations only.
@@ -1824,8 +1863,8 @@ export default function FCRoster() {
                   <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
                     {a>0&&<span style={{fontSize:8,fontWeight:900,color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif"}}>&#x1F464;{a}</span>}
                     {g>0&&<span style={{fontSize:8,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif"}}>&#x26BD;{g}</span>}
-                    {g>0&&<button onClick={function(){setEditingScorers(function(s){return toggleGoal(s,p,false);});}} style={{width:18,height:18,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.4)",fontSize:12,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,WebkitTapHighlightColor:"transparent"}}>−</button>}
-                    <button onClick={function(){setEditingScorers(function(s){return toggleGoal(s,p,true);});if(navigator.vibrate)navigator.vibrate(5);}} style={{width:18,height:18,borderRadius:"50%",background:"rgba(200,255,0,0.1)",border:"1px solid rgba(200,255,0,0.25)",color:"rgba(200,255,0,0.7)",fontSize:14,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,WebkitTapHighlightColor:"transparent"}} title="Log goal">+</button>
+                    {g>0&&<button onClick={function(){logGoalOnPitch(p,false);}} style={{width:18,height:18,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.4)",fontSize:12,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,WebkitTapHighlightColor:"transparent"}} title="Remove a goal">−</button>}
+                    <button onClick={function(){logGoalOnPitch(p,true);if(navigator.vibrate)navigator.vibrate(5);}} style={{width:18,height:18,borderRadius:"50%",background:savedId?"rgba(200,255,0,0.1)":"rgba(200,255,0,0.04)",border:"1px solid "+(savedId?"rgba(200,255,0,0.25)":"rgba(200,255,0,0.12)"),color:savedId?"rgba(200,255,0,0.7)":"rgba(200,255,0,0.3)",fontSize:14,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,WebkitTapHighlightColor:"transparent"}} title={savedId?"Log a goal":"Save roster first"}>+</button>
                   </div>
                 </div>
                 {/* Inline sub row */}
@@ -2488,20 +2527,6 @@ export default function FCRoster() {
                       );
                     })}
                     <HR/>
-                    {/* Save goals button — appears when any goals entered */}
-                    {editingScorers.length>0&&savedId&&(
-                      <button className="btn btn-volt-outline btn-sm" style={{width:"100%",gap:5}}
-                        onClick={function(){
-                          saveResult(savedId, {
-                            result: savedFormations.find(function(f){return f.id===savedId;})||{result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""},
-                            scoreFor: "", scoreAgainst: "", opponent: "", date: ""
-                          }, editingScorers);
-                          notify("Goals saved!");
-                        }}>
-                        ⚽ Save Goals to Lineup
-                      </button>
-                    )}
-                    <HR/>
                     {SubPlanner()}
                     <HR/>
                     {ActionBar({compact:true})}
@@ -2844,6 +2869,8 @@ export default function FCRoster() {
                                         setPhases(f.phases||[null,null,null,null,null]);setBallPos(f.ball_pos||null);
                                         setShowOpp(!!f.show_opp);setOppFmt(f.opp_fmt||"4-3-3");setOppList(f.opp_list||[]);setOppColor(f.opp_color||"#EE2244");
                                         if(f.team_name) setTeamName(f.team_name);
+                                        // Hydrate editingScorers from this match so pitch badges and auto-persist target the right row
+                                        setEditingScorers((f.scorers||[]).map(function(s){return Object.assign({},s);}));
                                         setSavedId(f.id);setTab("pitch");notify("Loaded: "+f.title);
                                       }}>Load</button>
                                     <button className="btn btn-danger btn-sm" style={{fontSize:10,padding:"5px 12px",minWidth:60}}
