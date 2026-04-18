@@ -1447,6 +1447,17 @@ export default function FCRoster() {
 
         <rect width="65" height="100" fill={sf.base}/>
 
+        {/* Mower stripes — outdoor surfaces only (subtle horizontal bands) */}
+        {(surface==="grass"||surface==="turf"||surface==="herrema")&&(
+          <g opacity="0.5" style={{pointerEvents:"none"}}>
+            <rect x="0" y="10" width="65" height="10" fill={sf.light}/>
+            <rect x="0" y="30" width="65" height="10" fill={sf.light}/>
+            <rect x="0" y="50" width="65" height="10" fill={sf.light}/>
+            <rect x="0" y="70" width="65" height="10" fill={sf.light}/>
+            <rect x="0" y="90" width="65" height="10" fill={sf.light}/>
+          </g>
+        )}
+
         {surface==="herrema"&&(
           <g>
             {/* Top keeper zone worn patches */}
