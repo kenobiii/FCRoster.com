@@ -5,17 +5,21 @@ var MOZ_URI = "data:image/png;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAK8BAwDACI
 
 var FORMATIONS = {
   "11v11":{
-    "4-3-3":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"RB",x:52,y:73},{id:3,n:"CB",x:41,y:76},{id:4,n:"CB",x:24,y:76},{id:5,n:"LB",x:13,y:73},{id:6,n:"CM",x:43,y:55},{id:7,n:"CM",x:32,y:52},{id:8,n:"CM",x:22,y:55},{id:9,n:"RW",x:49,y:30},{id:10,n:"ST",x:32,y:24},{id:11,n:"LW",x:16,y:30}],
-    "4-4-2":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"RB",x:52,y:73},{id:3,n:"CB",x:41,y:76},{id:4,n:"CB",x:24,y:76},{id:5,n:"LB",x:13,y:73},{id:6,n:"RM",x:51,y:52},{id:7,n:"CM",x:39,y:55},{id:8,n:"CM",x:26,y:55},{id:9,n:"LM",x:14,y:52},{id:10,n:"ST",x:40,y:27},{id:11,n:"ST",x:25,y:27}],
-    "4-2-3-1":[{id:1,n:"GK",x:32,y:88},{id:2,n:"RB",x:52,y:73},{id:3,n:"CB",x:41,y:77},{id:4,n:"CB",x:24,y:77},{id:5,n:"LB",x:13,y:73},{id:6,n:"DM",x:40,y:61},{id:7,n:"DM",x:25,y:61},{id:8,n:"RW",x:47,y:42},{id:9,n:"AM",x:32,y:40},{id:10,n:"LW",x:18,y:42},{id:11,n:"ST",x:32,y:21}],
-    "3-5-2":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:44,y:77},{id:3,n:"CB",x:32,y:79},{id:4,n:"CB",x:21,y:77},{id:5,n:"RM",x:53,y:54},{id:6,n:"CM",x:42,y:57},{id:7,n:"CM",x:32,y:59},{id:8,n:"CM",x:23,y:57},{id:9,n:"LM",x:12,y:54},{id:10,n:"ST",x:40,y:27},{id:11,n:"ST",x:25,y:27}],
-    "4-5-1":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"RB",x:52,y:73},{id:3,n:"CB",x:41,y:76},{id:4,n:"CB",x:24,y:76},{id:5,n:"LB",x:13,y:73},{id:6,n:"RM",x:53,y:54},{id:7,n:"CM",x:42,y:57},{id:8,n:"CM",x:32,y:59},{id:9,n:"CM",x:23,y:57},{id:10,n:"LM",x:12,y:54},{id:11,n:"ST",x:32,y:22}],
-    "5-3-2":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"RWB",x:55,y:70},{id:3,n:"CB",x:44,y:77},{id:4,n:"CB",x:32,y:79},{id:5,n:"CB",x:21,y:77},{id:6,n:"LWB",x:10,y:70},{id:7,n:"CM",x:42,y:54},{id:8,n:"CM",x:32,y:56},{id:9,n:"CM",x:23,y:54},{id:10,n:"ST",x:40,y:27},{id:11,n:"ST",x:25,y:27}],
+    "4-3-3":    [{id:1,n:"GK",x:32,y:88},{id:2,n:"RB",x:52,y:73},{id:3,n:"CB",x:41,y:76},{id:4,n:"CB",x:24,y:76},{id:5,n:"LB",x:13,y:73},{id:6,n:"CM",x:43,y:55},{id:7,n:"CM",x:32,y:52},{id:8,n:"CM",x:22,y:55},{id:9,n:"RW",x:49,y:30},{id:10,n:"ST",x:32,y:24},{id:11,n:"LW",x:16,y:30}],
+    "4-4-2":    [{id:1,n:"GK",x:32,y:88},{id:2,n:"RB",x:52,y:73},{id:3,n:"CB",x:41,y:76},{id:4,n:"CB",x:24,y:76},{id:5,n:"LB",x:13,y:73},{id:6,n:"RM",x:51,y:52},{id:7,n:"CM",x:39,y:55},{id:8,n:"CM",x:26,y:55},{id:9,n:"LM",x:14,y:52},{id:10,n:"ST",x:40,y:27},{id:11,n:"ST",x:25,y:27}],
+    "4-2-3-1":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"RB",x:52,y:73},{id:3,n:"CB",x:41,y:77},{id:4,n:"CB",x:24,y:77},{id:5,n:"LB",x:13,y:73},{id:6,n:"DM",x:40,y:61},{id:7,n:"DM",x:25,y:61},{id:8,n:"RW",x:47,y:42},{id:9,n:"AM",x:32,y:40},{id:10,n:"LW",x:18,y:42},{id:11,n:"ST",x:32,y:21}],
+    "3-5-2":    [{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:44,y:77},{id:3,n:"CB",x:32,y:79},{id:4,n:"CB",x:21,y:77},{id:5,n:"RM",x:53,y:54},{id:6,n:"CM",x:42,y:57},{id:7,n:"CM",x:32,y:59},{id:8,n:"CM",x:23,y:57},{id:9,n:"LM",x:12,y:54},{id:10,n:"ST",x:40,y:27},{id:11,n:"ST",x:25,y:27}],
+    "4-5-1":    [{id:1,n:"GK",x:32,y:88},{id:2,n:"RB",x:52,y:73},{id:3,n:"CB",x:41,y:76},{id:4,n:"CB",x:24,y:76},{id:5,n:"LB",x:13,y:73},{id:6,n:"RM",x:53,y:54},{id:7,n:"CM",x:42,y:57},{id:8,n:"CM",x:32,y:59},{id:9,n:"CM",x:23,y:57},{id:10,n:"LM",x:12,y:54},{id:11,n:"ST",x:32,y:22}],
+    "5-3-2":    [{id:1,n:"GK",x:32,y:88},{id:2,n:"RWB",x:55,y:70},{id:3,n:"CB",x:44,y:77},{id:4,n:"CB",x:32,y:79},{id:5,n:"CB",x:21,y:77},{id:6,n:"LWB",x:10,y:70},{id:7,n:"CM",x:42,y:54},{id:8,n:"CM",x:32,y:56},{id:9,n:"CM",x:23,y:54},{id:10,n:"ST",x:40,y:27},{id:11,n:"ST",x:25,y:27}],
+    "4-1-4-1":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"RB",x:52,y:73},{id:3,n:"CB",x:41,y:76},{id:4,n:"CB",x:24,y:76},{id:5,n:"LB",x:13,y:73},{id:6,n:"DM",x:32,y:62},{id:7,n:"RM",x:52,y:46},{id:8,n:"CM",x:40,y:48},{id:9,n:"CM",x:25,y:48},{id:10,n:"LM",x:13,y:46},{id:11,n:"ST",x:32,y:24}],
+    "3-4-3":    [{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:44,y:77},{id:3,n:"CB",x:32,y:79},{id:4,n:"CB",x:21,y:77},{id:5,n:"RM",x:53,y:54},{id:6,n:"CM",x:40,y:57},{id:7,n:"CM",x:25,y:57},{id:8,n:"LM",x:12,y:54},{id:9,n:"RW",x:49,y:28},{id:10,n:"ST",x:32,y:24},{id:11,n:"LW",x:16,y:28}],
+    "4-1-2-1-2":[{id:1,n:"GK",x:32,y:88},{id:2,n:"RB",x:52,y:73},{id:3,n:"CB",x:41,y:76},{id:4,n:"CB",x:24,y:76},{id:5,n:"LB",x:13,y:73},{id:6,n:"DM",x:32,y:62},{id:7,n:"CM",x:44,y:50},{id:8,n:"CM",x:20,y:50},{id:9,n:"AM",x:32,y:38},{id:10,n:"ST",x:40,y:24},{id:11,n:"ST",x:25,y:24}],
   },
   "9v9":{
     "3-3-2":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:44,y:75},{id:3,n:"CB",x:32,y:77},{id:4,n:"CB",x:21,y:75},{id:5,n:"CM",x:44,y:54},{id:6,n:"CM",x:32,y:52},{id:7,n:"CM",x:21,y:54},{id:8,n:"ST",x:62,y:28},{id:9,n:"ST",x:38,y:28}],
     "2-3-2-1":[{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:41,y:76},{id:3,n:"CB",x:24,y:76},{id:4,n:"RM",x:49,y:58},{id:5,n:"CM",x:32,y:60},{id:6,n:"LM",x:16,y:58},{id:7,n:"RW",x:46,y:38},{id:8,n:"LW",x:20,y:38},{id:9,n:"ST",x:32,y:24}],
     "3-4-1":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:44,y:75},{id:3,n:"CB",x:32,y:78},{id:4,n:"CB",x:21,y:75},{id:5,n:"RM",x:51,y:53},{id:6,n:"CM",x:40,y:56},{id:7,n:"CM",x:25,y:56},{id:8,n:"LM",x:14,y:53},{id:9,n:"ST",x:32,y:25}],
+    "3-2-3":  [{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:44,y:75},{id:3,n:"CB",x:32,y:77},{id:4,n:"CB",x:21,y:75},{id:5,n:"CM",x:40,y:54},{id:6,n:"CM",x:25,y:54},{id:7,n:"RW",x:48,y:28},{id:8,n:"ST",x:32,y:24},{id:9,n:"LW",x:17,y:28}],
   },
   "7v7":{
     "2-3-1":[{id:1,n:"GK",x:32,y:88},{id:2,n:"CB",x:42,y:73},{id:3,n:"CB",x:23,y:73},{id:4,n:"RM",x:49,y:52},{id:5,n:"CM",x:32,y:50},{id:6,n:"LM",x:16,y:52},{id:7,n:"ST",x:32,y:25}],
@@ -364,7 +368,7 @@ export default function FCRoster() {
   function autoTitle() {
     var d = new Date();
     var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    return (teamName||"My Team") + " — " + d.getDate() + " " + months[d.getMonth()];
+    return (teamName||"Untitled Squad") + " — " + d.getDate() + " " + months[d.getMonth()];
   }
   function todayISO() {
     return new Date().toISOString().split("T")[0];
@@ -385,7 +389,7 @@ export default function FCRoster() {
   var [savedFormations, setSavedFormations] = useState([]);
   var [savedId,   setSavedId]   = useState(null);
   var [squad,     setSquad]     = useState(null);   // persistent squad from DB
-  var [teamName,  setTeamName]  = useState("My Team");
+  var [teamName,  setTeamName]  = useState("");
   // Result modal state
   var [resultModal,setResultModal] = useState(null); // {id} — shown after save
   var [pendingResult,setPendingResult] = useState({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
@@ -444,7 +448,7 @@ export default function FCRoster() {
         .maybeSingle();
       if (data) {
         setSquad(data);
-        setTeamName(data.team_name || "My Team");
+        setTeamName(data.team_name || "");
         // Pre-fill pitch names from squad if current pitch is blank
         if (data.players && data.players.length > 0) {
           setPlayers(function(prev) {
@@ -508,6 +512,25 @@ export default function FCRoster() {
         });
       });
     } catch(e) { notify("Error saving result."); }
+  }
+
+  // Single source of truth for saving the current pitch state as a roster formation.
+  // Used by the desktop ActionBar and the mobile PITCH-tab Save button.
+  function doSaveRoster() {
+    if(!user){ setShowAuth(true); return; }
+    var saveTitle = titleEdited ? title : autoTitle();
+    var saveDate  = todayISO();
+    var state = {title:saveTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
+    var state2 = Object.assign({}, state, {team_name: teamName, game_date: saveDate});
+    var fn = savedId ? updateFormation(savedId, state2) : saveFormation(state2);
+    fn.then(function(row){
+      setSavedId(row.id);
+      setTitle(saveTitle);
+      setTitleEdited(false);
+      setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:saveDate});
+      setResultModal({id: row.id});
+      return loadFormations().then(setSavedFormations);
+    }).catch(function(e){notify("Error: "+e.message);});
   }
 
   // Scorer helpers
@@ -1280,23 +1303,6 @@ export default function FCRoster() {
     var canUndo = historyLen > 0;
     var sz = "btn-md";
 
-    function doSaveRoster() {
-      if(!user){ setShowAuth(true); return; }
-      var saveTitle = titleEdited ? title : autoTitle();
-      var saveDate  = todayISO();
-      var state = {title:saveTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
-      var state2 = Object.assign({}, state, {team_name: teamName, game_date: saveDate});
-      var fn = savedId ? updateFormation(savedId, state2) : saveFormation(state2);
-      fn.then(function(row){
-        setSavedId(row.id);
-        setTitle(saveTitle);
-        setTitleEdited(false);
-        setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:saveDate});
-        setResultModal({id: row.id});
-        return loadFormations().then(setSavedFormations);
-      }).catch(function(e){notify("Error: "+e.message);});
-    }
-
     return (
       <div style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:compact?"5px 0":"0"}}>
         <button onClick={doUndo} className={"btn btn-secondary "+sz}
@@ -1504,16 +1510,6 @@ export default function FCRoster() {
           <rect x="26" y="96.5" width="13" height="2.5" strokeWidth="0.28" opacity="0.6"/>
           <circle cx="32" cy="87" r="0.6" fill={sf.line} stroke="none"/>
         </g>
-
-        {/* Empty state hint — fades once first player named */}
-        {!hasNamedAny&&(
-          <text x="32.5" y="50" textAnchor="middle" dominantBaseline="middle"
-            fontSize="2.2" fill="rgba(255,255,255,0.28)"
-            style={{userSelect:"none",pointerEvents:"none",fontFamily:"'Poppins',sans-serif",fontStyle:"italic",
-              animation:"fadeHint 2s ease-in-out infinite alternate"}}>
-            tap a player to add their name
-          </text>
-        )}
 
         {lines.map(function(ln,i){return(
           <path key={i} d={pts2d(ln.pts)} stroke={TC[ln.tool]} strokeWidth={ln.tool==="shot"?"0.65":"0.52"} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.92" strokeDasharray={ln.tool==="run"?"1.7,0.85":"none"}/>
@@ -1838,7 +1834,7 @@ export default function FCRoster() {
               var playTitle=title||"My Play";
               var state={title:playTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"play"};
               saveFormation(state).then(function(){notify("Play saved to profile!");return loadFormations().then(setSavedFormations);}).catch(function(e){notify("Error: "+e.message);});
-            }} className="btn btn-primary btn-sm" style={{flex:1,fontWeight:900}}>&#x2193; Save Roster</button>
+            }} className="btn btn-primary btn-sm" style={{flex:1,fontWeight:900}}>&#x2193; Save Play</button>
           </div>
         </div>
         <HR/>
@@ -1929,29 +1925,7 @@ export default function FCRoster() {
               <div className="pc">
                 {PhaseStrip()}
                 {/* Squad name bar -- desktop only, above pitch */}
-                <div className="d-hdr" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 16px",borderBottom:"1px solid rgba(255,255,255,0.06)",background:"#131313",flexShrink:0,gap:10}}>
-                  {/* Save Roster — left side of squad header bar */}
-                  <button onClick={function(){
-                      if(!user){setShowAuth(true);return;}
-                      var saveTitle = titleEdited ? title : autoTitle();
-                      var saveDate  = todayISO();
-                      var state={title:saveTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
-                      var state2 = Object.assign({}, state, {team_name: teamName, game_date: saveDate});
-                      var fn = savedId ? updateFormation(savedId, state2) : saveFormation(state2);
-                      fn.then(function(row){
-                        setSavedId(row.id);setTitle(saveTitle);setTitleEdited(false);
-                        setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:saveDate});
-                        setResultModal({id: row.id});
-                        return loadFormations().then(setSavedFormations);
-                      }).catch(function(e){notify("Error: "+e.message);});
-                    }}
-                    className="btn btn-primary btn-sm"
-                    style={{gap:5,fontWeight:900,minWidth:120,
-                      boxShadow:user?"0 0 12px rgba(200,255,0,0.25)":"none",
-                      opacity:user?1:0.5}}>
-                    <span>&#x2193;</span>
-                    <span>{savedId?"Update Roster":"Save Roster"}</span>
-                  </button>
+                <div className="d-hdr" style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"6px 16px",borderBottom:"1px solid rgba(255,255,255,0.06)",background:"#131313",flexShrink:0,gap:10}}>
                   {editTitle ? (
                     <input
                       value={title}
@@ -2044,18 +2018,12 @@ export default function FCRoster() {
                 <div className="mob-panel" style={{maxHeight:"min(65dvh,65vh)"}}>
                 <div style={{padding:"8px 12px 0",display:"flex",flexDirection:"column",gap:6,width:"100%"}}>
                   {/* Save Roster CTA — top of pitch panel on mobile */}
-                  <button onClick={function(){
-                    if(!user){setShowAuth(true);return;}
-                    var saveTitle = titleEdited ? title : autoTitle();
-                    var saveDate = todayISO();
-                    var state={title:saveTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
-                    var fn = savedId ? updateFormation(savedId, Object.assign({},state,{team_name:teamName,game_date:saveDate})) : saveFormation(Object.assign({},state,{team_name:teamName,game_date:saveDate}));
-                    fn.then(function(row){setSavedId(row.id);setTitle(saveTitle);setTitleEdited(false);setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:saveDate});setResultModal({id:row.id});return loadFormations().then(setSavedFormations);}).catch(function(e){notify("Error: "+e.message);});
-                  }} className="btn btn-primary btn-md" style={{width:"100%",gap:6,fontWeight:900,
+                  <button onClick={doSaveRoster}
+                    className="btn btn-primary btn-md" style={{width:"100%",gap:6,fontWeight:900,
                     boxShadow:user?"0 0 16px rgba(200,255,0,0.25)":"none",
                     opacity:user?1:0.5}}>
                     <span>&#x2193;</span>
-                    <span>{savedId?"Update Roster":"Save Roster to Profile"}</span>
+                    <span>{savedId?"Update Roster":"Save Roster"}</span>
                   </button>
                   {/* Compact surface / kit / opposition row */}
                   <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
@@ -2355,9 +2323,10 @@ export default function FCRoster() {
                       <div style={{border:"1px solid "+T.b,borderRadius:8,padding:"12px 14px",background:T.raised,display:"flex",flexDirection:"column",gap:8}}>
                         <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.2em",color:T.volt,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",marginBottom:2}}>Team</div>
                         <input value={teamName} onChange={function(e){setTeamName(e.target.value);}}
-                          placeholder="e.g. Sunday FC"
-                          style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:5,
-                            color:T.text,fontSize:14,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",padding:"7px 10px",outline:"none"}}/>
+                          placeholder="Untitled Squad"
+                          style={{background:"rgba(255,255,255,0.05)",border:"1px solid "+(teamName?"rgba(255,255,255,0.1)":"rgba(200,255,0,0.35)"),borderRadius:5,
+                            color: teamName ? T.text : "rgba(255,255,255,0.45)",
+                            fontSize:14,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",padding:"7px 10px",outline:"none"}}/>
                         <button className="btn btn-secondary btn-sm" style={{gap:5}}
                           onClick={function(){saveSquad(players, teamName);}}>
                           &#x1F465; Save Squad to Profile
@@ -2369,27 +2338,9 @@ export default function FCRoster() {
                         )}
                       </div>
 
-                      {/* Save Roster + Save Play */}
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                        <button className="btn btn-primary btn-md" style={{gap:5}}
-                          onClick={function(){
-                            var saveTitle = titleEdited ? title : autoTitle();
-                            var saveDate  = todayISO();
-                            var state={title:saveTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"roster"};
-                            var state2 = Object.assign({}, state, {team_name: teamName, game_date: saveDate});
-                            var fn = savedId ? updateFormation(savedId, state2) : saveFormation(state2);
-                            fn.then(function(row){
-                              setSavedId(row.id);
-                              setTitle(saveTitle);
-                              setTitleEdited(false);
-                              setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:saveDate});
-                              setResultModal({id: row.id});
-                              return loadFormations().then(setSavedFormations);
-                            }).catch(function(e){notify("Error: "+e.message);});
-                          }}>
-                          <span>&#x2193;</span> {savedId?"Update":"Save Roster"}
-                        </button>
-                        <button className="btn btn-volt-outline btn-md" style={{gap:5}}
+                      {/* Save Play — Roster saves happen from the pitch */}
+                      <div>
+                        <button className="btn btn-volt-outline btn-md" style={{gap:5,width:"100%"}}
                           onClick={function(){
                             var playTitle=title+" (Play)";
                             var state={title:playTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"play"};
