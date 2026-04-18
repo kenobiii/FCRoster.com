@@ -2122,6 +2122,8 @@ export default function FCRoster() {
             }}>
             {user ? "Profile" : "Sign In"}
           </button>
+          <button onClick={function(){setTab("about");}}
+            style={{background:"none",border:"none",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:13,letterSpacing:"0.16em",textTransform:"uppercase",padding:"0 14px",height:50,flexShrink:0,color:tab==="about"?T.text:T.ghost,borderBottom:"2px solid "+(tab==="about"?T.volt:"transparent"),transition:"color .13s,border-color .13s"}}>About</button>
         </nav>
 
         {/* Right anchor -- avatar dropdown when signed in */}
@@ -2139,7 +2141,7 @@ export default function FCRoster() {
                   <div style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.06em"}}>{user.name}</div>
                   <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:2}}>{user.email}</div>
                 </div>
-                {[["pitch","Pitch"],["profile","Profile"],["playbook","Playbook"],["about","About"]].map(function(item){return(
+                {[["pitch","Pitch"],["profile","Profile"],["about","About"]].map(function(item){return(
                   <button key={item[0]} onClick={function(){setTab(item[0]);setMoreOpen(false);}}
                     style={{display:"block",width:"100%",textAlign:"left",background:"none",border:"none",cursor:"pointer",padding:"10px 14px",fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",color:tab===item[0]?T.volt:T.sub,transition:"color .13s"}}
                     onMouseEnter={function(e){e.currentTarget.style.background="rgba(255,255,255,0.04)";}}
