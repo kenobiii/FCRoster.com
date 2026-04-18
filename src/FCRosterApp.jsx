@@ -2723,18 +2723,15 @@ export default function FCRoster() {
                         </div>
                       </div>
 
-                      {/* Team name + Save Squad */}
+                      {/* Team name input -- this is the PITCH team name (used when saving matches from the pitch).
+                          The Profile team pills above control which team's data you're BROWSING -- a distinct concern. */}
                       <div style={{border:"1px solid "+T.b,borderRadius:8,padding:"12px 14px",background:T.raised,display:"flex",flexDirection:"column",gap:8}}>
-                        <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.2em",color:T.volt,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",marginBottom:2}}>Team</div>
+                        <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.2em",color:T.volt,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",marginBottom:2}}>Pitch Team Name</div>
                         <input value={teamName} onChange={function(e){setTeamName(e.target.value);}}
                           placeholder="Untitled Squad"
                           style={{background:"rgba(255,255,255,0.05)",border:"1px solid "+(teamName?"rgba(255,255,255,0.1)":"rgba(200,255,0,0.35)"),borderRadius:5,
                             color: teamName ? T.text : "rgba(255,255,255,0.45)",
                             fontSize:14,fontWeight:700,fontFamily:"'Rajdhani',sans-serif",padding:"7px 10px",outline:"none"}}/>
-                        <button className="btn btn-secondary btn-sm" style={{gap:5}}
-                          onClick={function(){saveSquad(players, teamName);}}>
-                          &#x1F465; Save Squad to Profile
-                        </button>
                         {squad&&squad.updated_at&&(
                           <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>
                             Last saved {new Date(squad.updated_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
@@ -2742,18 +2739,16 @@ export default function FCRoster() {
                         )}
                       </div>
 
-                      {/* Save Play — Roster saves happen from the pitch */}
+                      {/* Save/Update Team -- persists the current pitch roster as this team's squad.
+                          Replaces the old "Save Play" button (plays are saved from the pitch). */}
                       <div>
-                        <button className="btn btn-volt-outline btn-md" style={{gap:5,width:"100%"}}
-                          onClick={function(){
-                            var playTitle=title+" (Play)";
-                            var state={title:playTitle,gameFmt,formation,surface,paletteId,players,lines,subs,phases,ballPos,showOpp,oppFmt,oppList,oppColor,type:"play"};
-                            saveFormation(state).then(function(){
-                              notify("Play saved!");
-                              return loadFormations().then(setSavedFormations);
-                            }).catch(function(e){notify("Error: "+e.message);});
-                          }}>
-                          <span>&#x2606;</span> Save Play
+                        <button className="btn btn-primary btn-md" style={{gap:6,width:"100%",fontWeight:900,
+                          boxShadow:teamName?"0 0 16px rgba(200,255,0,0.25)":"none",opacity:teamName?1:0.45}}
+                          disabled={!teamName}
+                          onClick={function(){saveSquad(players, teamName);}}
+                          title={teamName?(squad?"Update this team's saved squad":"Save this team to your profile"):"Name the team first"}>
+                          <span>&#x2193;</span>
+                          <span>{squad?"Update Team":"Save Team"}</span>
                         </button>
                       </div>
 
@@ -2992,22 +2987,6 @@ export default function FCRoster() {
                                     <div style={{fontSize:10,color:T.sub,fontFamily:"'Poppins',sans-serif",marginBottom:6,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                                       {f.opponent && !isPlay && <span>vs {f.opponent} &middot; </span>}
                                       <span style={{color:T.faint}}>{f.game_fmt} &middot; {f.formation}</span>
-                                    </div>
-                                    {/* Player dots */}
-                                    <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-                                      {(f.players||[]).slice(0,11).map(function(p,pi){
-                                        var c=tFill(p.n);
-                                        var g=scorerGoals(f.scorers||[],p.id);
-                                        var a=scorerAssists(f.scorers||[],p.id);
-                                        var title=(p.name||p.n)+(g>0?" ⚽"+g:"")+(a>0?" 👤"+a:"");
-                                        return (
-                                          <div key={pi} title={title} style={{position:"relative",width:17,height:17,flexShrink:0}}>
-                                            <div style={{width:17,height:17,borderRadius:"50%",background:c,border:g>0?"1.2px solid #C8FF00":a>0?"1.2px solid rgba(150,200,255,0.9)":"1px solid rgba(255,255,255,0.15)",boxShadow:g>0?"0 0 4px rgba(200,255,0,0.5)":a>0?"0 0 4px rgba(90,180,255,0.4)":p.name?"0 0 3px "+c+"66":"none"}}/>
-                                            {g>0&&(<div style={{position:"absolute",top:-4,right:-4,width:11,height:11,borderRadius:"50%",background:"#C8FF00",color:"#111",display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",lineHeight:1}}>{g}</div>)}
-                                            {a>0&&g===0&&(<div style={{position:"absolute",bottom:-4,right:-4,width:11,height:11,borderRadius:"50%",background:"rgba(150,200,255,0.95)",color:"#06182b",display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",lineHeight:1}}>{a}</div>)}
-                                          </div>
-                                        );
-                                      })}
                                     </div>
                                     {/* Scorer & assister names */}
                                     {(scored.length>0 || assisted.length>0) && (
