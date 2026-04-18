@@ -2475,38 +2475,37 @@ export default function FCRoster() {
                                 })()}
                                 <span style={{fontSize:10,opacity:0.2}}>&#x270E;</span>
                               </div>
-                            </div>
-                            {/* Inline sub row on profile */}
-                            {(function(){
-                              var plannedSub = subs.find(function(s){return s.playerId===p.id && s.subName && s.subName.trim();});
-                              if(!plannedSub) return null;
-                              // Career totals for this sub (across all saved matches for this team, matched by name)
-                              var subName = plannedSub.subName.trim().toLowerCase();
-                              var sg = 0, sa = 0;
-                              savedFormations.forEach(function(f){
-                                if(f.team_name!==teamName) return;
-                                (f.scorers||[]).forEach(function(s){
-                                  if(!s.playerId && s.name && s.name.trim().toLowerCase()===subName) {
-                                    sg += (s.goals||0);
-                                    sa += (s.assists||0);
-                                  }
+                              {/* Inline sub row on profile */}
+                              {(function(){
+                                var plannedSub = subs.find(function(s){return s.playerId===p.id && s.subName && s.subName.trim();});
+                                if(!plannedSub) return null;
+                                // Career totals for this sub (across all saved matches for this team, matched by name)
+                                var subName = plannedSub.subName.trim().toLowerCase();
+                                var sg = 0, sa = 0;
+                                savedFormations.forEach(function(f){
+                                  if(f.team_name!==teamName) return;
+                                  (f.scorers||[]).forEach(function(s){
+                                    if(!s.playerId && s.name && s.name.trim().toLowerCase()===subName) {
+                                      sg += (s.goals||0);
+                                      sa += (s.assists||0);
+                                    }
+                                  });
                                 });
-                              });
-                              return (
-                                <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 14px 5px 28px",
-                                  borderLeft:"2px solid rgba(255,255,255,0.08)",marginLeft:12,
-                                  background:"rgba(255,255,255,0.015)"}}>
-                                  <span style={{fontSize:11,color:"rgba(255,255,255,0.2)",flexShrink:0}}>↪</span>
-                                  <span style={{flex:1,fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"}}>{plannedSub.subName}</span>
-                                  {plannedSub.minute&&<span style={{fontSize:9,fontWeight:700,color:"#F5BE00",background:"rgba(245,190,0,0.1)",borderRadius:3,padding:"1px 6px",flexShrink:0}}>{plannedSub.minute}&prime;</span>}
-                                  {sa>0&&<span style={{fontSize:9,fontWeight:900,color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)",borderRadius:3,padding:"1px 5px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>&#x1F464;{sa}</span>}
-                                  {sg>0&&<span style={{fontSize:9,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 5px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>&#x26BD;{sg}</span>}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        );
-                      })}
+                                return (
+                                  <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 14px 5px 28px",
+                                    borderLeft:"2px solid rgba(255,255,255,0.08)",marginLeft:12,
+                                    background:"rgba(255,255,255,0.015)"}}>
+                                    <span style={{fontSize:11,color:"rgba(255,255,255,0.2)",flexShrink:0}}>↪</span>
+                                    <span style={{flex:1,fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"}}>{plannedSub.subName}</span>
+                                    {plannedSub.minute&&<span style={{fontSize:9,fontWeight:700,color:"#F5BE00",background:"rgba(245,190,0,0.1)",borderRadius:3,padding:"1px 6px",flexShrink:0}}>{plannedSub.minute}&prime;</span>}
+                                    {sa>0&&<span style={{fontSize:9,fontWeight:900,color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)",borderRadius:3,padding:"1px 5px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>&#x1F464;{sa}</span>}
+                                    {sg>0&&<span style={{fontSize:9,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 5px",fontFamily:"'Rajdhani',sans-serif",flexShrink:0}}>&#x26BD;{sg}</span>}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          );
+                        })}
                     </div>
 
                     {/* Subs shown inline under their starters above */}
