@@ -144,9 +144,10 @@ var CSS = [
   "  .pc{flex:1;min-height:0;padding:0;background:#131313;align-items:stretch;justify-content:flex-start;overflow:hidden;}",
   "  .pw{flex:1;min-height:0;width:auto;aspect-ratio:65/100;max-width:100%;margin:0 auto;max-height:100%;}",
   "  .d-hdr,.d-bar{display:none!important;}",
-  "  .mob-ctrl{display:flex;flex-direction:column;flex-shrink:0;background:#1E1E1E;border-top:1px solid rgba(255,255,255,0.08);}",
+  "  .mob-ctrl{display:flex;flex-direction:column;flex-shrink:0;background:#1E1E1E;border-top:1px solid rgba(255,255,255,0.08);padding-bottom:max(env(safe-area-inset-bottom,0px),12px);}",
   "  .mob-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.08);background:#111111;}",
-  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:64px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scrollbar-width:none;width:100%;scroll-padding-bottom:48px;}",
+  "  .mob-panel{display:flex;align-items:flex-start;justify-content:center;min-height:64px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scrollbar-width:none;width:100%;scroll-padding-bottom:96px;padding-bottom:max(env(safe-area-inset-bottom,16px),80px);}",
+  "  .scroll-safe{padding-bottom:max(env(safe-area-inset-bottom,16px),96px)!important;}",
   "}",
   "@media(max-width:639px){.nav-sec{display:none!important}.nav-more{display:flex!important}}",
   "@media(min-width:768px) and (max-width:1099px){.ps{grid-template-columns:172px 1fr 168px}}",
@@ -592,6 +593,22 @@ export default function FCRoster() {
     }
     setSubs(nextSubs);
     if(savedId) persistSubs(savedId, nextSubs);
+  }
+
+  // Match-scoped variant: toggles a sub directly on a saved match row (without touching pitch state).
+  // Used when the Profile roster is viewing a team that isn't currently on the pitch.
+  function toggleQuickSubOnMatch(starter, match) {
+    if(!user){ setShowAuth(true); return; }
+    if(!match || !match.id) return;
+    var existingSubs = (match.subs || []).slice();
+    var existingIdx = existingSubs.findIndex(function(s){return s.playerId===starter.id;});
+    var nextSubs;
+    if(existingIdx >= 0) {
+      nextSubs = existingSubs.filter(function(s,i){return i!==existingIdx;});
+    } else {
+      nextSubs = existingSubs.concat([{playerId: starter.id, subName:"", minute:""}]);
+    }
+    persistSubs(match.id, nextSubs);
   }
 
   // Wrapper for the pitch-tab goal +/− buttons. Updates editingScorers locally
@@ -2308,7 +2325,29 @@ export default function FCRoster() {
             </div>
 
             <div className="mob-ctrl">
-              {/* ── Persistent 3-pill nav bar ── */}
+              {/* Drawer handle -- tap to toggle full-screen pitch. Dead center, prominent chevron.
+                  Collapsed: up-chevron "pull up to reveal menu". Expanded: down-chevron "pull down to hide". */}
+              <button onClick={function(){
+                  if(sheetTab==="collapsed") setSheetTab("pitch");
+                  else setSheetTab("collapsed");
+                  if(navigator.vibrate) navigator.vibrate(8);
+                }}
+                style={{
+                  width:"100%",padding:"6px 0 5px",background:"#0F0F0F",
+                  border:"none",borderBottom:"1px solid rgba(255,255,255,0.05)",
+                  cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
+                  WebkitTapHighlightColor:"transparent",gap:8,
+                }}
+                title={sheetTab==="collapsed"?"Expand menu":"Collapse menu (full-screen pitch)"}
+                aria-label={sheetTab==="collapsed"?"Expand menu":"Collapse menu"}>
+                <div style={{width:40,height:4,borderRadius:2,background:sheetTab==="collapsed"?"rgba(200,255,0,0.5)":"rgba(255,255,255,0.22)",transition:"background 0.15s"}}/>
+                <span style={{fontSize:11,fontWeight:800,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.12em",color:sheetTab==="collapsed"?"rgba(200,255,0,0.85)":"rgba(255,255,255,0.42)",textTransform:"uppercase",display:"inline-flex",alignItems:"center",gap:4}}>
+                  {sheetTab==="collapsed" ? "\u2303 Menu" : "\u2304 Full Pitch"}
+                </span>
+                <div style={{width:40,height:4,borderRadius:2,background:sheetTab==="collapsed"?"rgba(200,255,0,0.5)":"rgba(255,255,255,0.22)",transition:"background 0.15s"}}/>
+              </button>
+
+              {/* -- Persistent 3-pill nav bar -- */}
               <div style={{
                 display:"flex",alignItems:"center",justifyContent:"space-between",
                 padding:"8px 12px",background:"#131313",flexShrink:0,
@@ -2861,7 +2900,7 @@ export default function FCRoster() {
                           <div style={{fontWeight:700,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:T.volt,display:"flex",alignItems:"center",gap:8}}>
                             <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>Full Roster{sourceTeam?" \u00b7 "+sourceTeam:""}</span>
                             {rosterSource==="saved" && (
-                              <span style={{fontSize:8,fontWeight:700,letterSpacing:"0.12em",padding:"2px 6px",borderRadius:3,border:"1px solid rgba(255,255,255,0.2)",color:T.ghost,background:"rgba(255,255,255,0.03)"}}>READ-ONLY</span>
+                              <span style={{fontSize:8,fontWeight:700,letterSpacing:"0.12em",padding:"2px 6px",borderRadius:3,border:"1px solid rgba(255,255,255,0.2)",color:T.ghost,background:"rgba(255,255,255,0.03)"}}>SNAPSHOT</span>
                             )}
                           </div>
                           <div style={{fontSize:10,color:T.ghost,fontFamily:"'Poppins',sans-serif",marginTop:2}}>
@@ -2869,7 +2908,7 @@ export default function FCRoster() {
                           </div>
                           {rosterSource==="saved" && sourceMatch && (
                             <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif",marginTop:4,fontStyle:"italic"}}>
-                              From match: {sourceMatch.title||"untitled"} \u00b7 load on pitch to edit
+                              From match: {sourceMatch.title||"untitled"} \u00b7 tap SUB to log; load on pitch for full edits
                             </div>
                           )}
                         </div>
@@ -2898,11 +2937,15 @@ export default function FCRoster() {
                                   <div style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name||p.n} <span style={{color:T.ghost,fontWeight:400,fontSize:10}}>{p.n}</span></div>
                                   <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{footLabel} &bull; {skillLabel}{p.age?" \u00b7 Age "+p.age:""}</div>
                                 </div>
-                                {/* Quick sub toggle -- only when editing pitch state (not read-only saved snapshot) */}
-                                {!readOnly && (function(){
-                                  var hasSub = subs.some(function(s){return s.playerId===p.id;});
+                                {/* Quick sub toggle -- works on both live pitch and saved-match rosters. */}
+                                {(function(){
+                                  var hasSub = displaySubs.some(function(s){return s.playerId===p.id;});
                                   return (
-                                    <button onClick={function(e){e.stopPropagation();toggleQuickSub(p);}}
+                                    <button onClick={function(e){
+                                        e.stopPropagation();
+                                        if(readOnly) { toggleQuickSubOnMatch(p, sourceMatch); }
+                                        else { toggleQuickSub(p); }
+                                      }}
                                       title={hasSub?"Remove planned sub for this starter":"Mark a sub for this starter (name later)"}
                                       style={{
                                         fontSize:9,fontWeight:800,letterSpacing:"0.08em",fontFamily:"'Rajdhani',sans-serif",
