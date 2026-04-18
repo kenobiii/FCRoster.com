@@ -2308,8 +2308,8 @@ export default function FCRoster() {
       <header style={{background:T.nav,borderBottom:"1px solid "+T.b,display:"flex",alignItems:"center",padding:"0 16px",height:50,flexShrink:0,zIndex:50}}>
 
         {/* Logo */}
-        <div onClick={function(){setTab("pitch");}} style={{display:"flex",alignItems:"center",gap:7,flexShrink:0,cursor:"pointer",marginRight:20}}>
-          <span style={{fontSize:20,lineHeight:1}}>&#x26BD;</span>
+        <div onClick={function(){setTab("pitch");}} style={{display:"flex",alignItems:"center",gap:9,flexShrink:0,cursor:"pointer",marginRight:20}}>
+          <img src="/fcr_mark.png" alt="" aria-hidden="true" style={{width:30,height:30,objectFit:"contain",flexShrink:0,filter:"drop-shadow(0 2px 4px rgba(0,0,0,0.5))"}}/>
           <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",lineHeight:1}}>
             <span style={{fontWeight:700,fontSize:16,letterSpacing:"0.08em",lineHeight:1,fontFamily:"'Rajdhani',sans-serif"}}>
               <span style={{color:T.volt}}>FC</span>
