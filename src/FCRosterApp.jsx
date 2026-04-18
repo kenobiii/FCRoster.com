@@ -165,6 +165,9 @@ var CSS = [
   ".btn-volt-outline:hover{background:rgba(200,255,0,0.14);border-color:rgba(200,255,0,0.55);}",
   ".btn-yellow-outline{background:rgba(255,214,10,0.08);color:#FFD60A;border:1px solid rgba(255,214,10,0.3);}",
   ".btn-yellow-outline:hover{background:rgba(255,214,10,0.14);border-color:rgba(255,214,10,0.55);}",
+  ".btn-white-outline{background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.3);}",
+  ".btn-white-outline:hover{background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.55);}",
+  ".btn-white-outline:disabled{opacity:0.28;cursor:not-allowed;}",
   ".btn-sm{padding:5px 12px;font-size:10px;}",
   ".btn-md{padding:8px 16px;font-size:11px;}",
   ".btn-lg{padding:12px 24px;font-size:14px;}",
@@ -363,7 +366,7 @@ export default function FCRoster() {
   var [historyLen, setHistoryLen] = useState(0);
   var historyRef = useRef([]);
   var [ballPos,   setBallPos]   = useState(null);
-  var [title,     setTitle]     = useState("My FCRoster");
+  var [title,     setTitle]     = useState("");
   var [titleEdited,setTitleEdited]= useState(false); // true if user manually typed a title
 
   // Auto-generate title from team + date
@@ -416,7 +419,7 @@ export default function FCRoster() {
           setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
           setLines([]);
           setBallPos(null);
-          setTitle("My FCRoster");
+          setTitle("");
           loadFormations().then(setSavedFormations).catch(function(){});
           setTimeout(loadSquad, 200); // pre-fill pitch from saved squad
         }
@@ -433,7 +436,7 @@ export default function FCRoster() {
         setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
         setLines([]);
         setBallPos(null);
-        setTitle("My FCRoster");
+        setTitle("");
       }
     });
     return function() { subscription.unsubscribe(); };
@@ -650,7 +653,7 @@ export default function FCRoster() {
     setPlayers(FORMATIONS["11v11"]["4-3-3"].map(function(p){return Object.assign({},p);}));
     setLines([]);
     setBallPos(null);
-    setTitle("My FCRoster");
+    setTitle("");
   }, []);
 
 
@@ -1307,8 +1310,8 @@ export default function FCRoster() {
 
     return (
       <div style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:compact?"5px 0":"0"}}>
-        <button onClick={doUndo} className={"btn btn-secondary "+sz}
-          style={{flex:1,opacity:canUndo?1:0.28,gap:5,border:canUndo?"1px solid rgba(255,255,255,0.18)":"1px solid rgba(255,255,255,0.06)",fontWeight:canUndo?700:400}} title="Undo" disabled={!canUndo}>
+        <button onClick={doUndo} className={"btn btn-white-outline "+sz}
+          style={{flex:1,gap:5,fontWeight:700}} title="Undo" disabled={!canUndo}>
           <span style={{fontSize:14,fontWeight:700}}>&#x21BA;</span>
           <span>Undo</span>
         </button>
@@ -1949,8 +1952,8 @@ export default function FCRoster() {
                   ) : (
                     <button onClick={function(e){e.stopPropagation();setEditTitle(true);}}
                       style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",padding:"5px 14px",borderRadius:5,border:"1px solid rgba(200,255,0,0.3)",background:"rgba(200,255,0,0.05)",transition:"all 0.15s",outline:"none",pointerEvents:"all"}}>
-                      <span style={{fontSize:14,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:title==="My FCRoster"?T.volt:T.text,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                        {title==="My FCRoster"?"Click to name your squad":title}
+                      <span style={{fontSize:14,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:!title||!title.trim()?T.volt:T.text,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                        {!title||!title.trim()?"Click to name your squad":title}
                       </span>
                       <span style={{fontSize:12,color:"rgba(200,255,0,0.4)",flexShrink:0}}>&#x270E;</span>
                     </button>
