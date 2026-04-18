@@ -3699,67 +3699,94 @@ export default function FCRoster() {
         </div>
       )}
       {/* Result modal — shown after saving a lineup */}
-      {resultModal&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)"}}
-          onClick={function(e){if(e.target===e.currentTarget){setResultModal(null);notify("Lineup saved!");}}}>
-          <div style={{background:"#1A1A1A",border:"1px solid "+T.bhi,borderTop:"2px solid "+T.volt,borderRadius:10,padding:22,width:"100%",maxWidth:300}} className="fu">
-            {/* Header */}
-            <div style={{textAlign:"center",marginBottom:16}}>
-              <div style={{fontSize:11,fontWeight:700,letterSpacing:"0.16em",color:T.volt,fontFamily:"'Rajdhani',sans-serif",marginBottom:6}}>
-                &#x2713; LINEUP SAVED
+      {resultModal&&(function(){
+        // Auto-derive W/D/L from score. Runs live as user types.
+        var sf = pendingResult.scoreFor;
+        var sa = pendingResult.scoreAgainst;
+        var hasScore = sf!=="" && sf!=null && sa!=="" && sa!=null;
+        var derived = null;
+        if(hasScore){
+          var nF = parseInt(sf)||0;
+          var nA = parseInt(sa)||0;
+          derived = nF>nA ? "W" : nF<nA ? "L" : "D";
+        }
+        var derivedColor = derived==="W" ? "#22CC44" : derived==="L" ? "#F02040" : derived==="D" ? "#F5BE00" : T.ghost;
+        var derivedBg    = derived==="W" ? "rgba(34,204,68,0.12)" : derived==="L" ? "rgba(240,32,64,0.12)" : derived==="D" ? "rgba(245,190,0,0.12)" : "transparent";
+
+        function saveAndClose(){
+          // Stamp the derived result before saving, and preserve any goals logged pre-save
+          var toSave = Object.assign({}, pendingResult, { result: derived || "" });
+          saveResult(resultModal.id, toSave, editingScorers);
+          setResultModal(null);
+          setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
+          notify("Result saved!");
+        }
+        function skipAndClose(){
+          setResultModal(null);
+          setPendingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});
+          notify("Lineup saved!");
+        }
+
+        return (
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)"}}
+            onClick={function(e){if(e.target===e.currentTarget){skipAndClose();}}}>
+            <div style={{background:"#1A1A1A",border:"1px solid "+T.bhi,borderTop:"2px solid "+T.volt,borderRadius:10,padding:22,width:"100%",maxWidth:320}} className="fu">
+              {/* Header */}
+              <div style={{textAlign:"center",marginBottom:16}}>
+                <div style={{fontSize:11,fontWeight:700,letterSpacing:"0.16em",color:T.volt,fontFamily:"'Rajdhani',sans-serif",marginBottom:6}}>
+                  &#x2713; Lineup Saved
+                </div>
+                <div style={{fontSize:11,color:T.ghost,fontFamily:"'Poppins',sans-serif",lineHeight:1.6}}>
+                  Add the final score, or skip and add it later from Profile.
+                </div>
               </div>
-              <div style={{fontSize:11,color:T.ghost,fontFamily:"'Poppins',sans-serif",lineHeight:1.6}}>
-                Add the result after the game.<br/>You can always find this on your profile.
-              </div>
-            </div>
-            {/* W / D / L — tap to start entering result */}
-            <div style={{display:"flex",gap:8,marginBottom:14}}>
-              {[["W","#22CC44","Win"],["D","#F5BE00","Draw"],["L","#F02040","Loss"]].map(function(item){
-                var active=pendingResult.result===item[0];
-                return (
-                  <button key={item[0]} onClick={function(){setPendingResult(function(p){return Object.assign({},p,{result:item[0]});});}}
-                    style={{flex:1,height:48,borderRadius:6,border:"2px solid "+(active?item[1]:T.b),
-                      background:active?"rgba(255,255,255,0.06)":"transparent",
-                      color:active?item[1]:"rgba(255,255,255,0.28)",
-                      fontFamily:"'Rajdhani',sans-serif",fontWeight:900,fontSize:18,cursor:"pointer",
-                      transition:"all 0.12s",WebkitTapHighlightColor:"transparent"}}>
-                    {item[0]}
-                    <div style={{fontSize:8,fontWeight:600,letterSpacing:"0.1em",marginTop:2,opacity:0.7}}>{item[2]}</div>
-                  </button>
-                );
-              })}
-            </div>
-            {/* Score + opponent — only revealed after W/D/L tapped */}
-            {pendingResult.result&&(
-              <div className="fu">
-                <div style={{display:"flex",gap:8,marginBottom:10,alignItems:"center"}}>
+
+              {/* Score entry -- primary interaction */}
+              <div style={{marginBottom:10}}>
+                <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.16em",color:T.faint,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",marginBottom:5,textAlign:"center"}}>
+                  Final Score
+                </div>
+                <div style={{display:"flex",gap:10,alignItems:"center"}}>
                   <input type="number" min="0" max="99" placeholder="0" value={pendingResult.scoreFor}
                     onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{scoreFor:e.target.value});});}}
-                    style={{flex:1,textAlign:"center",fontSize:22,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"6px 0"}}/>
-                  <span style={{color:T.ghost,fontWeight:700,fontSize:16}}>–</span>
+                    style={{flex:1,textAlign:"center",fontSize:28,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"10px 0",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:6,color:T.text}}/>
+                  <span style={{color:T.ghost,fontWeight:700,fontSize:18}}>&ndash;</span>
                   <input type="number" min="0" max="99" placeholder="0" value={pendingResult.scoreAgainst}
                     onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{scoreAgainst:e.target.value});});}}
-                    style={{flex:1,textAlign:"center",fontSize:22,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"6px 0"}}/>
+                    style={{flex:1,textAlign:"center",fontSize:28,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",padding:"10px 0",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:6,color:T.text}}/>
                 </div>
-                <input value={pendingResult.opponent} placeholder="vs Opponent (optional)"
-                  onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{opponent:e.target.value});});}}
-                  style={{marginBottom:12}}/>
-                <button className="btn btn-primary btn-sm" style={{width:"100%",marginBottom:8}}
-                  onClick={function(){
-                    saveResult(resultModal.id, pendingResult);
-                    setResultModal(null);
-                    notify("Result saved!");
-                  }}>Save Result</button>
+                <div style={{display:"flex",justifyContent:"space-between",marginTop:3,padding:"0 4px"}}>
+                  <span style={{fontSize:8,color:T.faint,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",textTransform:"uppercase"}}>You</span>
+                  <span style={{fontSize:8,color:T.faint,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",textTransform:"uppercase"}}>Opponent</span>
+                </div>
               </div>
-            )}
-            {/* Done / skip — most prominent action */}
-            <button className="btn btn-secondary btn-sm" style={{width:"100%"}}
-              onClick={function(){setResultModal(null);}}>
-              {pendingResult.result?"Cancel":"Done — add result after the game"}
-            </button>
+
+              {/* Opponent name (optional) */}
+              <input value={pendingResult.opponent} placeholder="vs opponent (optional)"
+                onChange={function(e){setPendingResult(function(p){return Object.assign({},p,{opponent:e.target.value});});}}
+                style={{width:"100%",marginBottom:10,padding:"7px 10px",fontSize:12,fontFamily:"'Poppins',sans-serif",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:5,color:T.text,outline:"none"}}/>
+
+              {/* Live derived result badge -- appears once scores entered */}
+              <div style={{height:28,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:12}}>
+                {derived && (
+                  <span style={{fontSize:11,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",padding:"4px 12px",borderRadius:4,background:derivedBg,color:derivedColor,border:"1px solid "+derivedColor+"55"}}>
+                    {derived} {parseInt(pendingResult.scoreFor)||0}&ndash;{parseInt(pendingResult.scoreAgainst)||0}
+                  </span>
+                )}
+              </div>
+
+              {/* Actions -- equal weight, side by side */}
+              <div style={{display:"flex",gap:8}}>
+                <button className="btn btn-secondary btn-sm" style={{flex:1,fontWeight:700}}
+                  onClick={skipAndClose}>Skip</button>
+                <button className="btn btn-primary btn-sm" style={{flex:2,fontWeight:900,opacity:hasScore?1:0.45}}
+                  disabled={!hasScore}
+                  onClick={saveAndClose}>Save Result</button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {editP&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)"}}
