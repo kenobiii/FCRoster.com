@@ -943,6 +943,25 @@ export default function FCRoster() {
     if (showOpp) { setOppFmt(k); setOppList(fs[k].map(function(p){return Object.assign({},p,{y:100-p.y});})); }
   }
 
+  // Commit any text typed into the floating inline-name input into the players array,
+  // then close the float. Used by the input's onBlur/Enter AND by the pitch SVG mousedown
+  // (which on desktop would otherwise race the input's onBlur and discard typed text).
+  function commitInlineName() {
+    if (!inlineName) return;
+    var nm = inlineName.name || "";
+    var id = inlineName.id;
+    setPlayers(function(prev){
+      return prev.map(function(x){
+        return x.id===id ? Object.assign({}, x, {name: nm}) : x;
+      });
+    });
+    if (nm.trim()) {
+      if (window.gtag) window.gtag("event","player_name_saved",{formation:formation,gameFmt:gameFmt});
+      setHasNamedAny(true);
+    }
+    setInlineName(null);
+  }
+
   // Position family mapping -- groups roles so a CB stays a CB across formations, LB finds a wingback, etc.
   function positionFamily(n) {
     var s = String(n||"").toUpperCase();
@@ -1622,7 +1641,7 @@ export default function FCRoster() {
           textRendering:"optimizeLegibility",
           cursor: dragId!==null ? "grabbing" : tool==="drag" ? "grab" : tool ? "crosshair" : "default"
         }}
-        onMouseDown={function(e){if(inlineName)setInlineName(null);svgDown(e);}} onMouseMove={svgMove} onMouseUp={svgUp} onMouseLeave={svgUp}
+        onMouseDown={function(e){if(inlineName)commitInlineName();svgDown(e);}} onMouseMove={svgMove} onMouseUp={svgUp} onMouseLeave={svgUp}
         onTouchEnd={svgUp}>
         <defs>
           
@@ -3928,24 +3947,10 @@ export default function FCRoster() {
             placeholder={inlineName.pos||"Name..."}
             onChange={function(e){setInlineName(function(s){return Object.assign({},s,{name:e.target.value});});}}
             onKeyDown={function(e){
-              if(e.key==="Enter"){
-                setPlayers(function(prev){return prev.map(function(x){return x.id===inlineName.id?Object.assign({},x,{name:inlineName.name}):x;});});
-                if(inlineName.name&&inlineName.name.trim()){
-                  if(window.gtag) window.gtag("event","player_name_saved",{formation:formation,gameFmt:gameFmt});
-                  setHasNamedAny(true);
-                }
-                setInlineName(null);
-              }
-              if(e.key==="Escape"){setInlineName(null);}
+              if(e.key==="Enter"){ commitInlineName(); }
+              if(e.key==="Escape"){ setInlineName(null); }
             }}
-            onBlur={function(){
-              setPlayers(function(prev){return prev.map(function(x){return x.id===inlineName.id?Object.assign({},x,{name:inlineName.name}):x;});});
-              if(inlineName.name&&inlineName.name.trim()){
-                if(window.gtag) window.gtag("event","player_name_saved",{formation:formation,gameFmt:gameFmt});
-                setHasNamedAny(true);
-              }
-              setInlineName(null);
-            }}
+            onBlur={commitInlineName}
             style={{
               width:140,
               background:"rgba(10,10,10,0.92)",
