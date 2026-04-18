@@ -1474,29 +1474,6 @@ export default function FCRoster() {
               <path d="M 0,82 C 10,84 22,80 32,83 S 54,85 65,82"/>
               <path d="M 0,94 C 14,92 24,96 34,93 S 52,91 65,95"/>
             </g>
-            {/* Damp patches — darker spots suggesting wet sand */}
-            <ellipse cx="18" cy="35" rx="8" ry="4" fill="#8A6838" opacity="0.22"/>
-            <ellipse cx="46" cy="62" rx="7" ry="3.5" fill="#8A6838" opacity="0.20"/>
-            <ellipse cx="28" cy="78" rx="6" ry="3" fill="#7A5A30" opacity="0.18"/>
-            {/* Footprint pairs — scattered trails */}
-            <g fill="#8A6838" opacity="0.40">
-              <ellipse cx="10" cy="20" rx="0.9" ry="1.4"/>
-              <ellipse cx="12" cy="23" rx="0.9" ry="1.4"/>
-              <ellipse cx="24" cy="45" rx="0.9" ry="1.4"/>
-              <ellipse cx="26" cy="48" rx="0.9" ry="1.4"/>
-              <ellipse cx="50" cy="18" rx="0.9" ry="1.4"/>
-              <ellipse cx="52" cy="21" rx="0.9" ry="1.4"/>
-              <ellipse cx="42" cy="72" rx="0.9" ry="1.4"/>
-              <ellipse cx="44" cy="75" rx="0.9" ry="1.4"/>
-              <ellipse cx="8" cy="58" rx="0.9" ry="1.4"/>
-              <ellipse cx="10" cy="61" rx="0.9" ry="1.4"/>
-              <ellipse cx="38" cy="30" rx="0.9" ry="1.4"/>
-              <ellipse cx="40" cy="33" rx="0.9" ry="1.4"/>
-              <ellipse cx="55" cy="85" rx="0.9" ry="1.4"/>
-              <ellipse cx="57" cy="88" rx="0.9" ry="1.4"/>
-              <ellipse cx="15" cy="88" rx="0.9" ry="1.4"/>
-              <ellipse cx="17" cy="91" rx="0.9" ry="1.4"/>
-            </g>
           </g>
         )}
 
@@ -2564,44 +2541,53 @@ export default function FCRoster() {
                                 {(function(){
                                   var cg = careerGoals(p.id);
                                   var ca = careerAssists(p.id);
-                                  var btnStyle = {
-                                    width:18,height:18,borderRadius:"50%",fontSize:14,lineHeight:1,
+                                  var minusBtn = {
+                                    width:18,height:18,borderRadius:"50%",fontSize:12,lineHeight:1,
                                     cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
                                     fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,
-                                    WebkitTapHighlightColor:"transparent"
-                                  };
-                                  var minusBtn = Object.assign({}, btnStyle, {
-                                    fontSize:12, background:"rgba(255,255,255,0.06)",
+                                    WebkitTapHighlightColor:"transparent",
+                                    background:"rgba(255,255,255,0.06)",
                                     border:"1px solid rgba(255,255,255,0.1)",
                                     color:"rgba(255,255,255,0.4)"
-                                  });
-                                  var goalPlus = Object.assign({}, btnStyle, {
-                                    background:"rgba(200,255,0,0.1)",
-                                    border:"1px solid rgba(200,255,0,0.25)",
-                                    color:"rgba(200,255,0,0.7)"
-                                  });
-                                  var assistPlus = Object.assign({}, btnStyle, {
-                                    background:"rgba(90,180,255,0.1)",
-                                    border:"1px solid rgba(90,180,255,0.25)",
-                                    color:"rgba(150,200,255,0.8)"
-                                  });
+                                  };
                                   var assistMinus = Object.assign({}, minusBtn, {
                                     background:"rgba(255,255,255,0.04)"
                                   });
+                                  // Pill-shaped plus buttons with sport icon always visible
+                                  var plusBtnBase = {
+                                    height:20,borderRadius:10,padding:"0 8px",fontSize:11,lineHeight:1,
+                                    cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:3,
+                                    fontFamily:"'Rajdhani',sans-serif",fontWeight:800,flexShrink:0,
+                                    WebkitTapHighlightColor:"transparent",whiteSpace:"nowrap"
+                                  };
+                                  var goalPlus = Object.assign({}, plusBtnBase, {
+                                    background:"rgba(200,255,0,0.1)",
+                                    border:"1px solid rgba(200,255,0,0.3)",
+                                    color:"#C8FF00"
+                                  });
+                                  var assistPlus = Object.assign({}, plusBtnBase, {
+                                    background:"rgba(90,180,255,0.1)",
+                                    border:"1px solid rgba(90,180,255,0.3)",
+                                    color:"rgba(150,200,255,0.95)"
+                                  });
                                   return (
                                     <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}
-                                      title="Adjusts most recent match's stats">
+                                      title="Log a goal or assist to this player's most recent match">
                                       {/* Goals cluster */}
                                       <div style={{display:"flex",alignItems:"center",gap:2}}>
-                                        {cg>0&&<span style={{fontSize:8,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif"}}>&#x26BD;{cg}</span>}
-                                        {cg>0&&<button onClick={function(e){e.stopPropagation();adjustCareerStat(p,"goals",false);}} style={minusBtn}>−</button>}
-                                        <button onClick={function(e){e.stopPropagation();adjustCareerStat(p,"goals",true);if(navigator.vibrate)navigator.vibrate(5);}} style={goalPlus}>+</button>
+                                        {cg>0&&<span style={{fontSize:9,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"2px 5px",fontFamily:"'Rajdhani',sans-serif"}}>&#x26BD;{cg}</span>}
+                                        {cg>0&&<button title="Remove a goal" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"goals",false);}} style={minusBtn}>&minus;</button>}
+                                        <button title="Add a goal to most recent match" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"goals",true);if(navigator.vibrate)navigator.vibrate(5);}} style={goalPlus}>
+                                          <span style={{fontSize:10}}>&#x26BD;</span><span style={{fontSize:11,fontWeight:900}}>+</span>
+                                        </button>
                                       </div>
                                       {/* Assists cluster */}
                                       <div style={{display:"flex",alignItems:"center",gap:2}}>
-                                        {ca>0&&<span style={{fontSize:8,fontWeight:900,color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)",borderRadius:3,padding:"1px 4px",fontFamily:"'Rajdhani',sans-serif"}}>&#x1F464;{ca}</span>}
-                                        {ca>0&&<button onClick={function(e){e.stopPropagation();adjustCareerStat(p,"assists",false);}} style={assistMinus}>−</button>}
-                                        <button onClick={function(e){e.stopPropagation();adjustCareerStat(p,"assists",true);if(navigator.vibrate)navigator.vibrate(5);}} style={assistPlus}>+</button>
+                                        {ca>0&&<span style={{fontSize:9,fontWeight:900,color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)",borderRadius:3,padding:"2px 5px",fontFamily:"'Rajdhani',sans-serif"}}>&#x1F464;{ca}</span>}
+                                        {ca>0&&<button title="Remove an assist" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"assists",false);}} style={assistMinus}>&minus;</button>}
+                                        <button title="Add an assist to most recent match" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"assists",true);if(navigator.vibrate)navigator.vibrate(5);}} style={assistPlus}>
+                                          <span style={{fontSize:10}}>&#x1F464;</span><span style={{fontSize:11,fontWeight:900}}>+</span>
+                                        </button>
                                       </div>
                                     </div>
                                   );
@@ -2789,15 +2775,18 @@ export default function FCRoster() {
                                       if(savedId===deletedId) setSavedId(null);
                                       // Backend call — if it fails, restore and surface the error
                                       deleteFormation(deletedId).then(function(){
-                                        // Refresh from DB to confirm & stay in sync
-                                        loadFormations().then(setSavedFormations).catch(function(e){
-                                          console.error("Delete succeeded but reload failed:",e);
-                                        });
+                                        return loadFormations();
+                                      }).then(function(fresh){
+                                        var stillThere = fresh.find(function(x){return x.id===deletedId;});
+                                        if(stillThere){
+                                          console.warn("[DELETE] row still in database after delete — likely RLS mismatch for id",deletedId);
+                                          notify("Couldn't delete — this row may belong to a different account.");
+                                        }
+                                        setSavedFormations(fresh);
                                       }).catch(function(e){
-                                        console.error("Delete failed for id",deletedId,":",e);
-                                        // Rollback: restore the row
+                                        console.error("[DELETE] failed for id",deletedId,":",e);
                                         setSavedFormations(previousFormations);
-                                        notify("Couldn't delete: "+(e&&e.message?e.message:"unknown error")+" (see console)");
+                                        notify("Couldn't delete: "+(e&&e.message?e.message:"unknown error"));
                                       });
                                     }}>&#x2715;</button>
                                 </div>
@@ -2845,11 +2834,11 @@ export default function FCRoster() {
                           return (
                             <div style={{border:"1px solid "+T.b,borderRadius:8,overflow:"hidden"}}>
                               <div onClick={function(){setExpandedSections(function(prev){var nxt=Object.assign({},prev);nxt[sectionKey]=isOpen?false:true;return nxt;});}}
-                                style={{padding:"10px 14px",borderBottom:isOpen?"1px solid "+T.b:"none",display:"flex",alignItems:"center",justifyContent:"space-between",background:T.raised,cursor:"pointer",userSelect:"none"}}>
+                                style={{padding:"12px 14px",borderBottom:isOpen?"1px solid rgba(200,255,0,0.15)":"none",display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(200,255,0,0.07)",cursor:"pointer",userSelect:"none"}}>
                                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                                  <span style={{fontSize:10,color:T.ghost,flexShrink:0,display:"inline-block",transform:isOpen?"rotate(90deg)":"rotate(0)",transition:"transform 0.12s"}}>&#x25B6;</span>
+                                  <span style={{fontSize:10,color:T.volt,flexShrink:0,display:"inline-block",transform:isOpen?"rotate(90deg)":"rotate(0)",transition:"transform 0.12s"}}>&#x25B6;</span>
                                   <span style={{width:3,height:14,background:accent,borderRadius:2}}/>
-                                  <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.16em",color:T.text,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"}}>
+                                  <span style={{fontSize:12,fontWeight:800,letterSpacing:"0.16em",color:T.text,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"}}>
                                     {title}{count>0?" ("+count+")":""}
                                   </span>
                                 </div>
