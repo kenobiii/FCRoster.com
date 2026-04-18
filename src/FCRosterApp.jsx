@@ -395,7 +395,7 @@ export default function FCRoster() {
   var [savedId,   setSavedId]   = useState(null);
   var [squad,     setSquad]     = useState(null);   // persistent squad from DB
   var [teamName,  setTeamName]  = useState("");
-  // Save-needs-name banner: appears when user tries to Save Roster with empty team name
+  // Save-needs-name banner: appears when user tries to Save Match with empty team name
   var [needsNameBanner,setNeedsNameBanner] = useState(false);
   var [bannerTeamName,setBannerTeamName] = useState("");
   // Profile page UI state
@@ -529,7 +529,7 @@ export default function FCRoster() {
     if(!user){ setShowAuth(true); return; }
     if(!savedId){
       // No match to log goals into — trigger save flow
-      notify("Save your roster first to log goals.");
+      notify("Save this match first to log goals.");
       doSaveRoster();
       return;
     }
@@ -1383,15 +1383,15 @@ export default function FCRoster() {
           <span style={{fontSize:14}}>&#x21BA;</span>
           <span>Reset</span>
         </button>
-        {/* Save Roster — primary CTA, always visible */}
+        {/* Save Match — primary CTA, always visible. Persists formation, players, drawings, subs, scorers, and result. */}
         <button onClick={doSaveRoster} className={"btn btn-primary "+sz}
           style={{flex:2,gap:5,fontWeight:900,
             boxShadow:user?"0 0 16px rgba(200,255,0,0.3)":"none",
             background:user?"#C8FF00":"rgba(200,255,0,0.3)",
             color:user?"#111":"rgba(0,0,0,0.5)",
-          }} title={user?"Save roster to profile":"Sign in to save"}>
+          }} title={user?"Save match to profile":"Sign in to save"}>
           <span style={{fontSize:13}}>&#x2193;</span>
-          <span>{savedId?"Update Roster":"Save Roster"}</span>
+          <span>{savedId?"Update Match":"Save Match"}</span>
         </button>
         <button onClick={doExport} className={"btn btn-yellow-outline "+sz}
           style={{flex:2,gap:5,fontWeight:800}}
@@ -2296,13 +2296,13 @@ export default function FCRoster() {
               {sheetTab==="pitch"&&(
                 <div className="mob-panel" style={{maxHeight:"min(65dvh,65vh)"}}>
                 <div style={{padding:"8px 12px 0",display:"flex",flexDirection:"column",gap:6,width:"100%"}}>
-                  {/* Save Roster CTA — top of pitch panel on mobile */}
+                  {/* Save Match CTA — top of pitch panel on mobile */}
                   <button onClick={doSaveRoster}
                     className="btn btn-primary btn-md" style={{width:"100%",gap:6,fontWeight:900,
                     boxShadow:user?"0 0 16px rgba(200,255,0,0.25)":"none",
                     opacity:user?1:0.5}}>
                     <span>&#x2193;</span>
-                    <span>{savedId?"Update Roster":"Save Roster"}</span>
+                    <span>{savedId?"Update Match":"Save Match"}</span>
                   </button>
                   {/* Compact surface / kit / opposition row */}
                   <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
@@ -2992,7 +2992,7 @@ export default function FCRoster() {
                               <div style={{border:"1px solid "+T.b,borderRadius:8,padding:"24px 20px",textAlign:"center"}}>
                                 <div style={{fontSize:28,opacity:0.2,marginBottom:8}}>&#x1F3F9;</div>
                                 <div style={{fontSize:13,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:4}}>No saves yet</div>
-                                <div style={{fontSize:11,color:T.sub,fontFamily:"'Poppins',sans-serif"}}>Build your squad on the pitch, name it, and hit Save Roster.</div>
+                                <div style={{fontSize:11,color:T.sub,fontFamily:"'Poppins',sans-serif"}}>Build your squad on the pitch, name it, and hit Save Match.</div>
                               </div>
                             )}
 
