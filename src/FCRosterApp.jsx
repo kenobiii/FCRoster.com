@@ -171,6 +171,10 @@ var CSS = [
   ".btn-sm{padding:5px 12px;font-size:10px;}",
   ".btn-md{padding:8px 16px;font-size:11px;}",
   ".btn-lg{padding:12px 24px;font-size:14px;}",
+  /* Clickable saved-card (match or play row on Profile page) */
+  ".saved-card{transition:background 0.13s;}",
+  ".saved-card:hover{background:rgba(200,255,0,0.04);}",
+  ".saved-card:active{background:rgba(200,255,0,0.08);}",
   /* Tab system */
   ".mob-tab-btn{flex:1;padding:11px 0;background:none;border:none;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.28);border-bottom:2px solid transparent;transition:color .13s,border-color .13s,background .13s;}",
   ".mob-tab-btn.active{color:#C8FF00;border-bottom-color:#C8FF00;background:rgba(200,255,0,0.04);}",
@@ -2326,8 +2330,26 @@ export default function FCRoster() {
                     <div style={{borderTop:"1px solid rgba(255,255,255,0.06)",paddingTop:6}}>
                       <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.16em",color:T.ghost,fontFamily:"'Rajdhani',sans-serif",marginBottom:5}}>MY LINEUPS</div>
                       <div style={{maxHeight:"min(26dvh,26vh)",overflowY:"auto",display:"flex",flexDirection:"column",gap:4,overscrollBehavior:"contain"}}>
-                        {savedFormations.map(function(f){return(
-                          <div key={f.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:5,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)"}}>
+                        {savedFormations.map(function(f){
+                          function loadThisLineup(){
+                            setTitle(f.title);setTitleEdited(true);setGameFmt(f.game_fmt);setFormation(f.formation);
+                            setSurface(f.surface||"grass");setPaletteId(f.palette_id||"unit");
+                            setPlayers((f.players||[]).map(function(p){return Object.assign({},p);}));
+                            setLines((f.lines||[]).map(function(ln){return Object.assign({},ln);}));
+                            setSubs((f.subs||[]).map(function(s){return Object.assign({},s);}));
+                            setPhases(f.phases||[null,null,null,null,null]);setBallPos(f.ball_pos||null);
+                            setShowOpp(!!f.show_opp);setOppFmt(f.opp_fmt||"4-3-3");
+                            setOppList(f.opp_list||[]);setOppColor(f.opp_color||"#EE2244");
+                            if(f.team_name) setTeamName(f.team_name);
+                            // Hydrate scorers so goal/assist badges appear on player circles after load
+                            setEditingScorers((f.scorers||[]).map(function(s){return Object.assign({},s);}));
+                            setSavedId(f.id);
+                            notify("Loaded: "+f.title);
+                          }
+                          return(
+                          <div key={f.id} onClick={loadThisLineup} className="saved-card"
+                               title="Tap to load onto the pitch"
+                               style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:5,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",cursor:"pointer"}}>
                             <div style={{flex:1,minWidth:0}}>
                               <div style={{display:"flex",alignItems:"center",gap:5}}>
                                 <span style={{fontSize:11,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</span>
@@ -2343,18 +2365,7 @@ export default function FCRoster() {
                                 {f.formation}{f.opponent&&" · vs "+f.opponent}{f.game_date&&" · "+new Date(f.game_date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}
                               </div>
                             </div>
-                            <button className="btn btn-volt-outline btn-sm" style={{flexShrink:0,fontSize:10,padding:"4px 10px"}}
-                              onClick={function(){
-                                setTitle(f.title);setGameFmt(f.game_fmt);setFormation(f.formation);
-                                setSurface(f.surface);setPaletteId(f.palette_id);
-                                setPlayers(f.players);setLines(f.lines||[]);setSubs(f.subs||[]);
-                                setPhases(f.phases||[null,null,null,null,null]);setBallPos(f.ball_pos||null);
-                                setShowOpp(f.show_opp||false);setOppFmt(f.opp_fmt||"4-4-2");
-                                setOppList(f.opp_list||[]);setOppColor(f.opp_color||"#EE2244");
-                                if(f.team_name) setTeamName(f.team_name);
-                                setSavedId(f.id);
-                                notify("Loaded: "+f.title);
-                              }}>Load</button>
+                            <span style={{fontSize:10,color:T.faint,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",flexShrink:0,userSelect:"none"}}>&rsaquo;</span>
                           </div>
                         );})}
                       </div>
@@ -2781,10 +2792,30 @@ export default function FCRoster() {
                           var resultColor = f.result==="W"?"#22CC44":f.result==="L"?"#F02040":"#F5BE00";
                           var resultBg = f.result==="W"?"rgba(34,204,68,0.12)":f.result==="L"?"rgba(240,32,64,0.12)":"rgba(245,190,0,0.12)";
                           var resultBorder = f.result==="W"?"rgba(34,204,68,0.4)":f.result==="L"?"rgba(240,32,64,0.4)":"rgba(245,190,0,0.4)";
+                          var isEditing = expandedResult===f.id;
+                          // Whole-card click target: loads this match/play onto the pitch. Skipped while
+                          // the inline result editor is open (avoids wiping unsaved edits if the user
+                          // taps outside the inputs but still inside the card header).
+                          function doLoad(){
+                            if(isEditing) return;
+                            setTitle(f.title);setTitleEdited(true);setGameFmt(f.game_fmt);setFormation(f.formation);
+                            setSurface(f.surface||"grass");setPaletteId(f.palette_id||"unit");
+                            setPlayers((f.players||[]).map(function(p){return Object.assign({},p);}));
+                            setLines((f.lines||[]).map(function(ln){return Object.assign({},ln);}));
+                            setSubs((f.subs||[]).map(function(s){return Object.assign({},s);}));
+                            setPhases(f.phases||[null,null,null,null,null]);setBallPos(f.ball_pos||null);
+                            setShowOpp(!!f.show_opp);setOppFmt(f.opp_fmt||"4-3-3");setOppList(f.opp_list||[]);setOppColor(f.opp_color||"#EE2244");
+                            if(f.team_name) setTeamName(f.team_name);
+                            // Hydrate editingScorers from this match so pitch badges and auto-persist target the right row
+                            setEditingScorers((f.scorers||[]).map(function(s){return Object.assign({},s);}));
+                            setSavedId(f.id);setTab("pitch");notify("Loaded: "+f.title);
+                          }
                           return (
                             <div key={f.id} style={{borderBottom:"1px solid "+T.b}}>
-                              <div style={{padding:"12px 14px"}}>
-                                {/* HEADER ROW — Date block, Title/Opponent, Result badge, Load/Delete */}
+                              <div onClick={doLoad} className={isEditing?"":"saved-card"}
+                                   title={isEditing?"":"Click to load onto the pitch"}
+                                   style={{padding:"12px 14px",cursor:isEditing?"default":"pointer"}}>
+                                {/* HEADER ROW — Date block, Title/Opponent, Result badge, Delete */}
                                 <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
                                   {/* Date block — left anchor */}
                                   {isPlay ? (
@@ -2810,12 +2841,12 @@ export default function FCRoster() {
                                         {f.title || "Untitled"}
                                       </span>
                                       {hasResult ? (
-                                        <span onClick={function(){setExpandedResult(expandedResult===f.id?null:f.id);setEditingResult({result:f.result||"",scoreFor:f.score_for!=null?String(f.score_for):"",scoreAgainst:f.score_against!=null?String(f.score_against):"",opponent:f.opponent||"",date:f.game_date||""});setEditingScorers((f.scorers||[]).map(function(s){return Object.assign({},s);}));setSubScorerInput("");}}
+                                        <span onClick={function(e){e.stopPropagation();setExpandedResult(expandedResult===f.id?null:f.id);setEditingResult({result:f.result||"",scoreFor:f.score_for!=null?String(f.score_for):"",scoreAgainst:f.score_against!=null?String(f.score_against):"",opponent:f.opponent||"",date:f.game_date||""});setEditingScorers((f.scorers||[]).map(function(s){return Object.assign({},s);}));setSubScorerInput("");}}
                                           style={{fontSize:10,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",padding:"3px 8px",borderRadius:4,flexShrink:0,cursor:"pointer",background:resultBg,color:resultColor,border:"1px solid "+resultBorder}}>
                                           {f.result}{f.score_for!=null?" "+f.score_for+"-"+f.score_against:""} &#x270E;
                                         </span>
                                       ) : !isPlay && (
-                                        <span onClick={function(){setExpandedResult(expandedResult===f.id?null:f.id);setEditingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});setEditingScorers([]);setSubScorerInput("");}}
+                                        <span onClick={function(e){e.stopPropagation();setExpandedResult(expandedResult===f.id?null:f.id);setEditingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});setEditingScorers([]);setSubScorerInput("");}}
                                           style={{fontSize:9,fontWeight:600,fontFamily:"'Poppins',sans-serif",color:"rgba(255,255,255,0.3)",cursor:"pointer",padding:"2px 7px",borderRadius:3,border:"1px dashed rgba(255,255,255,0.18)"}}>
                                           + add result
                                         </span>
@@ -2857,24 +2888,11 @@ export default function FCRoster() {
                                       </div>
                                     )}
                                   </div>
-                                  {/* Right column — Load/Delete */}
-                                  <div style={{display:"flex",flexDirection:"column",gap:5,flexShrink:0}}>
-                                    <button className="btn btn-volt-outline btn-sm" style={{fontSize:10,padding:"5px 12px",minWidth:60}}
-                                      onClick={function(){
-                                        setTitle(f.title);setTitleEdited(true);setGameFmt(f.game_fmt);setFormation(f.formation);
-                                        setSurface(f.surface||"grass");setPaletteId(f.palette_id||"unit");
-                                        setPlayers((f.players||[]).map(function(p){return Object.assign({},p);}));
-                                        setLines((f.lines||[]).map(function(ln){return Object.assign({},ln);}));
-                                        setSubs((f.subs||[]).map(function(s){return Object.assign({},s);}));
-                                        setPhases(f.phases||[null,null,null,null,null]);setBallPos(f.ball_pos||null);
-                                        setShowOpp(!!f.show_opp);setOppFmt(f.opp_fmt||"4-3-3");setOppList(f.opp_list||[]);setOppColor(f.opp_color||"#EE2244");
-                                        if(f.team_name) setTeamName(f.team_name);
-                                        // Hydrate editingScorers from this match so pitch badges and auto-persist target the right row
-                                        setEditingScorers((f.scorers||[]).map(function(s){return Object.assign({},s);}));
-                                        setSavedId(f.id);setTab("pitch");notify("Loaded: "+f.title);
-                                      }}>Load</button>
+                                  {/* Right column — Delete only (whole card is the load target) */}
+                                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5,flexShrink:0}}>
                                     <button className="btn btn-danger btn-sm" style={{fontSize:10,padding:"5px 12px",minWidth:60}}
-                                      onClick={function(){
+                                      onClick={function(e){
+                                        e.stopPropagation();
                                         if(!confirm("Delete \""+(f.title||"untitled")+"\"?")) return;
                                         var previousFormations = savedFormations;
                                         var deletedId = f.id;
@@ -2895,6 +2913,12 @@ export default function FCRoster() {
                                           notify("Couldn't delete: "+(e&&e.message?e.message:"unknown error"));
                                         });
                                       }}>&#x2715;</button>
+                                    {/* Subtle "tap to open" affordance — visible always so mobile users (no hover) see the cue */}
+                                    {!isEditing && (
+                                      <span style={{fontSize:9,color:T.faint,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",userSelect:"none"}}>
+                                        OPEN &rsaquo;
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               </div>
