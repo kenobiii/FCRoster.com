@@ -2781,11 +2781,24 @@ export default function FCRoster() {
                                     }}>Load</button>
                                   <button className="btn btn-danger btn-sm" style={{fontSize:10,padding:"4px 10px"}}
                                     onClick={function(){
-                                      if(!confirm("Delete \""+f.title+"\"?")) return;
-                                      deleteFormation(f.id).then(function(){
-                                        if(savedId===f.id) setSavedId(null);
-                                        return loadFormations().then(setSavedFormations);
-                                      }).catch(function(e){notify("Error: "+e.message);});
+                                      if(!confirm("Delete \""+(f.title||"untitled")+"\"?")) return;
+                                      // Optimistic: remove from UI immediately
+                                      var previousFormations = savedFormations;
+                                      var deletedId = f.id;
+                                      setSavedFormations(function(prev){return prev.filter(function(x){return x.id!==deletedId;});});
+                                      if(savedId===deletedId) setSavedId(null);
+                                      // Backend call — if it fails, restore and surface the error
+                                      deleteFormation(deletedId).then(function(){
+                                        // Refresh from DB to confirm & stay in sync
+                                        loadFormations().then(setSavedFormations).catch(function(e){
+                                          console.error("Delete succeeded but reload failed:",e);
+                                        });
+                                      }).catch(function(e){
+                                        console.error("Delete failed for id",deletedId,":",e);
+                                        // Rollback: restore the row
+                                        setSavedFormations(previousFormations);
+                                        notify("Couldn't delete: "+(e&&e.message?e.message:"unknown error")+" (see console)");
+                                      });
                                     }}>&#x2715;</button>
                                 </div>
                               </div>
