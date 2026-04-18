@@ -163,6 +163,8 @@ var CSS = [
   ".btn-danger:hover{background:rgba(240,50,50,0.08);border-color:rgba(240,50,50,0.5);}",
   ".btn-volt-outline{background:rgba(200,255,0,0.08);color:#C8FF00;border:1px solid rgba(200,255,0,0.3);}",
   ".btn-volt-outline:hover{background:rgba(200,255,0,0.14);border-color:rgba(200,255,0,0.55);}",
+  ".btn-yellow-outline{background:rgba(255,214,10,0.08);color:#FFD60A;border:1px solid rgba(255,214,10,0.3);}",
+  ".btn-yellow-outline:hover{background:rgba(255,214,10,0.14);border-color:rgba(255,214,10,0.55);}",
   ".btn-sm{padding:5px 12px;font-size:10px;}",
   ".btn-md{padding:8px 16px;font-size:11px;}",
   ".btn-lg{padding:12px 24px;font-size:14px;}",
@@ -1325,12 +1327,8 @@ export default function FCRoster() {
           <span style={{fontSize:13}}>&#x2193;</span>
           <span>{savedId?"Update Roster":"Save Roster"}</span>
         </button>
-        <button onClick={doExport} className={"btn "+sz}
-          style={{flex:2,gap:5,fontWeight:800,
-            background:"#FFD60A",
-            border:"1px solid #FFD60A",
-            color:"#1a1a1a",
-            boxShadow:"0 0 12px rgba(255,214,10,0.25)"}}
+        <button onClick={doExport} className={"btn btn-yellow-outline "+sz}
+          style={{flex:2,gap:5,fontWeight:800}}
           title="Export as PNG">
           <span style={{fontSize:12}}>&#x2913;</span>
           <span>Export PNG</span>
