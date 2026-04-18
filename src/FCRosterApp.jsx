@@ -1325,8 +1325,13 @@ export default function FCRoster() {
           <span style={{fontSize:13}}>&#x2193;</span>
           <span>{savedId?"Update Roster":"Save Roster"}</span>
         </button>
-        <button onClick={doExport} className={"btn btn-secondary "+sz}
-          style={{flex:2,gap:5,fontWeight:800}} title="Export as PNG">
+        <button onClick={doExport} className={"btn "+sz}
+          style={{flex:2,gap:5,fontWeight:800,
+            background:"#FFD60A",
+            border:"1px solid #FFD60A",
+            color:"#1a1a1a",
+            boxShadow:"0 0 12px rgba(255,214,10,0.25)"}}
+          title="Export as PNG">
           <span style={{fontSize:12}}>&#x2913;</span>
           <span>Export PNG</span>
         </button>
@@ -1940,8 +1945,7 @@ export default function FCRoster() {
                   ) : (
                     <button onClick={function(e){e.stopPropagation();setEditTitle(true);}}
                       style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",padding:"5px 14px",borderRadius:5,border:"1px solid rgba(200,255,0,0.3)",background:"rgba(200,255,0,0.05)",transition:"all 0.15s",outline:"none",pointerEvents:"all"}}>
-                      <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:"rgba(200,255,0,0.55)",flexShrink:0}}>SQUAD NAME</span>
-                      <span style={{fontSize:14,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:title==="My FCRoster"?"rgba(255,255,255,0.25)":T.text,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      <span style={{fontSize:14,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",fontFamily:"'Rajdhani',sans-serif",color:title==="My FCRoster"?T.volt:T.text,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                         {title==="My FCRoster"?"Click to name your squad":title}
                       </span>
                       <span style={{fontSize:12,color:"rgba(200,255,0,0.4)",flexShrink:0}}>&#x270E;</span>
