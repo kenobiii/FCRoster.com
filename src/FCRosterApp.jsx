@@ -2621,57 +2621,25 @@ export default function FCRoster() {
                                 </div>
                                 <span style={{fontSize:10,opacity:0.25,flexShrink:0}}>&#x270E;</span>
                               </div>
-                              {/* Stats row — always visible, separate horizontal space */}
+                              {/* Stats row — READ-ONLY season totals. To edit, open the specific match record. */}
                               {(function(){
                                 var cg = careerGoals(p.id);
                                 var ca = careerAssists(p.id);
-                                var minusBtn = {
-                                  width:20,height:20,borderRadius:"50%",fontSize:13,lineHeight:1,
-                                  cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
-                                  fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,
-                                  WebkitTapHighlightColor:"transparent",
-                                  background:"rgba(255,255,255,0.06)",
-                                  border:"1px solid rgba(255,255,255,0.1)",
-                                  color:"rgba(255,255,255,0.5)"
-                                };
-                                var assistMinus = Object.assign({}, minusBtn, {
-                                  background:"rgba(255,255,255,0.04)"
-                                });
-                                var plusBtnBase = {
-                                  height:22,borderRadius:11,padding:"0 10px",fontSize:11,lineHeight:1,
-                                  cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:3,
-                                  fontFamily:"'Rajdhani',sans-serif",fontWeight:800,flexShrink:0,
-                                  WebkitTapHighlightColor:"transparent",whiteSpace:"nowrap"
-                                };
-                                var goalPlus = Object.assign({}, plusBtnBase, {
-                                  background:"rgba(200,255,0,0.1)",
-                                  border:"1px solid rgba(200,255,0,0.3)",
-                                  color:"#C8FF00"
-                                });
-                                var assistPlus = Object.assign({}, plusBtnBase, {
-                                  background:"rgba(90,180,255,0.1)",
-                                  border:"1px solid rgba(90,180,255,0.3)",
-                                  color:"rgba(150,200,255,0.95)"
-                                });
-                                var badgeStyle = {fontSize:10,fontWeight:900,borderRadius:3,padding:"3px 6px",fontFamily:"'Rajdhani',sans-serif",display:"inline-flex",alignItems:"center",gap:3};
+                                if(cg===0&&ca===0) return null;
                                 return (
-                                  <div style={{display:"flex",alignItems:"center",gap:10,marginTop:6,paddingLeft:42,flexWrap:"wrap"}}>
-                                    {/* Goals cluster */}
-                                    <div style={{display:"flex",alignItems:"center",gap:4}}>
-                                      {cg>0&&<span style={Object.assign({},badgeStyle,{color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)"})}>&#x26BD; {cg}</span>}
-                                      {cg>0&&<button title="Remove a goal" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"goals",false);}} style={minusBtn}>&minus;</button>}
-                                      <button title="Add a goal to most recent match" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"goals",true);if(navigator.vibrate)navigator.vibrate(5);}} style={goalPlus}>
-                                        <span style={{fontSize:11}}>&#x26BD;</span><span style={{fontSize:12,fontWeight:900}}>+</span>
-                                      </button>
-                                    </div>
-                                    {/* Assists cluster */}
-                                    <div style={{display:"flex",alignItems:"center",gap:4}}>
-                                      {ca>0&&<span style={Object.assign({},badgeStyle,{color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)"})}>&#x1F464; {ca}</span>}
-                                      {ca>0&&<button title="Remove an assist" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"assists",false);}} style={assistMinus}>&minus;</button>}
-                                      <button title="Add an assist to most recent match" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"assists",true);if(navigator.vibrate)navigator.vibrate(5);}} style={assistPlus}>
-                                        <span style={{fontSize:11}}>&#x1F464;</span><span style={{fontSize:12,fontWeight:900}}>+</span>
-                                      </button>
-                                    </div>
+                                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6,paddingLeft:42,flexWrap:"wrap"}}
+                                    title="Season totals across saved matches for this team. Edit in a specific match record.">
+                                    {cg>0&&(
+                                      <span style={{fontSize:10,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"3px 7px",fontFamily:"'Rajdhani',sans-serif",display:"inline-flex",alignItems:"center",gap:3}}>
+                                        &#x26BD; {cg}
+                                      </span>
+                                    )}
+                                    {ca>0&&(
+                                      <span style={{fontSize:10,fontWeight:900,color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)",borderRadius:3,padding:"3px 7px",fontFamily:"'Rajdhani',sans-serif",display:"inline-flex",alignItems:"center",gap:3}}>
+                                        &#x1F464; {ca}
+                                      </span>
+                                    )}
+                                    <span style={{fontSize:8,color:T.faint,fontFamily:"'Poppins',sans-serif",letterSpacing:"0.06em",textTransform:"uppercase"}}>season</span>
                                   </div>
                                 );
                               })()}
