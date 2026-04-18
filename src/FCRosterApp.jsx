@@ -400,6 +400,8 @@ export default function FCRoster() {
   var [bannerTeamName,setBannerTeamName] = useState("");
   // Profile page UI state
   var [expandedTeams,setExpandedTeams] = useState({}); // {teamName: true} for expanded teams
+  // Section-level collapse state. Defaults to open; treat undefined as true.
+  var [expandedSections,setExpandedSections] = useState({teams:true,plays:true,drafts:true});
   var [driftBannerDismissed,setDriftBannerDismissed] = useState(false);
   var [profileSearch,setProfileSearch] = useState("");
   var [profileSort,setProfileSort] = useState("newest"); // newest | oldest | az
@@ -2721,19 +2723,24 @@ export default function FCRoster() {
                           );
                         }
 
-                        function SectionShell(title, count, accent, body){
+                        function SectionShell(sectionKey, title, count, accent, body){
+                          var isOpen = expandedSections[sectionKey] !== false; // default to open
                           return (
                             <div style={{border:"1px solid "+T.b,borderRadius:8,overflow:"hidden"}}>
-                              <div style={{padding:"10px 14px",borderBottom:"1px solid "+T.b,display:"flex",alignItems:"center",justifyContent:"space-between",background:T.raised}}>
+                              <div onClick={function(){setExpandedSections(function(prev){var nxt=Object.assign({},prev);nxt[sectionKey]=isOpen?false:true;return nxt;});}}
+                                style={{padding:"10px 14px",borderBottom:isOpen?"1px solid "+T.b:"none",display:"flex",alignItems:"center",justifyContent:"space-between",background:T.raised,cursor:"pointer",userSelect:"none"}}>
                                 <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                  <span style={{fontSize:10,color:T.ghost,flexShrink:0,display:"inline-block",transform:isOpen?"rotate(90deg)":"rotate(0)",transition:"transform 0.12s"}}>&#x25B6;</span>
                                   <span style={{width:3,height:14,background:accent,borderRadius:2}}/>
                                   <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.16em",color:T.text,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"}}>
                                     {title}{count>0?" ("+count+")":""}
                                   </span>
                                 </div>
-                                <button className="btn btn-secondary btn-sm" onClick={function(){loadFormations().then(setSavedFormations).catch(function(e){notify(e.message);});}}>&#x21BA;</button>
+                                <button className="btn btn-secondary btn-sm"
+                                  onClick={function(e){e.stopPropagation();loadFormations().then(setSavedFormations).catch(function(err){notify(err.message);});}}
+                                  title="Refresh">&#x21BA;</button>
                               </div>
-                              {body}
+                              {isOpen&&body}
                             </div>
                           );
                         }
@@ -2777,6 +2784,7 @@ export default function FCRoster() {
                             )}
 
                             {teamNames.length>0&&SectionShell(
+                              "teams",
                               "Teams & Match History",
                               teamNames.length,
                               T.volt,
@@ -2820,6 +2828,7 @@ export default function FCRoster() {
                             )}
 
                             {plays.length>0&&SectionShell(
+                              "plays",
                               "Tactical Plays",
                               plays.length,
                               "#F5BE00",
@@ -2830,6 +2839,7 @@ export default function FCRoster() {
                             )}
 
                             {drafts.length>0&&SectionShell(
+                              "drafts",
                               "Drafts — Unnamed Saves",
                               drafts.length,
                               T.ghost,
