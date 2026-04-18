@@ -1477,53 +1477,134 @@ export default function FCRoster() {
           </g>
         )}
 
-        {/* Futsal — vertical hardwood planks */}
+        {/* Futsal — vertical hardwood planks (21 planks, staggered breaks) */}
         {surface==="futsal"&&(
           <g style={{pointerEvents:"none"}}>
-            {/* Alternating plank tint — every other plank slightly darker */}
+            {/* Alternating plank tint — every other plank slightly darker (10 dark bands) */}
             <g opacity="0.30">
-              <rect x="5"  y="0" width="5" height="100" fill="#9E6808"/>
-              <rect x="15" y="0" width="5" height="100" fill="#9E6808"/>
-              <rect x="25" y="0" width="5" height="100" fill="#9E6808"/>
-              <rect x="35" y="0" width="5" height="100" fill="#9E6808"/>
-              <rect x="45" y="0" width="5" height="100" fill="#9E6808"/>
-              <rect x="55" y="0" width="5" height="100" fill="#9E6808"/>
+              <rect x="3.10"  y="0" width="3.10" height="100" fill="#9E6808"/>
+              <rect x="9.29"  y="0" width="3.10" height="100" fill="#9E6808"/>
+              <rect x="15.48" y="0" width="3.10" height="100" fill="#9E6808"/>
+              <rect x="21.67" y="0" width="3.10" height="100" fill="#9E6808"/>
+              <rect x="27.86" y="0" width="3.10" height="100" fill="#9E6808"/>
+              <rect x="34.05" y="0" width="3.10" height="100" fill="#9E6808"/>
+              <rect x="40.24" y="0" width="3.10" height="100" fill="#9E6808"/>
+              <rect x="46.43" y="0" width="3.10" height="100" fill="#9E6808"/>
+              <rect x="52.62" y="0" width="3.10" height="100" fill="#9E6808"/>
+              <rect x="58.81" y="0" width="3.10" height="100" fill="#9E6808"/>
             </g>
-            {/* Plank seam lines — thin vertical dividers */}
-            <g stroke="#6E4806" strokeWidth="0.12" opacity="0.45">
-              <line x1="5"  y1="0" x2="5"  y2="100"/>
-              <line x1="10" y1="0" x2="10" y2="100"/>
-              <line x1="15" y1="0" x2="15" y2="100"/>
-              <line x1="20" y1="0" x2="20" y2="100"/>
-              <line x1="25" y1="0" x2="25" y2="100"/>
-              <line x1="30" y1="0" x2="30" y2="100"/>
-              <line x1="35" y1="0" x2="35" y2="100"/>
-              <line x1="40" y1="0" x2="40" y2="100"/>
-              <line x1="45" y1="0" x2="45" y2="100"/>
-              <line x1="50" y1="0" x2="50" y2="100"/>
-              <line x1="55" y1="0" x2="55" y2="100"/>
-              <line x1="60" y1="0" x2="60" y2="100"/>
+            {/* Plank seam lines — 20 thin vertical dividers between planks */}
+            <g stroke="#6E4806" strokeWidth="0.1" opacity="0.45">
+              <line x1="3.10"  y1="0" x2="3.10"  y2="100"/>
+              <line x1="6.19"  y1="0" x2="6.19"  y2="100"/>
+              <line x1="9.29"  y1="0" x2="9.29"  y2="100"/>
+              <line x1="12.38" y1="0" x2="12.38" y2="100"/>
+              <line x1="15.48" y1="0" x2="15.48" y2="100"/>
+              <line x1="18.57" y1="0" x2="18.57" y2="100"/>
+              <line x1="21.67" y1="0" x2="21.67" y2="100"/>
+              <line x1="24.76" y1="0" x2="24.76" y2="100"/>
+              <line x1="27.86" y1="0" x2="27.86" y2="100"/>
+              <line x1="30.95" y1="0" x2="30.95" y2="100"/>
+              <line x1="34.05" y1="0" x2="34.05" y2="100"/>
+              <line x1="37.14" y1="0" x2="37.14" y2="100"/>
+              <line x1="40.24" y1="0" x2="40.24" y2="100"/>
+              <line x1="43.33" y1="0" x2="43.33" y2="100"/>
+              <line x1="46.43" y1="0" x2="46.43" y2="100"/>
+              <line x1="49.52" y1="0" x2="49.52" y2="100"/>
+              <line x1="52.62" y1="0" x2="52.62" y2="100"/>
+              <line x1="55.71" y1="0" x2="55.71" y2="100"/>
+              <line x1="58.81" y1="0" x2="58.81" y2="100"/>
+              <line x1="61.90" y1="0" x2="61.90" y2="100"/>
             </g>
-            {/* Wood grain — very faint horizontal streaks, staggered across planks */}
+            {/* Staggered horizontal breaks — butt joints where planks meet end-to-end */}
+            {/* Each plank gets 1-2 breaks, positions offset between neighbors */}
+            <g stroke="#4E3204" strokeWidth="0.22" opacity="0.55">
+              {/* Plank 0 (x=0 to 3.10) */}
+              <line x1="0"     y1="18" x2="3.10"  y2="18"/>
+              <line x1="0"     y1="62" x2="3.10"  y2="62"/>
+              {/* Plank 1 */}
+              <line x1="3.10"  y1="35" x2="6.19"  y2="35"/>
+              <line x1="3.10"  y1="78" x2="6.19"  y2="78"/>
+              {/* Plank 2 */}
+              <line x1="6.19"  y1="12" x2="9.29"  y2="12"/>
+              <line x1="6.19"  y1="55" x2="9.29"  y2="55"/>
+              {/* Plank 3 */}
+              <line x1="9.29"  y1="28" x2="12.38" y2="28"/>
+              <line x1="9.29"  y1="88" x2="12.38" y2="88"/>
+              {/* Plank 4 */}
+              <line x1="12.38" y1="45" x2="15.48" y2="45"/>
+              {/* Plank 5 */}
+              <line x1="15.48" y1="22" x2="18.57" y2="22"/>
+              <line x1="15.48" y1="72" x2="18.57" y2="72"/>
+              {/* Plank 6 */}
+              <line x1="18.57" y1="8"  x2="21.67" y2="8"/>
+              <line x1="18.57" y1="52" x2="21.67" y2="52"/>
+              {/* Plank 7 */}
+              <line x1="21.67" y1="32" x2="24.76" y2="32"/>
+              <line x1="21.67" y1="82" x2="24.76" y2="82"/>
+              {/* Plank 8 */}
+              <line x1="24.76" y1="15" x2="27.86" y2="15"/>
+              <line x1="24.76" y1="65" x2="27.86" y2="65"/>
+              {/* Plank 9 */}
+              <line x1="27.86" y1="42" x2="30.95" y2="42"/>
+              <line x1="27.86" y1="92" x2="30.95" y2="92"/>
+              {/* Plank 10 */}
+              <line x1="30.95" y1="25" x2="34.05" y2="25"/>
+              <line x1="30.95" y1="75" x2="34.05" y2="75"/>
+              {/* Plank 11 */}
+              <line x1="34.05" y1="48" x2="37.14" y2="48"/>
+              {/* Plank 12 */}
+              <line x1="37.14" y1="18" x2="40.24" y2="18"/>
+              <line x1="37.14" y1="68" x2="40.24" y2="68"/>
+              {/* Plank 13 */}
+              <line x1="40.24" y1="38" x2="43.33" y2="38"/>
+              <line x1="40.24" y1="85" x2="43.33" y2="85"/>
+              {/* Plank 14 */}
+              <line x1="43.33" y1="12" x2="46.43" y2="12"/>
+              <line x1="43.33" y1="58" x2="46.43" y2="58"/>
+              {/* Plank 15 */}
+              <line x1="46.43" y1="28" x2="49.52" y2="28"/>
+              <line x1="46.43" y1="78" x2="49.52" y2="78"/>
+              {/* Plank 16 */}
+              <line x1="49.52" y1="45" x2="52.62" y2="45"/>
+              {/* Plank 17 */}
+              <line x1="52.62" y1="22" x2="55.71" y2="22"/>
+              <line x1="52.62" y1="72" x2="55.71" y2="72"/>
+              {/* Plank 18 */}
+              <line x1="55.71" y1="8"  x2="58.81" y2="8"/>
+              <line x1="55.71" y1="52" x2="58.81" y2="52"/>
+              <line x1="55.71" y1="95" x2="58.81" y2="95"/>
+              {/* Plank 19 */}
+              <line x1="58.81" y1="32" x2="61.90" y2="32"/>
+              <line x1="58.81" y1="82" x2="61.90" y2="82"/>
+              {/* Plank 20 (x=61.90 to 65) */}
+              <line x1="61.90" y1="15" x2="65"    y2="15"/>
+              <line x1="61.90" y1="65" x2="65"    y2="65"/>
+            </g>
+            {/* Wood grain — very faint horizontal streaks scattered across planks */}
             <g stroke="#6E4806" strokeWidth="0.08" opacity="0.18">
-              <line x1="1"  y1="15" x2="9"  y2="15"/>
-              <line x1="11" y1="28" x2="19" y2="28"/>
-              <line x1="21" y1="42" x2="29" y2="42"/>
-              <line x1="31" y1="18" x2="39" y2="18"/>
-              <line x1="41" y1="35" x2="49" y2="35"/>
-              <line x1="51" y1="55" x2="59" y2="55"/>
-              <line x1="1"  y1="68" x2="9"  y2="68"/>
-              <line x1="21" y1="75" x2="29" y2="75"/>
-              <line x1="31" y1="82" x2="39" y2="82"/>
-              <line x1="51" y1="88" x2="59" y2="88"/>
-              <line x1="11" y1="60" x2="19" y2="60"/>
-              <line x1="41" y1="70" x2="49" y2="70"/>
-              <line x1="21" y1="8"  x2="29" y2="8"/>
-              <line x1="61" y1="25" x2="64" y2="25"/>
-              <line x1="61" y1="48" x2="64" y2="48"/>
-              <line x1="1"  y1="45" x2="4"  y2="45"/>
-              <line x1="1"  y1="92" x2="9"  y2="92"/>
-              <line x1="31" y1="50" x2="39" y2="50"/>
+              <line x1="0.5"   y1="40" x2="2.8"   y2="40"/>
+              <line x1="3.5"   y1="10" x2="6"     y2="10"/>
+              <line x1="6.5"   y1="28" x2="9"     y2="28"/>
+              <line x1="9.6"   y1="62" x2="12.2"  y2="62"/>
+              <line x1="12.8"  y1="22" x2="15.2"  y2="22"/>
+              <line x1="15.8"  y1="48" x2="18.3"  y2="48"/>
+              <line x1="19"    y1="90" x2="21.5"  y2="90"/>
+              <line x1="22"    y1="62" x2="24.5"  y2="62"/>
+              <line x1="25"    y1="40" x2="27.7"  y2="40"/>
+              <line x1="28"    y1="78" x2="30.7"  y2="78"/>
+              <line x1="31.3"  y1="55" x2="33.9"  y2="55"/>
+              <line x1="34.3"  y1="10" x2="37"    y2="10"/>
+              <line x1="37.5"  y1="85" x2="40.1"  y2="85"/>
+              <line x1="40.5"  y1="52" x2="43.2"  y2="52"/>
+              <line x1="43.6"  y1="25" x2="46.3"  y2="25"/>
+              <line x1="46.7"  y1="60" x2="49.4"  y2="60"/>
+              <line x1="49.8"  y1="92" x2="52.5"  y2="92"/>
+              <line x1="53"    y1="38" x2="55.6"  y2="38"/>
+              <line x1="56"    y1="65" x2="58.7"  y2="65"/>
+              <line x1="59.2"  y1="18" x2="61.8"  y2="18"/>
+              <line x1="62.2"  y1="45" x2="64.8"  y2="45"/>
+              <line x1="62.2"  y1="82" x2="64.8"  y2="82"/>
             </g>
           </g>
         )}
@@ -2528,72 +2609,72 @@ export default function FCRoster() {
                               onClick={function(){setEditP(Object.assign({},p));}}
                               onMouseEnter={function(e){e.currentTarget.style.background="rgba(255,255,255,0.03)";}}
                               onMouseLeave={function(e){e.currentTarget.style.background="transparent";}}>
+                              {/* Identity row */}
                               <div style={{display:"flex",alignItems:"center",gap:8}}>
                                 <div style={{width:8,height:8,borderRadius:"50%",background:availColor,flexShrink:0}}/>
                                 <div style={{width:26,height:26,borderRadius:"50%",background:tFill(p.n),display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                                   <span style={{fontSize:8,fontWeight:900,color:tTxt(p.n),fontFamily:"'Rajdhani',sans-serif"}}>{p.number||p.n.slice(0,4)}</span>
                                 </div>
                                 <div style={{flex:1,minWidth:0}}>
-                                  <div style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif"}}>{p.name||p.n} <span style={{color:T.ghost,fontWeight:400,fontSize:10}}>{p.n}</span></div>
-                                  <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>{footLabel} &bull; {skillLabel}{p.age?" &bull; Age "+p.age:""}</div>
+                                  <div style={{fontSize:12,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name||p.n} <span style={{color:T.ghost,fontWeight:400,fontSize:10}}>{p.n}</span></div>
+                                  <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{footLabel} &bull; {skillLabel}{p.age?" &bull; Age "+p.age:""}</div>
                                 </div>
-                                {/* Career totals — Goals & Assists — writes to most recent saved match */}
-                                {(function(){
-                                  var cg = careerGoals(p.id);
-                                  var ca = careerAssists(p.id);
-                                  var minusBtn = {
-                                    width:18,height:18,borderRadius:"50%",fontSize:12,lineHeight:1,
-                                    cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
-                                    fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,
-                                    WebkitTapHighlightColor:"transparent",
-                                    background:"rgba(255,255,255,0.06)",
-                                    border:"1px solid rgba(255,255,255,0.1)",
-                                    color:"rgba(255,255,255,0.4)"
-                                  };
-                                  var assistMinus = Object.assign({}, minusBtn, {
-                                    background:"rgba(255,255,255,0.04)"
-                                  });
-                                  // Pill-shaped plus buttons with sport icon always visible
-                                  var plusBtnBase = {
-                                    height:20,borderRadius:10,padding:"0 8px",fontSize:11,lineHeight:1,
-                                    cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:3,
-                                    fontFamily:"'Rajdhani',sans-serif",fontWeight:800,flexShrink:0,
-                                    WebkitTapHighlightColor:"transparent",whiteSpace:"nowrap"
-                                  };
-                                  var goalPlus = Object.assign({}, plusBtnBase, {
-                                    background:"rgba(200,255,0,0.1)",
-                                    border:"1px solid rgba(200,255,0,0.3)",
-                                    color:"#C8FF00"
-                                  });
-                                  var assistPlus = Object.assign({}, plusBtnBase, {
-                                    background:"rgba(90,180,255,0.1)",
-                                    border:"1px solid rgba(90,180,255,0.3)",
-                                    color:"rgba(150,200,255,0.95)"
-                                  });
-                                  return (
-                                    <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}
-                                      title="Log a goal or assist to this player's most recent match">
-                                      {/* Goals cluster */}
-                                      <div style={{display:"flex",alignItems:"center",gap:2}}>
-                                        {cg>0&&<span style={{fontSize:9,fontWeight:900,color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)",borderRadius:3,padding:"2px 5px",fontFamily:"'Rajdhani',sans-serif"}}>&#x26BD;{cg}</span>}
-                                        {cg>0&&<button title="Remove a goal" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"goals",false);}} style={minusBtn}>&minus;</button>}
-                                        <button title="Add a goal to most recent match" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"goals",true);if(navigator.vibrate)navigator.vibrate(5);}} style={goalPlus}>
-                                          <span style={{fontSize:10}}>&#x26BD;</span><span style={{fontSize:11,fontWeight:900}}>+</span>
-                                        </button>
-                                      </div>
-                                      {/* Assists cluster */}
-                                      <div style={{display:"flex",alignItems:"center",gap:2}}>
-                                        {ca>0&&<span style={{fontSize:9,fontWeight:900,color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)",borderRadius:3,padding:"2px 5px",fontFamily:"'Rajdhani',sans-serif"}}>&#x1F464;{ca}</span>}
-                                        {ca>0&&<button title="Remove an assist" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"assists",false);}} style={assistMinus}>&minus;</button>}
-                                        <button title="Add an assist to most recent match" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"assists",true);if(navigator.vibrate)navigator.vibrate(5);}} style={assistPlus}>
-                                          <span style={{fontSize:10}}>&#x1F464;</span><span style={{fontSize:11,fontWeight:900}}>+</span>
-                                        </button>
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
-                                <span style={{fontSize:10,opacity:0.2}}>&#x270E;</span>
+                                <span style={{fontSize:10,opacity:0.25,flexShrink:0}}>&#x270E;</span>
                               </div>
+                              {/* Stats row — always visible, separate horizontal space */}
+                              {(function(){
+                                var cg = careerGoals(p.id);
+                                var ca = careerAssists(p.id);
+                                var minusBtn = {
+                                  width:20,height:20,borderRadius:"50%",fontSize:13,lineHeight:1,
+                                  cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
+                                  fontFamily:"'Rajdhani',sans-serif",fontWeight:700,flexShrink:0,
+                                  WebkitTapHighlightColor:"transparent",
+                                  background:"rgba(255,255,255,0.06)",
+                                  border:"1px solid rgba(255,255,255,0.1)",
+                                  color:"rgba(255,255,255,0.5)"
+                                };
+                                var assistMinus = Object.assign({}, minusBtn, {
+                                  background:"rgba(255,255,255,0.04)"
+                                });
+                                var plusBtnBase = {
+                                  height:22,borderRadius:11,padding:"0 10px",fontSize:11,lineHeight:1,
+                                  cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:3,
+                                  fontFamily:"'Rajdhani',sans-serif",fontWeight:800,flexShrink:0,
+                                  WebkitTapHighlightColor:"transparent",whiteSpace:"nowrap"
+                                };
+                                var goalPlus = Object.assign({}, plusBtnBase, {
+                                  background:"rgba(200,255,0,0.1)",
+                                  border:"1px solid rgba(200,255,0,0.3)",
+                                  color:"#C8FF00"
+                                });
+                                var assistPlus = Object.assign({}, plusBtnBase, {
+                                  background:"rgba(90,180,255,0.1)",
+                                  border:"1px solid rgba(90,180,255,0.3)",
+                                  color:"rgba(150,200,255,0.95)"
+                                });
+                                var badgeStyle = {fontSize:10,fontWeight:900,borderRadius:3,padding:"3px 6px",fontFamily:"'Rajdhani',sans-serif",display:"inline-flex",alignItems:"center",gap:3};
+                                return (
+                                  <div style={{display:"flex",alignItems:"center",gap:10,marginTop:6,paddingLeft:42,flexWrap:"wrap"}}>
+                                    {/* Goals cluster */}
+                                    <div style={{display:"flex",alignItems:"center",gap:4}}>
+                                      {cg>0&&<span style={Object.assign({},badgeStyle,{color:"#C8FF00",background:"rgba(200,255,0,0.12)",border:"1px solid rgba(200,255,0,0.3)"})}>&#x26BD; {cg}</span>}
+                                      {cg>0&&<button title="Remove a goal" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"goals",false);}} style={minusBtn}>&minus;</button>}
+                                      <button title="Add a goal to most recent match" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"goals",true);if(navigator.vibrate)navigator.vibrate(5);}} style={goalPlus}>
+                                        <span style={{fontSize:11}}>&#x26BD;</span><span style={{fontSize:12,fontWeight:900}}>+</span>
+                                      </button>
+                                    </div>
+                                    {/* Assists cluster */}
+                                    <div style={{display:"flex",alignItems:"center",gap:4}}>
+                                      {ca>0&&<span style={Object.assign({},badgeStyle,{color:"rgba(150,200,255,0.95)",background:"rgba(90,180,255,0.12)",border:"1px solid rgba(90,180,255,0.3)"})}>&#x1F464; {ca}</span>}
+                                      {ca>0&&<button title="Remove an assist" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"assists",false);}} style={assistMinus}>&minus;</button>}
+                                      <button title="Add an assist to most recent match" onClick={function(e){e.stopPropagation();adjustCareerStat(p,"assists",true);if(navigator.vibrate)navigator.vibrate(5);}} style={assistPlus}>
+                                        <span style={{fontSize:11}}>&#x1F464;</span><span style={{fontSize:12,fontWeight:900}}>+</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                               {/* Inline sub row on profile */}
                               {(function(){
                                 var plannedSub = subs.find(function(s){return s.playerId===p.id && s.subName && s.subName.trim();});
@@ -2696,99 +2777,130 @@ export default function FCRoster() {
                         }
 
                         function SavedCard(f){
+                          var isPlay = f.type === "play";
+                          var hasResult = !!f.result;
+                          var scored = (f.scorers||[]).filter(function(s){return (s.goals||0)>0;});
+                          var assisted = (f.scorers||[]).filter(function(s){return (s.assists||0)>0;});
+                          var dateObj = f.game_date ? new Date(f.game_date+"T12:00:00") : null;
+                          var dateDay = dateObj ? dateObj.toLocaleDateString("en-GB",{day:"numeric",month:"short"}) : null;
+                          var dateYear = dateObj ? dateObj.getFullYear() : null;
+                          var dateWeekday = dateObj ? dateObj.toLocaleDateString("en-GB",{weekday:"short"}) : null;
+                          var resultColor = f.result==="W"?"#22CC44":f.result==="L"?"#F02040":"#F5BE00";
+                          var resultBg = f.result==="W"?"rgba(34,204,68,0.12)":f.result==="L"?"rgba(240,32,64,0.12)":"rgba(245,190,0,0.12)";
+                          var resultBorder = f.result==="W"?"rgba(34,204,68,0.4)":f.result==="L"?"rgba(240,32,64,0.4)":"rgba(245,190,0,0.4)";
                           return (
                             <div key={f.id} style={{borderBottom:"1px solid "+T.b}}>
-                              <div style={{display:"flex",alignItems:"flex-start",gap:8,padding:"10px 14px"}}>
-                                <div style={{flex:1,minWidth:0}}>
-                                  <div style={{fontSize:10,fontWeight:700,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",marginBottom:2}}>
-                                    {f.game_date ? new Date(f.game_date+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"}) : "No date"}
-                                    {f.opponent&&<span style={{color:T.sub}}> &bull; vs {f.opponent}</span>}
-                                  </div>
-                                  <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:4}}>
-                                    <span style={{fontSize:13,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.title}</span>
-                                    {f.result ? (
-                                      <span onClick={function(){setExpandedResult(expandedResult===f.id?null:f.id);setEditingResult({result:f.result||"",scoreFor:f.score_for!=null?String(f.score_for):"",scoreAgainst:f.score_against!=null?String(f.score_against):"",opponent:f.opponent||"",date:f.game_date||""});setEditingScorers((f.scorers||[]).map(function(s){return Object.assign({},s);}));setSubScorerInput("");}}
-                                        style={{fontSize:9,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.1em",padding:"2px 7px",borderRadius:3,flexShrink:0,cursor:"pointer",background:f.result==="W"?"rgba(34,204,68,0.15)":f.result==="L"?"rgba(240,32,64,0.15)":"rgba(245,190,0,0.15)",color:f.result==="W"?"#22CC44":f.result==="L"?"#F02040":"#F5BE00",border:"1px solid "+(f.result==="W"?"rgba(34,204,68,0.4)":f.result==="L"?"rgba(240,32,64,0.4)":"rgba(245,190,0,0.4)")}}>
-                                        {f.result}{f.score_for!=null?" "+f.score_for+"-"+f.score_against:""} &#x270E;
+                              <div style={{padding:"12px 14px"}}>
+                                {/* HEADER ROW — Date block, Title/Opponent, Result badge, Load/Delete */}
+                                <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
+                                  {/* Date block — left anchor */}
+                                  {isPlay ? (
+                                    <div style={{width:56,flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",padding:"4px 0",borderRight:"1px solid "+T.b,paddingRight:10}}>
+                                      <span style={{fontSize:20,opacity:0.6}}>&#x1F3AC;</span>
+                                      <span style={{fontSize:8,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",marginTop:2}}>PLAY</span>
+                                    </div>
+                                  ) : dateObj ? (
+                                    <div style={{width:56,flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",padding:"4px 0",borderRight:"1px solid "+T.b,paddingRight:10}}>
+                                      <span style={{fontSize:9,color:T.ghost,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase"}}>{dateWeekday}</span>
+                                      <span style={{fontSize:17,fontWeight:900,color:T.volt,fontFamily:"'Rajdhani',sans-serif",lineHeight:1.1,marginTop:1}}>{dateDay}</span>
+                                      <span style={{fontSize:8,color:T.faint,fontFamily:"'Rajdhani',sans-serif",fontWeight:600,marginTop:1}}>{dateYear}</span>
+                                    </div>
+                                  ) : (
+                                    <div style={{width:56,flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",padding:"4px 0",borderRight:"1px solid "+T.b,paddingRight:10}}>
+                                      <span style={{fontSize:9,color:T.faint,fontFamily:"'Rajdhani',sans-serif",fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase"}}>No date</span>
+                                    </div>
+                                  )}
+                                  {/* Middle column — identity + meta */}
+                                  <div style={{flex:1,minWidth:0}}>
+                                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3,flexWrap:"wrap"}}>
+                                      <span style={{fontSize:13,fontWeight:700,color:T.text,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:"0.02em"}}>
+                                        {f.title || "Untitled"}
                                       </span>
-                                    ) : (
-                                      <span onClick={function(){setExpandedResult(expandedResult===f.id?null:f.id);setEditingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});setEditingScorers([]);setSubScorerInput("");}}
-                                        style={{fontSize:9,fontWeight:600,fontFamily:"'Poppins',sans-serif",color:"rgba(255,255,255,0.22)",cursor:"pointer",padding:"2px 6px",borderRadius:3,border:"1px dashed rgba(255,255,255,0.15)"}}>
-                                        + result
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:3}}>
-                                    {(f.players||[]).slice(0,11).map(function(p,pi){
-                                      var c=tFill(p.n);
-                                      var g=scorerGoals(f.scorers||[],p.id);
-                                      return (
-                                        <div key={pi} title={(p.name||p.n)+(g>0?" ⚽"+g:"")} style={{position:"relative",width:16,height:16,flexShrink:0}}>
-                                          <div style={{width:16,height:16,borderRadius:"50%",background:c,border:g>0?"1px solid #C8FF00":"1px solid rgba(255,255,255,0.15)",boxShadow:g>0?"0 0 4px rgba(200,255,0,0.5)":p.name?"0 0 3px "+c+"66":"none"}}/>
-                                          {g>0&&(<div style={{position:"absolute",top:-4,right:-4,width:10,height:10,borderRadius:"50%",background:"#C8FF00",color:"#111",display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",lineHeight:1}}>{g}</div>)}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                  {f.scorers&&f.scorers.length>0&&(function(){
-                                    var scored = f.scorers.filter(function(s){return (s.goals||0)>0;});
-                                    var assisted = f.scorers.filter(function(s){return (s.assists||0)>0;});
-                                    return (
-                                      <div style={{fontSize:9,fontFamily:"'Poppins',sans-serif",marginBottom:2,display:"flex",flexDirection:"column",gap:1}}>
+                                      {hasResult ? (
+                                        <span onClick={function(){setExpandedResult(expandedResult===f.id?null:f.id);setEditingResult({result:f.result||"",scoreFor:f.score_for!=null?String(f.score_for):"",scoreAgainst:f.score_against!=null?String(f.score_against):"",opponent:f.opponent||"",date:f.game_date||""});setEditingScorers((f.scorers||[]).map(function(s){return Object.assign({},s);}));setSubScorerInput("");}}
+                                          style={{fontSize:10,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",letterSpacing:"0.08em",padding:"3px 8px",borderRadius:4,flexShrink:0,cursor:"pointer",background:resultBg,color:resultColor,border:"1px solid "+resultBorder}}>
+                                          {f.result}{f.score_for!=null?" "+f.score_for+"-"+f.score_against:""} &#x270E;
+                                        </span>
+                                      ) : !isPlay && (
+                                        <span onClick={function(){setExpandedResult(expandedResult===f.id?null:f.id);setEditingResult({result:"",scoreFor:"",scoreAgainst:"",opponent:"",date:""});setEditingScorers([]);setSubScorerInput("");}}
+                                          style={{fontSize:9,fontWeight:600,fontFamily:"'Poppins',sans-serif",color:"rgba(255,255,255,0.3)",cursor:"pointer",padding:"2px 7px",borderRadius:3,border:"1px dashed rgba(255,255,255,0.18)"}}>
+                                          + add result
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div style={{fontSize:10,color:T.sub,fontFamily:"'Poppins',sans-serif",marginBottom:6,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                                      {f.opponent && !isPlay && <span>vs {f.opponent} &middot; </span>}
+                                      <span style={{color:T.faint}}>{f.game_fmt} &middot; {f.formation}</span>
+                                    </div>
+                                    {/* Player dots */}
+                                    <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+                                      {(f.players||[]).slice(0,11).map(function(p,pi){
+                                        var c=tFill(p.n);
+                                        var g=scorerGoals(f.scorers||[],p.id);
+                                        var a=scorerAssists(f.scorers||[],p.id);
+                                        var title=(p.name||p.n)+(g>0?" ⚽"+g:"")+(a>0?" 👤"+a:"");
+                                        return (
+                                          <div key={pi} title={title} style={{position:"relative",width:17,height:17,flexShrink:0}}>
+                                            <div style={{width:17,height:17,borderRadius:"50%",background:c,border:g>0?"1.2px solid #C8FF00":a>0?"1.2px solid rgba(150,200,255,0.9)":"1px solid rgba(255,255,255,0.15)",boxShadow:g>0?"0 0 4px rgba(200,255,0,0.5)":a>0?"0 0 4px rgba(90,180,255,0.4)":p.name?"0 0 3px "+c+"66":"none"}}/>
+                                            {g>0&&(<div style={{position:"absolute",top:-4,right:-4,width:11,height:11,borderRadius:"50%",background:"#C8FF00",color:"#111",display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",lineHeight:1}}>{g}</div>)}
+                                            {a>0&&g===0&&(<div style={{position:"absolute",bottom:-4,right:-4,width:11,height:11,borderRadius:"50%",background:"rgba(150,200,255,0.95)",color:"#06182b",display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:900,fontFamily:"'Rajdhani',sans-serif",lineHeight:1}}>{a}</div>)}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                    {/* Scorer & assister names */}
+                                    {(scored.length>0 || assisted.length>0) && (
+                                      <div style={{fontSize:10,fontFamily:"'Poppins',sans-serif",marginTop:6,display:"flex",flexDirection:"column",gap:2}}>
                                         {scored.length>0 && (
-                                          <div style={{color:"rgba(200,255,0,0.7)"}}>
+                                          <div style={{color:"rgba(200,255,0,0.85)"}}>
                                             &#x26BD; {scored.map(function(s){return s.name+((s.goals||0)>1?" ×"+s.goals:"");}).join(", ")}
                                           </div>
                                         )}
                                         {assisted.length>0 && (
-                                          <div style={{color:"rgba(150,200,255,0.75)"}}>
+                                          <div style={{color:"rgba(150,200,255,0.85)"}}>
                                             &#x1F464; {assisted.map(function(s){return s.name+((s.assists||0)>1?" ×"+s.assists:"");}).join(", ")}
                                           </div>
                                         )}
                                       </div>
-                                    );
-                                  })()}
-                                  <div style={{fontSize:9,color:T.faint,fontFamily:"'Poppins',sans-serif"}}>
-                                    {f.game_fmt} &bull; {f.formation}
+                                    )}
                                   </div>
-                                </div>
-                                <div style={{display:"flex",flexDirection:"column",gap:4,flexShrink:0}}>
-                                  <button className="btn btn-volt-outline btn-sm" style={{fontSize:10,padding:"4px 10px"}}
-                                    onClick={function(){
-                                      setTitle(f.title);setTitleEdited(true);setGameFmt(f.game_fmt);setFormation(f.formation);
-                                      setSurface(f.surface||"grass");setPaletteId(f.palette_id||"unit");
-                                      setPlayers((f.players||[]).map(function(p){return Object.assign({},p);}));
-                                      setLines((f.lines||[]).map(function(ln){return Object.assign({},ln);}));
-                                      setSubs((f.subs||[]).map(function(s){return Object.assign({},s);}));
-                                      setPhases(f.phases||[null,null,null,null,null]);setBallPos(f.ball_pos||null);
-                                      setShowOpp(!!f.show_opp);setOppFmt(f.opp_fmt||"4-3-3");setOppList(f.opp_list||[]);setOppColor(f.opp_color||"#EE2244");
-                                      if(f.team_name) setTeamName(f.team_name);
-                                      setSavedId(f.id);setTab("pitch");notify("Loaded: "+f.title);
-                                    }}>Load</button>
-                                  <button className="btn btn-danger btn-sm" style={{fontSize:10,padding:"4px 10px"}}
-                                    onClick={function(){
-                                      if(!confirm("Delete \""+(f.title||"untitled")+"\"?")) return;
-                                      // Optimistic: remove from UI immediately
-                                      var previousFormations = savedFormations;
-                                      var deletedId = f.id;
-                                      setSavedFormations(function(prev){return prev.filter(function(x){return x.id!==deletedId;});});
-                                      if(savedId===deletedId) setSavedId(null);
-                                      // Backend call — if it fails, restore and surface the error
-                                      deleteFormation(deletedId).then(function(){
-                                        return loadFormations();
-                                      }).then(function(fresh){
-                                        var stillThere = fresh.find(function(x){return x.id===deletedId;});
-                                        if(stillThere){
-                                          console.warn("[DELETE] row still in database after delete — likely RLS mismatch for id",deletedId);
-                                          notify("Couldn't delete — this row may belong to a different account.");
-                                        }
-                                        setSavedFormations(fresh);
-                                      }).catch(function(e){
-                                        console.error("[DELETE] failed for id",deletedId,":",e);
-                                        setSavedFormations(previousFormations);
-                                        notify("Couldn't delete: "+(e&&e.message?e.message:"unknown error"));
-                                      });
-                                    }}>&#x2715;</button>
+                                  {/* Right column — Load/Delete */}
+                                  <div style={{display:"flex",flexDirection:"column",gap:5,flexShrink:0}}>
+                                    <button className="btn btn-volt-outline btn-sm" style={{fontSize:10,padding:"5px 12px",minWidth:60}}
+                                      onClick={function(){
+                                        setTitle(f.title);setTitleEdited(true);setGameFmt(f.game_fmt);setFormation(f.formation);
+                                        setSurface(f.surface||"grass");setPaletteId(f.palette_id||"unit");
+                                        setPlayers((f.players||[]).map(function(p){return Object.assign({},p);}));
+                                        setLines((f.lines||[]).map(function(ln){return Object.assign({},ln);}));
+                                        setSubs((f.subs||[]).map(function(s){return Object.assign({},s);}));
+                                        setPhases(f.phases||[null,null,null,null,null]);setBallPos(f.ball_pos||null);
+                                        setShowOpp(!!f.show_opp);setOppFmt(f.opp_fmt||"4-3-3");setOppList(f.opp_list||[]);setOppColor(f.opp_color||"#EE2244");
+                                        if(f.team_name) setTeamName(f.team_name);
+                                        setSavedId(f.id);setTab("pitch");notify("Loaded: "+f.title);
+                                      }}>Load</button>
+                                    <button className="btn btn-danger btn-sm" style={{fontSize:10,padding:"5px 12px",minWidth:60}}
+                                      onClick={function(){
+                                        if(!confirm("Delete \""+(f.title||"untitled")+"\"?")) return;
+                                        var previousFormations = savedFormations;
+                                        var deletedId = f.id;
+                                        setSavedFormations(function(prev){return prev.filter(function(x){return x.id!==deletedId;});});
+                                        if(savedId===deletedId) setSavedId(null);
+                                        deleteFormation(deletedId).then(function(){
+                                          return loadFormations();
+                                        }).then(function(fresh){
+                                          var stillThere = fresh.find(function(x){return x.id===deletedId;});
+                                          if(stillThere){
+                                            console.warn("[DELETE] row still in database after delete — likely RLS mismatch for id",deletedId);
+                                            notify("Couldn't delete — this row may belong to a different account.");
+                                          }
+                                          setSavedFormations(fresh);
+                                        }).catch(function(e){
+                                          console.error("[DELETE] failed for id",deletedId,":",e);
+                                          setSavedFormations(previousFormations);
+                                          notify("Couldn't delete: "+(e&&e.message?e.message:"unknown error"));
+                                        });
+                                      }}>&#x2715;</button>
+                                  </div>
                                 </div>
                               </div>
                               {expandedResult===f.id&&(
